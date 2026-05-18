@@ -28,7 +28,7 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const data = await api.post("/api/auth/register", form);
+      const data = await api.post<{ access_token: string; user_id: string; name: string; role: "visitor" | "operator" | "admin" }>("/api/auth/register", form);
       setAuth(data.access_token, { id: data.user_id, name: data.name, role: data.role });
       router.push(data.role === "operator" ? "/dashboard" : "/sites");
     } catch (err: unknown) {
