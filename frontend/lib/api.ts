@@ -1,4 +1,6 @@
 const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001").replace(/^http:\/\/(?!localhost)/, "https://");
+console.log("[api] NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+console.log("[api] BASE:", BASE);
 
 type RequestOptions = {
   auth?: boolean;
