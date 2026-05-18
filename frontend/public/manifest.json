@@ -1,0 +1,10 @@
+{
+  "name": "Digby.rocks",
+  "short_name": "Digby",
+  "description": "Book rockhound sites across Ontario and Canada",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c1917",
+  "theme_color": "#ca8a04",
+  "icons": []
+}
