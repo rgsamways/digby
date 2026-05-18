@@ -22,7 +22,7 @@ export default function HomePage() {
             <Link href="/sites" className="btn-primary text-base px-6 py-3">
               Browse Sites
             </Link>
-            <Link href="/register?role=operator" className="btn-secondary text-base px-6 py-3 border-white/30 text-white hover:bg-white/10">
+            <Link href="/register?role=operator" className="inline-flex items-center justify-center rounded-lg border border-white/40 bg-transparent px-6 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors">
               List Your Site
             </Link>
           </div>
