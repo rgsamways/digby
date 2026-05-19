@@ -55,6 +55,11 @@ export default function DashboardPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-alerts"] }),
   });
 
+  const completeBooking = useMutation({
+    mutationFn: (id: string) => api.patch(`/api/bookings/${id}/complete`, {}, { auth: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["operator-bookings"] }),
+  });
+
   const confirmed = bookings.filter((b) => b.status === "confirmed");
   const pending = bookings.filter((b) => b.status === "pending");
   const revenue = confirmed.reduce((sum, b) => sum + b.total_amount, 0);
@@ -186,13 +191,25 @@ export default function DashboardPage() {
                   Party of {b.party_size}{b.is_group_booking ? " (group)" : ""}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold">${b.total_amount.toFixed(2)}</p>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  b.status === "confirmed" ? "bg-green-100 text-green-700" :
-                  b.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                  "bg-stone-100 text-stone-500"
-                }`}>{b.status}</span>
+              <div className="flex items-center gap-3 text-right">
+                <div>
+                  <p className="text-sm font-semibold">${b.total_amount.toFixed(2)}</p>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    b.status === "confirmed" ? "bg-green-100 text-green-700" :
+                    b.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                    b.status === "completed" ? "bg-blue-100 text-blue-700" :
+                    "bg-stone-100 text-stone-500"
+                  }`}>{b.status}</span>
+                </div>
+                {b.status === "confirmed" && (
+                  <button
+                    onClick={() => completeBooking.mutate(b.id)}
+                    disabled={completeBooking.isPending}
+                    className="rounded-md border border-brand-600 px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+                  >
+                    Mark complete
+                  </button>
+                )}
               </div>
             </div>
           ))

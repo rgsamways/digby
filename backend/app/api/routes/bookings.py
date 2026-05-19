@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from app.api.deps import get_current_user, require_operator
 from app.core.config import settings
 from app.models.availability import Availability
-from app.models.booking import Booking, BookingStatus
+from app.models.booking import Booking, BookingStatus, GroupMember
+from app.models.passport_stamp import PassportStamp
 from app.models.site import Site
 from app.models.user import User
 
@@ -22,6 +23,12 @@ class BookingCreate(BaseModel):
     date: datetime
     party_size: int
     notes: str = ""
+    is_group_booking: bool = False
+    group_members: list[GroupMember] = []
+
+
+class MembersUpdate(BaseModel):
+    group_members: list[GroupMember]
 
 
 class BookingResponse(BaseModel):
@@ -70,6 +77,8 @@ async def create_booking(
         operator_payout=operator_payout,
         stripe_payment_intent_id=intent.id,
         notes=body.notes,
+        is_group_booking=body.is_group_booking,
+        group_members=body.group_members,
     )
     await booking.insert()
 
@@ -108,6 +117,56 @@ async def cancel_booking(
     return {"status": "cancelled"}
 
 
+@router.patch("/{booking_id}/members")
+async def update_members(
+    booking_id: PydanticObjectId,
+    body: MembersUpdate,
+    visitor: User = Depends(get_current_user),
+) -> dict:
+    booking = await Booking.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if booking.visitor_id != visitor.id:
+        raise HTTPException(status_code=403, detail="Only the booking leader can edit members")
+    await booking.set({
+        Booking.group_members: body.group_members,
+        Booking.is_group_booking: len(body.group_members) > 0,
+    })
+    return _booking_dict(booking)
+
+
+@router.patch("/{booking_id}/complete")
+async def complete_booking(
+    booking_id: PydanticObjectId,
+    operator: User = Depends(require_operator),
+) -> dict:
+    booking = await Booking.get(booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if booking.operator_id != operator.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if booking.status != BookingStatus.CONFIRMED:
+        raise HTTPException(status_code=409, detail="Only confirmed bookings can be completed")
+
+    site = await Site.get(booking.site_id)
+    site_name = site.name if site else "Unknown site"
+
+    existing = await PassportStamp.find_one(PassportStamp.booking_id == booking.id)
+    if not existing:
+        stamp = PassportStamp(
+            visitor_id=booking.visitor_id,
+            site_id=booking.site_id,
+            site_name=site_name,
+            minerals_found=[],
+            visited_at=booking.date,
+            booking_id=booking.id,
+        )
+        await stamp.insert()
+
+    await booking.set({Booking.status: BookingStatus.COMPLETED})
+    return {"status": "completed"}
+
+
 def _booking_dict(b: Booking) -> dict:
     return {
         "id": str(b.id),
@@ -117,4 +176,7 @@ def _booking_dict(b: Booking) -> dict:
         "total_amount": b.total_amount,
         "status": b.status,
         "created_at": b.created_at.isoformat(),
+        "is_group_booking": b.is_group_booking,
+        "group_members": [m.model_dump() for m in b.group_members],
+        "notes": b.notes,
     }

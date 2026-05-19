@@ -18,6 +18,13 @@ export interface Site {
   review_count: number;
 }
 
+export interface GroupMember {
+  name: string;
+  email: string;
+  amount_owed: number;
+  paid: boolean;
+}
+
 export interface Booking {
   id: string;
   site_id: string;
@@ -27,6 +34,8 @@ export interface Booking {
   status: "pending" | "confirmed" | "cancelled" | "completed";
   created_at: string;
   is_group_booking?: boolean;
+  group_members?: GroupMember[];
+  notes?: string;
 }
 
 export interface User {

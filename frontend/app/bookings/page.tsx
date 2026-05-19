@@ -1,10 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { Booking } from "@/lib/types";
-import { Calendar, MapPin } from "lucide-react";
+import type { Booking, GroupMember } from "@/lib/types";
+import { Calendar, Users } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-green-100 text-green-700",
@@ -14,10 +15,13 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function MyBookingsPage() {
+  const qc = useQueryClient();
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["my-bookings"],
     queryFn: () => api.get("/api/bookings/my", { auth: true }),
   });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -36,32 +40,136 @@ export default function MyBookingsPage() {
           <Link href="/sites" className="btn-primary">Browse sites</Link>
         </div>
       ) : (
-        <div className="card divide-y divide-stone-100">
+        <div className="space-y-3">
           {bookings.map((b) => (
-            <div key={b.id} className="flex items-center gap-4 px-5 py-4">
-              <Calendar className="h-5 w-5 shrink-0 text-stone-400" />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-stone-900">
-                  {new Date(b.date).toLocaleDateString("en-CA", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </p>
-                <p className="text-sm text-stone-500">Party of {b.party_size}</p>
+            <div key={b.id} className="card">
+              <div className="flex items-center gap-4 px-5 py-4">
+                <Calendar className="h-5 w-5 shrink-0 text-stone-400" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-stone-900">
+                    {new Date(b.date).toLocaleDateString("en-CA", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <p className="text-sm text-stone-500">
+                    Party of {b.party_size}
+                    {b.is_group_booking && ` · ${(b.group_members?.length ?? 0)} member${b.group_members?.length === 1 ? "" : "s"}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-stone-900">
+                    ${b.total_amount.toFixed(2)} CAD
+                  </p>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
+                    {b.status}
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-stone-900">
-                  ${b.total_amount.toFixed(2)} CAD
-                </p>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
-                  {b.status}
-                </span>
-              </div>
+
+              {b.status !== "cancelled" && b.status !== "completed" && (
+                <div className="border-t border-stone-100 px-5 py-3">
+                  <button
+                    onClick={() => setEditingId(editingId === b.id ? null : b.id)}
+                    className="flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
+                  >
+                    <Users className="h-4 w-4" />
+                    {editingId === b.id ? "Hide members" : b.is_group_booking ? "Edit members" : "Add group members"}
+                  </button>
+                  {editingId === b.id && (
+                    <MemberEditor
+                      booking={b}
+                      onSaved={() => {
+                        qc.invalidateQueries({ queryKey: ["my-bookings"] });
+                        setEditingId(null);
+                      }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function MemberEditor({ booking, onSaved }: { booking: Booking; onSaved: () => void }) {
+  const perPerson = booking.total_amount / booking.party_size;
+  const [members, setMembers] = useState<GroupMember[]>(
+    booking.group_members?.length
+      ? booking.group_members
+      : [{ name: "", email: "", amount_owed: perPerson, paid: false }]
+  );
+
+  const save = useMutation({
+    mutationFn: (data: GroupMember[]) =>
+      api.patch(`/api/bookings/${booking.id}/members`, { group_members: data }, { auth: true }),
+    onSuccess: onSaved,
+  });
+
+  function update(i: number, field: keyof GroupMember, value: string | boolean | number) {
+    setMembers((m) => m.map((mem, idx) => (idx === i ? { ...mem, [field]: value } : mem)));
+  }
+
+  return (
+    <div className="mt-3 space-y-2 rounded-lg bg-stone-50 p-3">
+      {members.map((m, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            placeholder="Name"
+            value={m.name}
+            onChange={(e) => update(i, "name", e.target.value)}
+            className="input flex-1 min-w-[140px]"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={m.email}
+            onChange={(e) => update(i, "email", e.target.value)}
+            className="input flex-1 min-w-[180px]"
+          />
+          <label className="flex items-center gap-1 text-xs text-stone-600">
+            <input
+              type="checkbox"
+              checked={m.paid}
+              onChange={(e) => update(i, "paid", e.target.checked)}
+              className="h-3.5 w-3.5 accent-brand-600"
+            />
+            paid
+          </label>
+          <button
+            type="button"
+            onClick={() => setMembers((mm) => mm.filter((_, idx) => idx !== i))}
+            className="text-xs text-stone-400 hover:text-red-500"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center justify-between pt-1">
+        <button
+          type="button"
+          onClick={() => setMembers((m) => [...m, { name: "", email: "", amount_owed: perPerson, paid: false }])}
+          className="text-xs font-medium text-brand-600 hover:underline"
+        >
+          + Add member
+        </button>
+        <button
+          type="button"
+          onClick={() => save.mutate(members.filter((m) => m.name && m.email))}
+          disabled={save.isPending}
+          className="btn-primary text-xs"
+        >
+          {save.isPending ? "Saving…" : "Save members"}
+        </button>
+      </div>
+      {save.isError && (
+        <p className="text-xs text-red-600">{(save.error as Error).message}</p>
       )}
     </div>
   );
