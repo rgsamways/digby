@@ -21,7 +21,9 @@ export function Navbar() {
 
   const visitorLinks = [
     { href: "/sites", label: "Browse Sites" },
+    { href: "/guides", label: "Find a Guide" },
     { href: "/bookings", label: "My Bookings" },
+    { href: "/passport", label: "My Passport" },
   ];
 
   const operatorLinks = [
@@ -30,9 +32,16 @@ export function Navbar() {
     { href: "/dashboard/sites", label: "My Sites" },
   ];
 
-  const links = user?.role === "operator" || user?.role === "admin"
-    ? operatorLinks
-    : visitorLinks;
+  const guideLinks = [
+    { href: "/sites", label: "Browse Sites" },
+    { href: "/guides", label: "Guides" },
+    { href: "/dashboard/guide", label: "My Dashboard" },
+  ];
+
+  const links =
+    user?.role === "operator" || user?.role === "admin" ? operatorLinks :
+    user?.role === "guide" ? guideLinks :
+    visitorLinks;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">

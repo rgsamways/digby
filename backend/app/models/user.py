@@ -8,6 +8,7 @@ from pydantic import EmailStr
 class UserRole(StrEnum):
     VISITOR = "visitor"
     OPERATOR = "operator"
+    GUIDE = "guide"
     ADMIN = "admin"
 
 
@@ -17,8 +18,18 @@ class User(Document):
     name: str
     phone: str | None = None
     role: UserRole = UserRole.VISITOR
-    stripe_customer_id: str | None = None   # visitors
-    stripe_account_id: str | None = None    # operators (Connect)
+    bio: str = ""
+    avatar_url: str | None = None
+    # visitor fields
+    stripe_customer_id: str | None = None
+    # operator fields
+    stripe_account_id: str | None = None
+    # guide fields
+    specialties: list[str] = []          # e.g. ["amethyst", "fossils"]
+    years_experience: int = 0
+    certifications: list[str] = []
+    rate_per_day: float | None = None    # CAD
+    guide_location: str | None = None   # e.g. "Bancroft, ON"
     is_verified: bool = False
     is_active: bool = True
     created_at: datetime = datetime.now(UTC)

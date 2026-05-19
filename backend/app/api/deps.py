@@ -27,6 +27,12 @@ async def require_operator(user: User = Depends(get_current_user)) -> User:
     return user
 
 
+async def require_guide(user: User = Depends(get_current_user)) -> User:
+    if user.role not in (UserRole.GUIDE, UserRole.ADMIN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Guides only")
+    return user
+
+
 async def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")

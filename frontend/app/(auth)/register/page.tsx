@@ -15,7 +15,7 @@ function RegisterForm() {
     name: "",
     email: "",
     password: "",
-    role: params.get("role") === "operator" ? "operator" : "visitor",
+    role: (["operator", "guide"].includes(params.get("role") ?? "") ? params.get("role") : "visitor") as string,
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,6 +65,7 @@ function RegisterForm() {
             <select value={form.role} onChange={set("role")} className="input">
               <option value="visitor">Visitor / Rockhound</option>
               <option value="operator">Operator / Landowner</option>
+              <option value="guide">Guide / Expert</option>
             </select>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
