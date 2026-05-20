@@ -212,6 +212,8 @@ async def submit_quiz(
     body: SubmitBody,
     visitor: User = Depends(get_current_user),
 ) -> dict:
+    from datetime import date
+
     bank_map = {q["id"]: q for q in _BANK}
     results = []
     correct_count = 0
@@ -232,7 +234,15 @@ async def submit_quiz(
 
     score = correct_count
     perfect = score == QUESTIONS_PER_SESSION
-    points = score * POINTS_PER_CORRECT + (PERFECT_BONUS if perfect else 0)
+
+    # Award points only on the first submission today (UTC date)
+    today_start = datetime(date.today().year, date.today().month, date.today().day, tzinfo=UTC)
+    already_played_today = await QuizResult.find_one(
+        QuizResult.visitor_id == visitor.id,
+        QuizResult.completed_at >= today_start,
+    )
+    points = 0 if already_played_today else (score * POINTS_PER_CORRECT + (PERFECT_BONUS if perfect else 0))
+    points_eligible = already_played_today is None
 
     result = QuizResult(
         visitor_id=visitor.id,
@@ -246,6 +256,7 @@ async def submit_quiz(
         "score": score,
         "max_score": QUESTIONS_PER_SESSION,
         "points_awarded": points,
+        "points_eligible": points_eligible,
         "perfect": perfect,
         "results": results,
     }

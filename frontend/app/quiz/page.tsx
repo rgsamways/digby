@@ -26,6 +26,7 @@ interface SubmitResponse {
   score: number;
   max_score: number;
   points_awarded: number;
+  points_eligible: boolean;
   perfect: boolean;
   results: QuizResultDetail[];
 }
@@ -150,10 +151,16 @@ export default function QuizPage() {
         </h1>
         <p className="mt-1 text-stone-500">{pct}% correct</p>
 
-        <div className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3">
-          <span className="text-2xl font-extrabold text-white">+{submitResult.points_awarded}</span>
-          <span className="text-sm font-medium text-brand-200">pts earned</span>
-        </div>
+        {submitResult.points_eligible ? (
+          <div className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3">
+            <span className="text-2xl font-extrabold text-white">+{submitResult.points_awarded}</span>
+            <span className="text-sm font-medium text-brand-200">pts earned</span>
+          </div>
+        ) : (
+          <div className="mt-6 rounded-2xl bg-stone-100 px-6 py-3 text-sm text-stone-500">
+            No points — you already earned points from the quiz today. Come back tomorrow!
+          </div>
+        )}
 
         {/* Answer review */}
         <div className="mt-8 space-y-3 text-left">
