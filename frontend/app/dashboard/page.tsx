@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import type { Booking, WeatherAlert, YieldReport } from "@/lib/types";
-import { Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle } from "lucide-react";
+import type { Booking, WeatherAlert, YieldReport, ScavengerHunt } from "@/lib/types";
+import { Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map } from "lucide-react";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -64,6 +64,18 @@ export default function DashboardPage() {
     queryKey: ["me"],
     queryFn: () => api.get("/api/auth/me", { auth: true }),
     enabled: !!user,
+  });
+
+  const { data: hunts = [] } = useQuery<ScavengerHunt[]>({
+    queryKey: ["my-hunts"],
+    queryFn: () => api.get("/api/hunts/my", { auth: true }),
+    enabled: user?.role === "operator",
+  });
+
+  const toggleHunt = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      api.patch(`/api/hunts/${id}`, { is_active }, { auth: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-hunts"] }),
   });
 
   const connectStripe = useMutation({
@@ -126,6 +138,42 @@ export default function DashboardPage() {
           <p className="mt-2 text-sm text-stone-500">
             Connect a Stripe account to receive payments from visitors.
           </p>
+        )}
+      </section>
+
+      {/* Scavenger Hunts */}
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Map className="h-5 w-5 text-brand-600" />
+            <h2 className="text-lg font-semibold text-stone-800">Scavenger Hunts</h2>
+          </div>
+          <Link href="/dashboard/hunts/new" className="btn-primary text-sm gap-1">
+            <Plus className="h-4 w-4" /> New hunt
+          </Link>
+        </div>
+        {hunts.length === 0 ? (
+          <p className="text-sm text-stone-500">No hunts yet. Create one to give visitors a challenge at your site.</p>
+        ) : (
+          <div className="space-y-2">
+            {hunts.map((h) => (
+              <div key={h.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3">
+                <div>
+                  <p className="text-sm font-medium text-stone-800">{h.title}</p>
+                  <p className="text-xs text-stone-500">{h.items.length} items · {h.is_active ? "Active" : "Inactive"}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link href={`/dashboard/hunts/${h.id}/edit`} className="text-xs font-medium text-brand-600 hover:underline">Edit</Link>
+                  <button
+                    onClick={() => toggleHunt.mutate({ id: h.id, is_active: !h.is_active })}
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${h.is_active ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"}`}
+                  >
+                    {h.is_active ? "Active" : "Inactive"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

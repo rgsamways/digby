@@ -78,6 +78,33 @@ export interface WeatherAlert {
   created_at: string;
 }
 
+export interface HuntItem {
+  id: string;
+  label: string;
+  hint: string;
+  points: number;
+}
+
+export interface ScavengerHunt {
+  id: string;
+  site_id: string;
+  operator_id: string;
+  title: string;
+  description: string;
+  is_active: boolean;
+  items: HuntItem[];
+  created_at: string;
+}
+
+export interface HuntProgress {
+  id: string;
+  hunt_id: string;
+  booking_id: string;
+  found_item_ids: string[];
+  completed_at: string | null;
+  stamp_awarded: boolean;
+}
+
 export interface PassportStamp {
   id: string;
   site_id: string;

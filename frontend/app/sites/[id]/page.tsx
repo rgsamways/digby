@@ -3,12 +3,15 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { BookingForm } from "@/components/BookingForm";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import type { Site, YieldReport, WeatherAlert } from "@/lib/types";
-import { MapPin, Clock, Users, AlertTriangle } from "lucide-react";
+import { useAuthStore } from "@/lib/auth";
+import type { Site, YieldReport, WeatherAlert, ScavengerHunt, Booking } from "@/lib/types";
+import { MapPin, Clock, Users, AlertTriangle, Map } from "lucide-react";
 
 export default function SitePage() {
   const { id } = useParams<{ id: string }>();
+  const user = useAuthStore((s) => s.user);
 
   const { data: site, isLoading } = useQuery<Site>({
     queryKey: ["site", id],
@@ -27,6 +30,23 @@ export default function SitePage() {
     enabled: !!id,
   });
 
+  const { data: hunt } = useQuery<ScavengerHunt>({
+    queryKey: ["site-hunt", id],
+    queryFn: () => api.get(`/api/hunts/site/${id}`, { auth: true }),
+    enabled: !!id && !!user,
+    retry: false,
+  });
+
+  const { data: myBookings = [] } = useQuery<Booking[]>({
+    queryKey: ["my-bookings"],
+    queryFn: () => api.get("/api/bookings/my", { auth: true }),
+    enabled: !!user,
+  });
+
+  const confirmedBookingForSite = myBookings.find(
+    (b) => b.site_id === id && (b.status === "confirmed" || b.status === "completed")
+  );
+
   if (isLoading) return <div className="flex h-64 items-center justify-center text-stone-500">Loading…</div>;
   if (!site) return <div className="p-8 text-center text-stone-500">Site not found.</div>;
 
@@ -43,6 +63,26 @@ export default function SitePage() {
                 <p key={a.id} className="text-sm text-amber-700">{a.message}</p>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {hunt && confirmedBookingForSite && (
+        <div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Map className="h-5 w-5 text-brand-600" />
+              <div>
+                <p className="font-semibold text-brand-800">Scavenger Hunt available</p>
+                <p className="text-sm text-brand-600">{hunt.title} · {hunt.items.length} items</p>
+              </div>
+            </div>
+            <Link
+              href={`/sites/${id}/hunt?booking=${confirmedBookingForSite.id}`}
+              className="btn-primary text-sm"
+            >
+              Start hunt
+            </Link>
           </div>
         </div>
       )}

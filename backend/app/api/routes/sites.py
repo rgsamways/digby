@@ -55,6 +55,12 @@ async def list_sites(
     return [_site_to_dict(s) for s in sites]
 
 
+@router.get("/my")
+async def my_sites(operator: User = Depends(require_operator)) -> list[dict]:
+    sites = await Site.find(Site.operator_id == operator.id).to_list()
+    return [_site_to_dict(s) for s in sites]
+
+
 @router.get("/{site_id}")
 async def get_site(site_id: PydanticObjectId) -> dict:
     site = await Site.get(site_id)
