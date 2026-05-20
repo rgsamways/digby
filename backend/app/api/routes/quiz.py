@@ -199,10 +199,12 @@ class SubmitBody(BaseModel):
 @router.get("/questions")
 async def get_questions(visitor: User = Depends(get_current_user)) -> list[dict]:
     selected = random.sample(_BANK, QUESTIONS_PER_SESSION)
-    return [
-        {"id": q["id"], "question": q["question"], "options": q["options"], "answer": q["answer"], "explanation": q["explanation"]}
-        for q in selected
-    ]
+    result = []
+    for q in selected:
+        options = q["options"][:]
+        random.shuffle(options)
+        result.append({"id": q["id"], "question": q["question"], "options": options, "answer": q["answer"], "explanation": q["explanation"]})
+    return result
 
 
 @router.post("/submit")
