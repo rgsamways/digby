@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import get_current_user
-from app.api.routes import auth, availability, bookings, guide_bookings, guides, hunts, passport, payments, sites, weather_alerts, yield_reports
+from app.api.routes import auth, availability, bookings, guide_bookings, guides, hunts, passport, payments, quiz, sites, weather_alerts, yield_reports
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.models.user import User
@@ -43,6 +43,7 @@ app.include_router(yield_reports.router, prefix="/api/yield-reports", tags=["yie
 app.include_router(weather_alerts.router, prefix="/api/weather-alerts", tags=["weather-alerts"])
 app.include_router(passport.router, prefix="/api/passport", tags=["passport"])
 app.include_router(hunts.router, prefix="/api/hunts", tags=["hunts"])
+app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

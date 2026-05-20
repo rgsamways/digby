@@ -24,6 +24,7 @@ export function Navbar() {
     { href: "/guides", label: "Find a Guide" },
     { href: "/bookings", label: "My Bookings" },
     { href: "/passport", label: "My Passport" },
+    { href: "/quiz", label: "Quiz" },
   ];
 
   const operatorLinks = [
@@ -36,6 +37,7 @@ export function Navbar() {
     { href: "/sites", label: "Browse Sites" },
     { href: "/guides", label: "Guides" },
     { href: "/dashboard/guide", label: "My Dashboard" },
+    { href: "/quiz", label: "Quiz" },
   ];
 
   const links =
