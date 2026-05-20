@@ -11,6 +11,8 @@ interface Question {
   id: string;
   question: string;
   options: string[];
+  answer: string;
+  explanation: string;
 }
 
 interface QuizResultDetail {
@@ -193,9 +195,6 @@ export default function QuizPage() {
   // Playing / reviewing
   if (!questions) return null;
   const q = questions[current];
-  const resultForCurrent = submitResult?.results.find((r) => r.id === q.id);
-  const correctAnswer = resultForCurrent?.correct_answer;
-  const explanation = resultForCurrent?.explanation;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
@@ -221,9 +220,9 @@ export default function QuizPage() {
           {q.options.map((opt) => {
             let style = "border-stone-200 bg-white hover:border-brand-300 hover:bg-brand-50 cursor-pointer";
             if (phase === "reviewing") {
-              if (opt === correctAnswer) {
+              if (opt === q.answer) {
                 style = "border-green-400 bg-green-50";
-              } else if (opt === chosen && opt !== correctAnswer) {
+              } else if (opt === chosen) {
                 style = "border-red-300 bg-red-50";
               } else {
                 style = "border-stone-200 bg-stone-50 opacity-60";
@@ -237,10 +236,10 @@ export default function QuizPage() {
                 className={`w-full rounded-lg border p-3 text-left text-sm font-medium transition-colors ${style}`}
               >
                 <div className="flex items-center gap-2">
-                  {phase === "reviewing" && opt === correctAnswer && (
+                  {phase === "reviewing" && opt === q.answer && (
                     <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                   )}
-                  {phase === "reviewing" && opt === chosen && opt !== correctAnswer && (
+                  {phase === "reviewing" && opt === chosen && opt !== q.answer && (
                     <XCircle className="h-4 w-4 shrink-0 text-red-400" />
                   )}
                   {opt}
@@ -252,7 +251,7 @@ export default function QuizPage() {
 
         {phase === "reviewing" && (
           <div className="mt-4 rounded-lg bg-stone-50 border border-stone-200 p-3">
-            <p className="text-xs text-stone-600">{explanation ?? resultForCurrent?.explanation}</p>
+            <p className="text-xs text-stone-600">{q.explanation}</p>
           </div>
         )}
       </div>

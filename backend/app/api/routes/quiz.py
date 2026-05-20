@@ -200,7 +200,7 @@ class SubmitBody(BaseModel):
 async def get_questions(visitor: User = Depends(get_current_user)) -> list[dict]:
     selected = random.sample(_BANK, QUESTIONS_PER_SESSION)
     return [
-        {"id": q["id"], "question": q["question"], "options": q["options"]}
+        {"id": q["id"], "question": q["question"], "options": q["options"], "answer": q["answer"], "explanation": q["explanation"]}
         for q in selected
     ]
 
