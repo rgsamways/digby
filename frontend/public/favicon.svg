@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="g" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="55%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark stone background -->
+  <rect width="32" height="32" rx="7" fill="#1c1917"/>
+  <!-- Gem body (Lucide gem paths, scaled +4,+4 offset into 32×32) -->
+  <path d="M10 7h12l4 6-10 13L6 13Z" fill="url(#g)"/>
+  <!-- Facet lines -->
+  <path d="M15 7 12 13l4 13 4-13-3-6" fill="none" stroke="#fef9c3" stroke-width="0.8" opacity="0.5"/>
+  <path d="M6 13h20" fill="none" stroke="#fef9c3" stroke-width="0.8" opacity="0.5"/>
+</svg>

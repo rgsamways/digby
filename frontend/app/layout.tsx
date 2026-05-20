@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   description:
     "Discover and book rockhound sites across Ontario and Canada. Pay-to-dig, guided tours, and collecting walks.",
   metadataBase: new URL("https://digby.rocks"),
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
   openGraph: {
     type: "website",
     siteName: "Digby.rocks",
