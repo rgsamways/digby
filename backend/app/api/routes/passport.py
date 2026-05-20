@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import get_current_user
+from app.models.hunt_progress import HuntProgress
 from app.models.passport_stamp import PassportStamp
 from app.models.user import User
 
@@ -15,6 +16,14 @@ BADGES = [
     {"id": "mineral_master", "name": "Mineral Master", "description": "Visit 25 sites", "threshold": 25},
 ]
 
+STAMP_POINTS = 25
+MINERAL_POINTS = 10
+HUNT_POINTS = 100
+
+
+def _compute_points(stamp_count: int, unique_mineral_count: int, hunt_count: int) -> int:
+    return stamp_count * STAMP_POINTS + unique_mineral_count * MINERAL_POINTS + hunt_count * HUNT_POINTS
+
 
 @router.get("/me")
 async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
@@ -22,22 +31,66 @@ async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
         PassportStamp.visitor_id == visitor.id
     ).sort(-PassportStamp.visited_at).to_list()
 
-    earned_badges = [
-        b for b in BADGES if len(stamps) >= b["threshold"]
-    ]
+    earned_badges = [b for b in BADGES if len(stamps) >= b["threshold"]]
 
-    # unique minerals found across all visits
     all_minerals: set[str] = set()
     for s in stamps:
         all_minerals.update(s.minerals_found)
 
+    hunt_completions = await HuntProgress.find(
+        HuntProgress.visitor_id == visitor.id,
+        HuntProgress.completed_at != None,  # noqa: E711
+    ).count()
+
+    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions)
+
     return {
         "visitor_name": visitor.name,
         "total_visits": len(stamps),
+        "total_points": total_points,
+        "hunt_completions": hunt_completions,
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],
     }
+
+
+@router.get("/leaderboard")
+async def leaderboard() -> list[dict]:
+    from collections import defaultdict
+
+    all_stamps = await PassportStamp.find_all().to_list()
+    completed_hunts = await HuntProgress.find(
+        HuntProgress.completed_at != None  # noqa: E711
+    ).to_list()
+
+    stamps_by_visitor: dict = defaultdict(list)
+    for s in all_stamps:
+        stamps_by_visitor[str(s.visitor_id)].append(s)
+
+    hunts_by_visitor: dict = defaultdict(int)
+    for h in completed_hunts:
+        hunts_by_visitor[str(h.visitor_id)] += 1
+
+    visitor_ids = set(stamps_by_visitor.keys()) | set(hunts_by_visitor.keys())
+    scores: list[tuple[str, int, int]] = []
+    for vid in visitor_ids:
+        vstamps = stamps_by_visitor[vid]
+        minerals: set[str] = set()
+        for s in vstamps:
+            minerals.update(s.minerals_found)
+        pts = _compute_points(len(vstamps), len(minerals), hunts_by_visitor[vid])
+        scores.append((vid, pts, len(vstamps)))
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+
+    result = []
+    for vid, pts, visits in scores[:10]:
+        user = await User.get(PydanticObjectId(vid))
+        if user:
+            result.append({"name": user.name, "points": pts, "visits": visits})
+
+    return result
 
 
 @router.get("/{visitor_id}")
@@ -51,8 +104,17 @@ async def get_passport(visitor_id: str) -> dict:
     for s in stamps:
         all_minerals.update(s.minerals_found)
 
+    hunt_completions = await HuntProgress.find(
+        HuntProgress.visitor_id == PydanticObjectId(visitor_id),
+        HuntProgress.completed_at != None,  # noqa: E711
+    ).count()
+
+    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions)
+
     return {
         "total_visits": len(stamps),
+        "total_points": total_points,
+        "hunt_completions": hunt_completions,
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],

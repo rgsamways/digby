@@ -121,6 +121,12 @@ export interface Badge {
   threshold: number;
 }
 
+export interface LeaderboardEntry {
+  name: string;
+  points: number;
+  visits: number;
+}
+
 export interface GuideBooking {
   id: string;
   guide_id: string;
