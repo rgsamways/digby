@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.models.availability import Availability
 from app.models.booking import Booking
 from app.models.guide_booking import GuideBooking
+from app.models.diary_entry import DiaryEntry
 from app.models.hunt_progress import HuntProgress
 from app.models.passport_stamp import PassportStamp
 from app.models.quiz_result import QuizResult
@@ -23,7 +24,7 @@ async def init_db() -> None:
     _client = AsyncIOMotorClient(settings.MONGODB_URL)
     await init_beanie(
         database=_client.get_default_database(),
-        document_models=[User, Site, Booking, Availability, Review, GuideBooking, PassportStamp, WeatherAlert, YieldReport, ScavengerHunt, HuntProgress, QuizResult],
+        document_models=[User, Site, Booking, Availability, Review, GuideBooking, PassportStamp, WeatherAlert, YieldReport, ScavengerHunt, HuntProgress, QuizResult, DiaryEntry],
     )
 
 

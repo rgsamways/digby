@@ -6,8 +6,8 @@ import { BookingForm } from "@/components/BookingForm";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
-import type { Site, YieldReport, WeatherAlert, ScavengerHunt, Booking } from "@/lib/types";
-import { MapPin, Clock, Users, AlertTriangle, Map } from "lucide-react";
+import type { Site, YieldReport, WeatherAlert, ScavengerHunt, Booking, DiaryEntry } from "@/lib/types";
+import { MapPin, Clock, Users, AlertTriangle, Map, BookOpen } from "lucide-react";
 
 export default function SitePage() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +27,12 @@ export default function SitePage() {
   const { data: reports = [] } = useQuery<YieldReport[]>({
     queryKey: ["site-yields", id],
     queryFn: () => api.get(`/api/yield-reports/site/${id}`),
+    enabled: !!id,
+  });
+
+  const { data: diaryEntries = [] } = useQuery<DiaryEntry[]>({
+    queryKey: ["site-diary", id],
+    queryFn: () => api.get(`/api/diary/site/${id}`),
     enabled: !!id,
   });
 
@@ -154,6 +160,32 @@ export default function SitePage() {
                     )}
                     {r.quantity_notes && <p className="mt-1 text-xs text-stone-500">{r.quantity_notes}</p>}
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* From the Field — diary entries */}
+          {diaryEntries.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-stone-500" />
+                <h3 className="font-semibold text-stone-800">From the Field</h3>
+              </div>
+              <div className="space-y-3">
+                {diaryEntries.slice(0, 4).map((e) => (
+                  <Link key={e.id} href={`/diary/${e.id}`} className="block rounded-lg border border-stone-200 p-3 hover:border-brand-300 hover:bg-brand-50 transition-colors">
+                    <p className="font-medium text-stone-800 text-sm">{e.title}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">{e.visitor_name} · {new Date(e.visit_date).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    {e.minerals_found.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {e.minerals_found.slice(0, 4).map((m) => (
+                          <span key={m} className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">{m}</span>
+                        ))}
+                      </div>
+                    )}
+                    {e.body && <p className="mt-1 text-xs text-stone-500 line-clamp-2">{e.body}</p>}
+                  </Link>
                 ))}
               </div>
             </div>

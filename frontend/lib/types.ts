@@ -127,6 +127,22 @@ export interface LeaderboardEntry {
   visits: number;
 }
 
+export interface DiaryEntry {
+  id: string;
+  visitor_name: string;
+  booking_id: string;
+  site_id: string;
+  site_name: string;
+  visit_date: string;
+  title: string;
+  body: string;
+  minerals_found: string[];
+  photo_urls: string[];
+  is_public: boolean;
+  points_awarded: number;
+  created_at: string;
+}
+
 export interface GuideBooking {
   id: string;
   guide_id: string;

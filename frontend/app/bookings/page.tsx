@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { Booking, GroupMember } from "@/lib/types";
-import { Calendar, Users } from "lucide-react";
+import { BookOpen, Calendar, Users } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-green-100 text-green-700",
@@ -68,6 +68,15 @@ export default function MyBookingsPage() {
                   </span>
                 </div>
               </div>
+
+              {b.status === "completed" && (
+                <div className="border-t border-stone-100 px-5 py-3">
+                  <Link href={`/diary/new?booking=${b.id}`} className="flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline">
+                    <BookOpen className="h-4 w-4" />
+                    Write a field journal entry
+                  </Link>
+                </div>
+              )}
 
               {b.status !== "cancelled" && b.status !== "completed" && (
                 <div className="border-t border-stone-100 px-5 py-3">

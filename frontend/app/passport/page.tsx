@@ -10,6 +10,8 @@ interface PassportData {
   total_visits: number;
   total_points: number;
   hunt_completions: number;
+  quiz_sessions: number;
+  diary_entries: number;
   unique_minerals: string[];
   badges: Badge[];
   stamps: PassportStamp[];
@@ -57,7 +59,11 @@ export default function PassportPage() {
 
         {data.total_points > 0 && (
           <p className="mt-2 text-xs text-stone-400">
-            {data.total_visits} visit{data.total_visits !== 1 ? "s" : ""} · {data.unique_minerals.length} mineral{data.unique_minerals.length !== 1 ? "s" : ""} · {data.hunt_completions} hunt{data.hunt_completions !== 1 ? "s" : ""}
+            {data.total_visits} visit{data.total_visits !== 1 ? "s" : ""}
+            {" · "}{data.unique_minerals.length} mineral{data.unique_minerals.length !== 1 ? "s" : ""}
+            {data.hunt_completions > 0 && ` · ${data.hunt_completions} hunt${data.hunt_completions !== 1 ? "s" : ""}`}
+            {data.diary_entries > 0 && ` · ${data.diary_entries} journal entr${data.diary_entries !== 1 ? "ies" : "y"}`}
+            {data.quiz_sessions > 0 && ` · ${data.quiz_sessions} quiz${data.quiz_sessions !== 1 ? "zes" : ""}`}
           </p>
         )}
       </div>

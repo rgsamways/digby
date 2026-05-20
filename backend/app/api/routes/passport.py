@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import get_current_user
+from app.models.diary_entry import DiaryEntry
 from app.models.hunt_progress import HuntProgress
 from app.models.passport_stamp import PassportStamp
 from app.models.quiz_result import QuizResult
@@ -22,8 +23,8 @@ MINERAL_POINTS = 10
 HUNT_POINTS = 100
 
 
-def _compute_points(stamp_count: int, unique_mineral_count: int, hunt_count: int, quiz_points: int) -> int:
-    return stamp_count * STAMP_POINTS + unique_mineral_count * MINERAL_POINTS + hunt_count * HUNT_POINTS + quiz_points
+def _compute_points(stamp_count: int, unique_mineral_count: int, hunt_count: int, quiz_points: int, diary_points: int) -> int:
+    return stamp_count * STAMP_POINTS + unique_mineral_count * MINERAL_POINTS + hunt_count * HUNT_POINTS + quiz_points + diary_points
 
 
 @router.get("/me")
@@ -46,7 +47,10 @@ async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
     quiz_results = await QuizResult.find(QuizResult.visitor_id == visitor.id).to_list()
     quiz_points = sum(r.points_awarded for r in quiz_results)
 
-    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points)
+    diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == visitor.id).to_list()
+    diary_points = sum(e.points_awarded for e in diary_entries)
+
+    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points)
 
     return {
         "visitor_name": visitor.name,
@@ -54,6 +58,7 @@ async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
         "total_points": total_points,
         "hunt_completions": hunt_completions,
         "quiz_sessions": len(quiz_results),
+        "diary_entries": len(diary_entries),
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],
@@ -82,14 +87,24 @@ async def leaderboard() -> list[dict]:
     for qr in all_quiz:
         quiz_pts_by_visitor[str(qr.visitor_id)] += qr.points_awarded
 
-    visitor_ids = set(stamps_by_visitor.keys()) | set(hunts_by_visitor.keys()) | set(quiz_pts_by_visitor.keys())
+    all_diary = await DiaryEntry.find_all().to_list()
+    diary_pts_by_visitor: dict = defaultdict(int)
+    for de in all_diary:
+        diary_pts_by_visitor[str(de.visitor_id)] += de.points_awarded
+
+    visitor_ids = (
+        set(stamps_by_visitor.keys())
+        | set(hunts_by_visitor.keys())
+        | set(quiz_pts_by_visitor.keys())
+        | set(diary_pts_by_visitor.keys())
+    )
     scores: list[tuple[str, int, int]] = []
     for vid in visitor_ids:
         vstamps = stamps_by_visitor[vid]
         minerals: set[str] = set()
         for s in vstamps:
             minerals.update(s.minerals_found)
-        pts = _compute_points(len(vstamps), len(minerals), hunts_by_visitor[vid], quiz_pts_by_visitor[vid])
+        pts = _compute_points(len(vstamps), len(minerals), hunts_by_visitor[vid], quiz_pts_by_visitor[vid], diary_pts_by_visitor[vid])
         scores.append((vid, pts, len(vstamps)))
 
     scores.sort(key=lambda x: x[1], reverse=True)
@@ -122,13 +137,17 @@ async def get_passport(visitor_id: str) -> dict:
     quiz_results = await QuizResult.find(QuizResult.visitor_id == PydanticObjectId(visitor_id)).to_list()
     quiz_points = sum(r.points_awarded for r in quiz_results)
 
-    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points)
+    diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == PydanticObjectId(visitor_id)).to_list()
+    diary_points = sum(e.points_awarded for e in diary_entries)
+
+    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points)
 
     return {
         "total_visits": len(stamps),
         "total_points": total_points,
         "hunt_completions": hunt_completions,
         "quiz_sessions": len(quiz_results),
+        "diary_entries": len(diary_entries),
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],

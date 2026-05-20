@@ -24,6 +24,7 @@ export function Navbar() {
     { href: "/guides", label: "Find a Guide" },
     { href: "/bookings", label: "My Bookings" },
     { href: "/passport", label: "My Passport" },
+    { href: "/diary", label: "Journal" },
     { href: "/quiz", label: "Quiz" },
   ];
 
