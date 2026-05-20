@@ -24,8 +24,8 @@ async def stripe_connect_onboard(operator: User = Depends(require_operator)) -> 
 
     link = stripe.AccountLink.create(
         account=account_id,
-        refresh_url="https://digby.rocks/dashboard/stripe/refresh",
-        return_url="https://digby.rocks/dashboard/stripe/complete",
+        refresh_url="https://www.digby.rocks/dashboard/stripe/refresh",
+        return_url="https://www.digby.rocks/dashboard/stripe/complete",
         type="account_onboarding",
     )
     return {"url": link.url}
