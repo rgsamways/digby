@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Mountain, Calendar } from "lucide-react";
+import { MapPin, Building2, Calendar } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -44,7 +44,7 @@ export default function HomePage() {
               body: "Real-time availability, instant confirmation, and secure payments via Stripe.",
             },
             {
-              icon: Mountain,
+              icon: Building2,
               title: "Operators Welcome",
               body: "Landowners and tour guides list sites in minutes and manage bookings in one place.",
             },
