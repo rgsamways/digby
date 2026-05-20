@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Trash2, Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import type { ScavengerHunt } from "@/lib/types";
+import type { ScavengerHunt, Site } from "@/lib/types";
 
 interface ItemDraft { label: string; hint: string; points: number; }
 
@@ -21,6 +21,12 @@ export default function EditHuntPage() {
     queryKey: ["hunt", id],
     queryFn: () => api.get(`/api/hunts/${id}`, { auth: true }),
     enabled: !!id,
+  });
+
+  const { data: site } = useQuery<Site>({
+    queryKey: ["site", hunt?.site_id],
+    queryFn: () => api.get(`/api/sites/${hunt!.site_id}`),
+    enabled: !!hunt?.site_id,
   });
 
   useEffect(() => {
@@ -61,6 +67,12 @@ export default function EditHuntPage() {
       <h1 className="mb-6 text-2xl font-bold text-stone-900">Edit hunt</h1>
 
       <div className="card p-6 space-y-5">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-stone-700">Site</label>
+          <p className="input bg-stone-50 text-stone-500 cursor-default">{site?.name ?? hunt.site_id}</p>
+          <p className="mt-1 text-xs text-stone-400">Site cannot be changed after creation.</p>
+        </div>
+
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700">Title</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
