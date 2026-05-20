@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { Booking, Site } from "@/lib/types";
 
-export default function NewDiaryEntryPage() {
+function NewDiaryEntryForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("booking");
@@ -209,5 +209,13 @@ export default function NewDiaryEntryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewDiaryEntryPage() {
+  return (
+    <Suspense fallback={<div className="flex h-64 items-center justify-center text-stone-400">Loading…</div>}>
+      <NewDiaryEntryForm />
+    </Suspense>
   );
 }
