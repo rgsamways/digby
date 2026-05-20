@@ -45,6 +45,10 @@ async def create_booking(
     if not site or not site.is_active:
         raise HTTPException(status_code=404, detail="Site not found")
 
+    operator = await User.get(site.operator_id)
+    if not operator or not operator.stripe_account_id or not operator.stripe_account_enabled:
+        raise HTTPException(status_code=409, detail="Operator payment account not set up")
+
     avail = await Availability.find_one(
         Availability.site_id == site.id,
         Availability.date == body.date.date(),
@@ -56,10 +60,11 @@ async def create_booking(
     platform_fee = round(total * settings.STRIPE_PLATFORM_FEE_PERCENT / 100, 2)
     operator_payout = round(total - platform_fee, 2)
 
-    # Create Stripe PaymentIntent
     intent = stripe.PaymentIntent.create(
         amount=int(total * 100),  # cents
         currency="cad",
+        application_fee_amount=int(platform_fee * 100),
+        transfer_data={"destination": operator.stripe_account_id},
         metadata={
             "site_id": body.site_id,
             "visitor_id": str(visitor.id),

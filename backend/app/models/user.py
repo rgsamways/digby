@@ -24,6 +24,7 @@ class User(Document):
     stripe_customer_id: str | None = None
     # operator fields
     stripe_account_id: str | None = None
+    stripe_account_enabled: bool = False
     # guide fields
     specialties: list[str] = []          # e.g. ["amethyst", "fossils"]
     years_experience: int = 0

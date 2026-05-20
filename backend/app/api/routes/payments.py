@@ -54,4 +54,10 @@ async def stripe_webhook(request: Request) -> JSONResponse:
         if booking:
             await booking.set({Booking.status: BookingStatus.CANCELLED})
 
+    elif event["type"] == "account.updated":
+        account = event["data"]["object"]
+        user = await User.find_one(User.stripe_account_id == account["id"])
+        if user:
+            await user.set({"stripe_account_enabled": account.get("charges_enabled", False)})
+
     return JSONResponse({"received": True})
