@@ -40,8 +40,11 @@ export interface Booking {
 
 export interface User {
   id: string;
+  email: string;
   name: string;
   role: "visitor" | "operator" | "guide" | "admin";
+  stripe_account_id?: string | null;
+  stripe_account_enabled?: boolean;
 }
 
 export interface Guide {

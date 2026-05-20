@@ -52,6 +52,7 @@ async def me(user: User = Depends(get_current_user)) -> dict:
         "name": user.name,
         "role": user.role,
         "stripe_account_id": user.stripe_account_id,
+        "stripe_account_enabled": user.stripe_account_enabled,
     }
 
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { Booking, WeatherAlert, YieldReport } from "@/lib/types";
-import { Calendar, Plus, AlertTriangle, Pickaxe } from "lucide-react";
+import { Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -60,6 +60,17 @@ export default function DashboardPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["operator-bookings"] }),
   });
 
+  const { data: me } = useQuery<typeof user>({
+    queryKey: ["me"],
+    queryFn: () => api.get("/api/auth/me", { auth: true }),
+    enabled: !!user,
+  });
+
+  const connectStripe = useMutation({
+    mutationFn: () => api.post<{ url: string }>("/api/payments/connect/onboard", {}, { auth: true }),
+    onSuccess: (data) => { window.location.href = data.url; },
+  });
+
   const confirmed = bookings.filter((b) => b.status === "confirmed");
   const pending = bookings.filter((b) => b.status === "pending");
   const revenue = confirmed.reduce((sum, b) => sum + b.total_amount, 0);
@@ -89,6 +100,34 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Stripe Connect */}
+      <section className="card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-stone-500" />
+            <h2 className="text-lg font-semibold text-stone-800">Stripe Payments</h2>
+          </div>
+          {me?.stripe_account_enabled ? (
+            <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+              <CheckCircle className="h-4 w-4" /> Connected
+            </span>
+          ) : (
+            <button
+              onClick={() => connectStripe.mutate()}
+              disabled={connectStripe.isPending}
+              className="btn-primary text-sm"
+            >
+              {connectStripe.isPending ? "Redirecting…" : me?.stripe_account_id ? "Complete Stripe setup" : "Connect Stripe"}
+            </button>
+          )}
+        </div>
+        {!me?.stripe_account_enabled && (
+          <p className="mt-2 text-sm text-stone-500">
+            Connect a Stripe account to receive payments from visitors.
+          </p>
+        )}
+      </section>
 
       {/* Weather Alerts */}
       <section className="card p-6">
