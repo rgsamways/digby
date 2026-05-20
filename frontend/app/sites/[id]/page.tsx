@@ -77,12 +77,21 @@ export default function SitePage() {
                 <p className="text-sm text-brand-600">{hunt.title} · {hunt.items.length} items</p>
               </div>
             </div>
-            <Link
-              href={`/sites/${id}/hunt?booking=${confirmedBookingForSite.id}`}
-              className="btn-primary text-sm"
-            >
+            <Link href={`/sites/${id}/hunt?booking=${confirmedBookingForSite.id}`} className="btn-primary text-sm">
               Start hunt
             </Link>
+          </div>
+        </div>
+      )}
+
+      {hunt && !confirmedBookingForSite && (
+        <div className="mb-6 rounded-xl border border-stone-200 bg-stone-50 p-4">
+          <div className="flex items-center gap-2">
+            <Map className="h-5 w-5 text-stone-400" />
+            <div>
+              <p className="font-semibold text-stone-700">Scavenger Hunt: {hunt.title}</p>
+              <p className="text-sm text-stone-500">{hunt.items.length} items to find — book this site to play</p>
+            </div>
           </div>
         </div>
       )}
