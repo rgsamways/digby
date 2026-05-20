@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, Mountain } from "lucide-react";
+import { Menu, X, Gem } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ export function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-extrabold text-stone-900">
-          <Mountain className="h-5 w-5 text-brand-600" />
+          <Gem className="h-5 w-5 text-brand-600" />
           <span>
             digby<span className="text-brand-600">.rocks</span>
           </span>
