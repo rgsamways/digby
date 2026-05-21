@@ -19,7 +19,9 @@ from app.api.routes import (
     partners,
     passport,
     payments,
+    products,
     quiz,
+    shop_orders,
     site_questions,
     sites,
     specimens,
@@ -74,6 +76,8 @@ app.include_router(specimens.router, prefix="/api/specimens", tags=["specimens"]
 app.include_router(site_questions.router, prefix="/api/site-questions", tags=["site-questions"])
 app.include_router(field_guides.router, prefix="/api/field-guides", tags=["field-guides"])
 app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
+app.include_router(products.router, prefix="/api/products", tags=["products"])
+app.include_router(shop_orders.router, prefix="/api/shop/orders", tags=["shop-orders"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

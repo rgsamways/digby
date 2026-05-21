@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Gem, ChevronDown } from "lucide-react";
+import { Menu, X, Gem, ChevronDown, ShoppingCart } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
+import { useCartStore } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 const exploreLinks = [
@@ -58,6 +59,7 @@ export function Navbar() {
 
   const isExploreActive = exploreLinks.some((l) => pathname === l.href);
   const isMyDigbyActive = myDigbyLinks.some((l) => pathname === l.href);
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
 
   // Primary nav items (always visible in desktop bar)
   const primaryLinks = isOperator
@@ -77,12 +79,14 @@ export function Navbar() {
       ]
     : [
         { href: "/sites", label: "Browse Sites" },
+        { href: "/shop", label: "Shop" },
         { href: "/specimens", label: "Marketplace" },
       ];
 
   // All links for mobile (flat list)
   const allMobileLinks = [
     ...primaryLinks,
+    { href: "/shop/cart", label: `Cart${cartCount > 0 ? ` (${cartCount})` : ""}` },
     ...(isVisitor ? exploreLinks : []),
     ...(isVisitor && user ? myDigbyLinks : []),
   ];
@@ -154,6 +158,15 @@ export function Navbar() {
 
         {/* Desktop auth / user menu */}
         <div className="hidden items-center gap-2 md:flex">
+          {/* Cart icon */}
+          <Link href="/shop/cart" className="relative rounded-lg p-2 text-stone-600 hover:bg-stone-100">
+            <ShoppingCart className="h-5 w-5" />
+            {cartCount > 0 && (
+              <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-[9px] font-bold text-white">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
+          </Link>
           {user ? (
             <div className="relative">
               <button

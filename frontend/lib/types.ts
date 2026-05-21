@@ -233,6 +233,40 @@ export interface GuideReview {
   created_at: string;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  subcategory: string;
+  description: string;
+  price: number; // cents
+  images: string[];
+  stock: number;
+  dropship: boolean;
+  tags: string[];
+  related_products: string[];
+  site_recommendations: string[];
+  related?: Product[];
+}
+
+export interface ShopOrderItem {
+  product_id: string;
+  product_name: string;
+  qty: number;
+  price: number; // cents
+}
+
+export interface ShopOrder {
+  id: string;
+  items: ShopOrderItem[];
+  total: number; // cents
+  status: "pending" | "confirmed" | "fulfilled" | "shipped" | "cancelled";
+  shipping_address: Record<string, string>;
+  tracking_number: string;
+  created_at: string;
+}
+
 export interface GuideBooking {
   id: string;
   guide_id: string;

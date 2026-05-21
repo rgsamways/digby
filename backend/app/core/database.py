@@ -12,9 +12,11 @@ from app.models.guide_review import GuideReview
 from app.models.hunt_progress import HuntProgress
 from app.models.partner_business import PartnerBusiness
 from app.models.passport_stamp import PassportStamp
+from app.models.product import Product
 from app.models.quiz_result import QuizResult
 from app.models.review import Review
 from app.models.scavenger_hunt import ScavengerHunt
+from app.models.shop_order import ShopOrder
 from app.models.site import Site
 from app.models.site_question import SiteQuestion
 from app.models.specimen import Specimen
@@ -37,7 +39,7 @@ async def init_db() -> None:
             PassportStamp, WeatherAlert, YieldReport, ScavengerHunt,
             HuntProgress, QuizResult, DiaryEntry, PartnerBusiness,
             GuideReview, AlertSubscription, Specimen, SpecimenOrder,
-            SiteQuestion, FieldGuide, WaitlistEntry,
+            SiteQuestion, FieldGuide, WaitlistEntry, Product, ShopOrder,
         ],
     )
 

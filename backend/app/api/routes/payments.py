@@ -1,10 +1,15 @@
+import json
+
 import stripe
+from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from app.api.deps import require_operator
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
+from app.models.product import Product
+from app.models.shop_order import ShopOrder, ShopOrderItem, ShopOrderStatus
 from app.models.specimen_order import OrderStatus, SpecimenOrder
 from app.models.user import User
 
@@ -44,14 +49,20 @@ async def stripe_webhook(request: Request) -> JSONResponse:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     if event["type"] == "payment_intent.succeeded":
-        pi_id = event["data"]["object"]["id"]
-        booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
-        if booking:
-            await booking.set({Booking.status: BookingStatus.CONFIRMED})
+        pi = event["data"]["object"]
+        pi_id = pi["id"]
+        if pi.get("metadata", {}).get("order_type") == "shop":
+            await _handle_shop_order_succeeded(pi)
         else:
-            order = await SpecimenOrder.find_one(SpecimenOrder.stripe_payment_intent_id == pi_id)
-            if order:
-                await order.set({SpecimenOrder.status: OrderStatus.CONFIRMED})
+            booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
+            if booking:
+                await booking.set({Booking.status: BookingStatus.CONFIRMED})
+            else:
+                order = await SpecimenOrder.find_one(
+                    SpecimenOrder.stripe_payment_intent_id == pi_id
+                )
+                if order:
+                    await order.set({SpecimenOrder.status: OrderStatus.CONFIRMED})
 
     elif event["type"] == "payment_intent.payment_failed":
         pi_id = event["data"]["object"]["id"]
@@ -74,3 +85,36 @@ async def stripe_webhook(request: Request) -> JSONResponse:
             await user.set({"stripe_account_enabled": account.get("charges_enabled", False)})
 
     return JSONResponse({"received": True})
+
+
+async def _handle_shop_order_succeeded(pi: dict) -> None:
+    pi_id = pi["id"]
+    existing = await ShopOrder.find_one(ShopOrder.stripe_payment_intent_id == pi_id)
+    if existing:
+        return
+
+    metadata = pi.get("metadata", {})
+    user_id = metadata.get("user_id", "")
+    raw_cart = json.loads(metadata.get("cart", "[]"))
+    shipping_address = json.loads(metadata.get("shipping_address", "{}"))
+
+    items = [ShopOrderItem(**i) for i in raw_cart]
+
+    for item in items:
+        try:
+            product = await Product.get(PydanticObjectId(item.product_id))
+            if product and not product.dropship:
+                new_stock = max(0, product.stock - item.qty)
+                await product.set({"stock": new_stock})
+        except Exception:
+            pass
+
+    order = ShopOrder(
+        user_id=user_id,
+        items=items,
+        total=pi["amount"],
+        status=ShopOrderStatus.CONFIRMED,
+        stripe_payment_intent_id=pi_id,
+        shipping_address=shipping_address,
+    )
+    await order.insert()
