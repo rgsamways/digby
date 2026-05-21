@@ -2,60 +2,93 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Menu, X, Gem } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Menu, X, Gem, ChevronDown } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+
+const exploreLinks = [
+  { href: "/community", label: "Community" },
+  { href: "/guides", label: "Find a Guide" },
+  { href: "/mystery", label: "Mystery Dig" },
+  { href: "/mineral-id", label: "Mineral ID" },
+  { href: "/mineral-school", label: "Field Guides" },
+  { href: "/alerts", label: "Alerts" },
+  { href: "/quiz", label: "Quiz" },
+];
+
+const myDigbyLinks = [
+  { href: "/bookings", label: "My Bookings" },
+  { href: "/passport", label: "My Passport" },
+  { href: "/diary", label: "Journal" },
+];
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function handleLogout() {
     clearAuth();
     router.push("/");
-    setOpen(false);
+    setMobileOpen(false);
+    setOpenMenu(null);
   }
 
-  const visitorLinks = [
-    { href: "/sites", label: "Browse Sites" },
-    { href: "/specimens", label: "Marketplace" },
-    { href: "/community", label: "Community" },
-    { href: "/guides", label: "Find a Guide" },
-    { href: "/mystery", label: "Mystery Dig" },
-    { href: "/bookings", label: "My Bookings" },
-    { href: "/passport", label: "My Passport" },
-    { href: "/mineral-id", label: "Mineral ID" },
-    { href: "/mineral-school", label: "Field Guides" },
-    { href: "/alerts", label: "Alerts" },
-    { href: "/diary", label: "Journal" },
-    { href: "/quiz", label: "Quiz" },
-  ];
+  function toggle(name: string) {
+    setOpenMenu(openMenu === name ? null : name);
+  }
 
-  const operatorLinks = [
-    { href: "/sites", label: "Browse Sites" },
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/dashboard/sites", label: "My Sites" },
-    { href: "/specimens", label: "Marketplace" },
-    { href: "/mineral-id", label: "Mineral ID" },
-  ];
+  const isOperator = user?.role === "operator" || user?.role === "admin";
+  const isGuide = user?.role === "guide";
+  const isVisitor = !isOperator && !isGuide;
 
-  const guideLinks = [
-    { href: "/sites", label: "Browse Sites" },
-    { href: "/guides", label: "Guides" },
-    { href: "/dashboard/guide", label: "My Dashboard" },
-    { href: "/quiz", label: "Quiz" },
-  ];
+  const isExploreActive = exploreLinks.some((l) => pathname === l.href);
+  const isMyDigbyActive = myDigbyLinks.some((l) => pathname === l.href);
 
-  const links =
-    user?.role === "operator" || user?.role === "admin" ? operatorLinks :
-    user?.role === "guide" ? guideLinks :
-    visitorLinks;
+  // Primary nav items (always visible in desktop bar)
+  const primaryLinks = isOperator
+    ? [
+        { href: "/sites", label: "Browse Sites" },
+        { href: "/specimens", label: "Marketplace" },
+        { href: "/mineral-id", label: "Mineral ID" },
+        { href: "/dashboard/sites", label: "My Sites" },
+        { href: "/dashboard", label: "Dashboard" },
+      ]
+    : isGuide
+    ? [
+        { href: "/sites", label: "Browse Sites" },
+        { href: "/guides", label: "Guides" },
+        { href: "/dashboard/guide", label: "My Dashboard" },
+        { href: "/quiz", label: "Quiz" },
+      ]
+    : [
+        { href: "/sites", label: "Browse Sites" },
+        { href: "/specimens", label: "Marketplace" },
+      ];
+
+  // All links for mobile (flat list)
+  const allMobileLinks = [
+    ...primaryLinks,
+    ...(isVisitor ? exploreLinks : []),
+    ...(isVisitor && user ? myDigbyLinks : []),
+  ];
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
+    <nav ref={navRef} className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-extrabold text-stone-900">
@@ -65,31 +98,108 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden items-center gap-6 md:flex">
-          {links.map(({ href, label }) => (
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-1 md:flex">
+          {primaryLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-brand-600",
+                "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-brand-600",
                 pathname === href ? "text-brand-600" : "text-stone-600"
               )}
             >
               {label}
             </Link>
           ))}
+
+          {/* Explore dropdown — visitors only */}
+          {isVisitor && (
+            <div className="relative">
+              <button
+                onClick={() => toggle("explore")}
+                className={cn(
+                  "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-brand-600",
+                  isExploreActive || openMenu === "explore" ? "text-brand-600" : "text-stone-600"
+                )}
+              >
+                Explore
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    openMenu === "explore" && "rotate-180"
+                  )}
+                />
+              </button>
+              {openMenu === "explore" && (
+                <div className="absolute left-0 top-full mt-1 w-48 rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
+                  {exploreLinks.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpenMenu(null)}
+                      className={cn(
+                        "block px-4 py-2 text-sm transition-colors hover:bg-stone-50 hover:text-brand-600",
+                        pathname === href ? "font-medium text-brand-600" : "text-stone-700"
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Desktop auth */}
-        <div className="hidden items-center gap-3 md:flex">
+        {/* Desktop auth / user menu */}
+        <div className="hidden items-center gap-2 md:flex">
           {user ? (
-            <>
-              <span className="text-sm text-stone-500">{user.name}</span>
-              <button onClick={handleLogout} className="btn-secondary text-sm py-1.5">
-                Log out
+            <div className="relative">
+              <button
+                onClick={() => toggle("user")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-stone-100",
+                  openMenu === "user" && "bg-stone-100"
+                )}
+              >
+                <span className="text-stone-700">{user.name}</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 text-stone-400 transition-transform",
+                    openMenu === "user" && "rotate-180"
+                  )}
+                />
               </button>
-            </>
+              {openMenu === "user" && (
+                <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
+                  {isVisitor && (
+                    <>
+                      {myDigbyLinks.map(({ href, label }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setOpenMenu(null)}
+                          className={cn(
+                            "block px-4 py-2 text-sm transition-colors hover:bg-stone-50 hover:text-brand-600",
+                            pathname === href ? "font-medium text-brand-600" : "text-stone-700"
+                          )}
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                      <div className="my-1 border-t border-stone-100" />
+                    </>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full px-4 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50 hover:text-red-500"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link href="/login" className="btn-secondary text-sm py-1.5">
@@ -104,23 +214,23 @@ export function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          onClick={() => setOpen(!open)}
+          onClick={() => setMobileOpen(!mobileOpen)}
           className="rounded-lg p-2 text-stone-600 hover:bg-stone-100 md:hidden"
           aria-label="Toggle menu"
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {open && (
+      {/* Mobile menu — flat list */}
+      {mobileOpen && (
         <div className="border-t border-stone-100 bg-white px-4 pb-4 md:hidden">
           <div className="flex flex-col gap-1 pt-3">
-            {links.map(({ href, label }) => (
+            {allMobileLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                onClick={() => setOpen(false)}
+                onClick={() => setMobileOpen(false)}
                 className={cn(
                   "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   pathname === href
@@ -141,10 +251,18 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" onClick={() => setOpen(false)} className="btn-secondary text-sm">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-secondary text-sm"
+                  >
                     Log in
                   </Link>
-                  <Link href="/register" onClick={() => setOpen(false)} className="btn-primary text-sm">
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-primary text-sm"
+                  >
                     Sign up
                   </Link>
                 </>
