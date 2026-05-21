@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import type { Booking, WeatherAlert, YieldReport, ScavengerHunt } from "@/lib/types";
-import { Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map } from "lucide-react";
+import type { Booking, WeatherAlert, YieldReport, ScavengerHunt, Specimen, Site, SiteQuestion } from "@/lib/types";
+import { Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map, ShoppingBag, Bell, CheckCircle2, HelpCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -65,6 +65,70 @@ export default function DashboardPage() {
     queryFn: () => api.get("/api/auth/me", { auth: true }),
     enabled: !!user,
   });
+
+  const { data: unansweredQuestions = [] } = useQuery<SiteQuestion[]>({
+    queryKey: ["unanswered-questions"],
+    queryFn: async () => {
+      const sites: Site[] = await api.get("/api/sites/my", { auth: true });
+      const allQs = await Promise.all(
+        sites.map((s) => api.get<SiteQuestion[]>(`/api/site-questions/site/${s.id}`))
+      );
+      return allQs.flat().filter((q: SiteQuestion) => !q.answer);
+    },
+    enabled: user?.role === "operator",
+  });
+
+  const [answerForms, setAnswerForms] = useState<Record<string, string>>({});
+  const answerQuestion = useMutation({
+    mutationFn: ({ id, answer }: { id: string; answer: string }) =>
+      api.patch(`/api/site-questions/${id}/answer`, { answer }, { auth: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["unanswered-questions"] }),
+  });
+
+  const toggleOpenToday = useMutation({
+    mutationFn: ({ siteId, value }: { siteId: string; value: boolean }) =>
+      api.patch(`/api/sites/${siteId}`, { is_open_today: value }, { auth: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["operator-sites"] }),
+  });
+
+  const { data: mySites = [] } = useQuery<Site[]>({
+    queryKey: ["operator-sites"],
+    queryFn: () => api.get("/api/sites/my", { auth: true }),
+    enabled: user?.role === "operator",
+  });
+
+  const { data: mySpecimens = [] } = useQuery<Specimen[]>({
+    queryKey: ["my-specimens"],
+    queryFn: () => api.get("/api/specimens/my", { auth: true }),
+    enabled: user?.role === "operator",
+  });
+
+  const [specimenForm, setSpecimenForm] = useState({
+    site_id: "", title: "", description: "", minerals: "", province: "Ontario", price: "", images: "",
+  });
+  const createSpecimen = useMutation({
+    mutationFn: (data: object) => api.post("/api/specimens/", data, { auth: true }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-specimens"] });
+      setSpecimenForm({ site_id: "", title: "", description: "", minerals: "", province: "Ontario", price: "", images: "" });
+    },
+  });
+
+  const [seasonalForm, setSeasonalForm] = useState({ site_id: "", mineral: "", start_month: "4", end_month: "6", notes: "" });
+  const addSeasonalWindow = useMutation({
+    mutationFn: async (data: { site_id: string; mineral: string; start_month: number; end_month: number; notes: string }) => {
+      const site = mySites.find((s) => s.id === data.site_id);
+      if (!site) throw new Error("Site not found");
+      const windows = [...(site.seasonal_windows ?? []), { mineral: data.mineral, start_month: data.start_month, end_month: data.end_month, notes: data.notes }];
+      return api.patch(`/api/sites/${data.site_id}`, { seasonal_windows: windows }, { auth: true });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["operator-sites"] });
+      setSeasonalForm({ site_id: "", mineral: "", start_month: "4", end_month: "6", notes: "" });
+    },
+  });
+
+  const MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   const { data: hunts = [] } = useQuery<ScavengerHunt[]>({
     queryKey: ["my-hunts"],
@@ -300,6 +364,195 @@ export default function DashboardPage() {
               </div>
             </div>
           ))
+        )}
+      </section>
+
+      {/* Open Today toggles */}
+      {mySites.length > 0 && (
+        <section className="card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h2 className="text-lg font-semibold text-stone-800">Open Today</h2>
+          </div>
+          <p className="mb-4 text-sm text-stone-500">
+            Toggle your sites open — visitors nearby will see a green badge.
+          </p>
+          <div className="space-y-2">
+            {mySites.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3">
+                <p className="text-sm font-medium text-stone-800">{s.name}</p>
+                <button
+                  onClick={() => toggleOpenToday.mutate({ siteId: s.id, value: !s.is_open_today })}
+                  disabled={toggleOpenToday.isPending}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    s.is_open_today ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
+                  }`}
+                >
+                  {s.is_open_today ? "Open" : "Closed"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Unanswered Q&A */}
+      {unansweredQuestions.length > 0 && (
+        <section className="card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-semibold text-stone-800">
+              Visitor Questions <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-sm text-amber-700">{unansweredQuestions.length}</span>
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {unansweredQuestions.map((q) => (
+              <div key={q.id} className="rounded-lg border border-stone-200 p-3">
+                <p className="text-sm font-medium text-stone-800">{q.question}</p>
+                <p className="text-xs text-stone-400 mt-0.5">{q.visitor_name}</p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Your answer…"
+                    value={answerForms[q.id] ?? ""}
+                    onChange={(e) => setAnswerForms((f) => ({ ...f, [q.id]: e.target.value }))}
+                    className="input flex-1 text-sm"
+                  />
+                  <button
+                    onClick={() => answerQuestion.mutate({ id: q.id, answer: answerForms[q.id] ?? "" })}
+                    disabled={!answerForms[q.id] || answerQuestion.isPending}
+                    className="btn-primary text-sm"
+                  >
+                    Answer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Seasonal Windows */}
+      <section className="card p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Bell className="h-5 w-5 text-brand-600" />
+          <h2 className="text-lg font-semibold text-stone-800">Seasonal Windows</h2>
+        </div>
+        <p className="mb-4 text-sm text-stone-500">
+          Tag your sites with optimal collecting windows. Visitors subscribed to those minerals get notified.
+        </p>
+        <div className="mb-4 rounded-lg bg-stone-50 p-4 space-y-3">
+          <select value={seasonalForm.site_id}
+            onChange={(e) => setSeasonalForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
+            <option value="">Select site…</option>
+            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <input type="text" placeholder="Mineral (e.g. Agates)" value={seasonalForm.mineral}
+            onChange={(e) => setSeasonalForm((f) => ({ ...f, mineral: e.target.value }))} className="input" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-stone-500">Start month</label>
+              <select value={seasonalForm.start_month}
+                onChange={(e) => setSeasonalForm((f) => ({ ...f, start_month: e.target.value }))} className="input">
+                {MONTHS.slice(1).map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-stone-500">End month</label>
+              <select value={seasonalForm.end_month}
+                onChange={(e) => setSeasonalForm((f) => ({ ...f, end_month: e.target.value }))} className="input">
+                {MONTHS.slice(1).map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <input type="text" placeholder="Notes (e.g. best after spring thaw)" value={seasonalForm.notes}
+            onChange={(e) => setSeasonalForm((f) => ({ ...f, notes: e.target.value }))} className="input" />
+          <button
+            onClick={() => addSeasonalWindow.mutate({
+              site_id: seasonalForm.site_id,
+              mineral: seasonalForm.mineral,
+              start_month: Number(seasonalForm.start_month),
+              end_month: Number(seasonalForm.end_month),
+              notes: seasonalForm.notes,
+            })}
+            disabled={!seasonalForm.site_id || !seasonalForm.mineral}
+            className="btn-primary text-sm"
+          >
+            Add Window
+          </button>
+        </div>
+        {mySites.some((s) => s.seasonal_windows?.length > 0) && (
+          <div className="space-y-2">
+            {mySites.filter((s) => s.seasonal_windows?.length > 0).map((s) =>
+              s.seasonal_windows.map((w, i) => (
+                <div key={`${s.id}-${i}`} className="flex items-center justify-between rounded-lg border border-stone-200 p-3 text-sm">
+                  <span className="font-medium text-stone-800">{s.name}</span>
+                  <span className="text-stone-500">{w.mineral} · {MONTHS[w.start_month]}–{MONTHS[w.end_month]}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Specimen Marketplace */}
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-brand-600" />
+            <h2 className="text-lg font-semibold text-stone-800">Specimen Listings</h2>
+          </div>
+          <Link href="/specimens" className="text-sm font-medium text-brand-600 hover:underline">
+            View marketplace →
+          </Link>
+        </div>
+        <div className="mb-4 rounded-lg bg-stone-50 p-4 space-y-3">
+          <p className="text-sm font-medium text-stone-700">List a new specimen</p>
+          <input type="text" placeholder="Title (e.g. Thunder Bay Amethyst Cluster)" value={specimenForm.title}
+            onChange={(e) => setSpecimenForm((f) => ({ ...f, title: e.target.value }))} className="input" />
+          <textarea placeholder="Description" value={specimenForm.description} rows={2}
+            onChange={(e) => setSpecimenForm((f) => ({ ...f, description: e.target.value }))} className="input resize-none" />
+          <input type="text" placeholder="Minerals (comma-separated)" value={specimenForm.minerals}
+            onChange={(e) => setSpecimenForm((f) => ({ ...f, minerals: e.target.value }))} className="input" />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="number" placeholder="Price (CAD)" value={specimenForm.price}
+              onChange={(e) => setSpecimenForm((f) => ({ ...f, price: e.target.value }))} className="input" min="0" step="0.01" />
+            <input type="text" placeholder="Image URL (optional)" value={specimenForm.images}
+              onChange={(e) => setSpecimenForm((f) => ({ ...f, images: e.target.value }))} className="input" />
+          </div>
+          <button
+            onClick={() => createSpecimen.mutate({
+              title: specimenForm.title,
+              description: specimenForm.description,
+              minerals: specimenForm.minerals.split(",").map((s) => s.trim()).filter(Boolean),
+              province: specimenForm.province,
+              price: Number(specimenForm.price),
+              images: specimenForm.images ? [specimenForm.images] : [],
+              quantity: 1,
+            })}
+            disabled={!specimenForm.title || !specimenForm.price}
+            className="btn-primary text-sm"
+          >
+            List Specimen
+          </button>
+        </div>
+        {mySpecimens.length === 0 ? (
+          <p className="text-sm text-stone-500">No specimens listed yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {mySpecimens.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3 text-sm">
+                <div>
+                  <p className="font-medium text-stone-800">{s.title}</p>
+                  <p className="text-xs text-stone-500">{s.minerals.join(", ") || "No minerals"}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">${s.price.toFixed(2)}</p>
+                  <p className="text-xs text-stone-400">{s.available} available</p>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

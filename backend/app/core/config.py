@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PLATFORM_FEE_PERCENT: int = 12
 
+    ANTHROPIC_API_KEY: str = ""
+
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM: str = "noreply@digby.rocks"
+
     BACKEND_CORS_ORIGINS: str = (
         "http://localhost:3000,http://localhost:3001,"
         "http://127.0.0.1:3000,http://127.0.0.1:3001"

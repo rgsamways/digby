@@ -2,33 +2,103 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Guide } from "@/lib/types";
+import type { Guide, GuideBooking, GuideReview } from "@/lib/types";
 import { useAuthStore } from "@/lib/auth";
+import { Star } from "lucide-react";
+
+interface ReviewsResponse {
+  reviews: GuideReview[];
+  average_rating: number | null;
+  review_count: number;
+}
+
+function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange?.(n)}
+          className={onChange ? "cursor-pointer" : "cursor-default"}
+        >
+          <Star
+            className={`h-5 w-5 ${n <= value ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function GuideDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
 
   const { data: guide, isLoading } = useQuery<Guide>({
     queryKey: ["guide", id],
     queryFn: () => api.get(`/api/guides/${id}`),
   });
 
+  const { data: reviewsData } = useQuery<ReviewsResponse>({
+    queryKey: ["guide-reviews", id],
+    queryFn: () => api.get(`/api/guide-reviews/guide/${id}`),
+    enabled: !!id,
+  });
+
+  // Completed guide bookings for this guide (to enable review form)
+  const { data: myGuideBookings = [] } = useQuery<GuideBooking[]>({
+    queryKey: ["my-guide-bookings"],
+    queryFn: () => api.get("/api/guide-bookings/my", { auth: true }),
+    enabled: !!user,
+  });
+
+  const completedBookingForThisGuide = myGuideBookings.find(
+    (b) => b.guide_id === id && b.status === "completed",
+  );
+
+  const alreadyReviewed = reviewsData?.reviews.some((r) => r.visitor_id === user?.id);
+
+  // Booking form state
   const [date, setDate] = useState("");
   const [partySize, setPartySize] = useState(1);
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [bookLoading, setBookLoading] = useState(false);
+  const [bookError, setBookError] = useState("");
+
+  // Review form state
+  const [rating, setRating] = useState(5);
+  const [reviewBody, setReviewBody] = useState("");
+  const [reviewError, setReviewError] = useState("");
+
+  const submitReview = useMutation({
+    mutationFn: () =>
+      api.post(
+        "/api/guide-reviews/",
+        { guide_booking_id: completedBookingForThisGuide!.id, rating, body: reviewBody },
+        { auth: true },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guide-reviews", id] });
+      setReviewBody("");
+      setRating(5);
+      setReviewError("");
+    },
+    onError: (err: unknown) => {
+      setReviewError(err instanceof Error ? err.message : "Failed to submit review");
+    },
+  });
 
   async function handleBook(e: React.FormEvent) {
     e.preventDefault();
     if (!user) { router.push("/login"); return; }
-    setLoading(true);
-    setError("");
+    setBookLoading(true);
+    setBookError("");
     try {
       const data = await api.post<{ booking_id: string; client_secret: string }>(
         "/api/guide-bookings/",
@@ -37,14 +107,17 @@ export default function GuideDetailPage() {
       );
       router.push(`/guide-bookings/${data.booking_id}/confirm?secret=${data.client_secret}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Booking failed");
+      setBookError(err instanceof Error ? err.message : "Booking failed");
     } finally {
-      setLoading(false);
+      setBookLoading(false);
     }
   }
 
   if (isLoading) return <div className="flex h-64 items-center justify-center text-stone-500">Loading…</div>;
   if (!guide) return <div className="p-8 text-center text-stone-500">Guide not found.</div>;
+
+  const avgRating = reviewsData?.average_rating;
+  const reviewCount = reviewsData?.review_count ?? 0;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -61,6 +134,14 @@ export default function GuideDetailPage() {
             {guide.guide_location && <p className="text-stone-500">{guide.guide_location}</p>}
             {guide.years_experience > 0 && (
               <p className="text-sm text-stone-500">{guide.years_experience} years experience</p>
+            )}
+            {avgRating !== null && avgRating !== undefined && (
+              <div className="mt-1 flex items-center gap-2">
+                <StarRating value={Math.round(avgRating)} />
+                <span className="text-sm text-stone-500">
+                  {avgRating.toFixed(1)} · {reviewCount} review{reviewCount !== 1 ? "s" : ""}
+                </span>
+              </div>
             )}
           </div>
           {guide.rate_per_day && (
@@ -96,7 +177,7 @@ export default function GuideDetailPage() {
 
       {/* Booking form */}
       {guide.rate_per_day && (
-        <div className="card p-6">
+        <div className="card mb-6 p-6">
           <h2 className="mb-4 text-lg font-semibold text-stone-900">Book this Guide</h2>
           <form onSubmit={handleBook} className="space-y-4">
             <div>
@@ -129,11 +210,70 @@ export default function GuideDetailPage() {
               </div>
             )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "Booking…" : "Book Guide"}
+            {bookError && <p className="text-sm text-red-600">{bookError}</p>}
+            <button type="submit" disabled={bookLoading} className="btn-primary w-full">
+              {bookLoading ? "Booking…" : "Book Guide"}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Leave a review (only if user has a completed booking and hasn't reviewed yet) */}
+      {completedBookingForThisGuide && !alreadyReviewed && (
+        <div className="card mb-6 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-stone-900">Leave a Review</h2>
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-stone-700">Rating</label>
+              <StarRating value={rating} onChange={setRating} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-stone-700">Your experience</label>
+              <textarea
+                value={reviewBody}
+                onChange={(e) => setReviewBody(e.target.value)}
+                rows={3}
+                className="input resize-none"
+                placeholder="Tell others about your time in the field…"
+              />
+            </div>
+            {reviewError && <p className="text-sm text-red-600">{reviewError}</p>}
+            <button
+              onClick={() => submitReview.mutate()}
+              disabled={submitReview.isPending}
+              className="btn-primary"
+            >
+              {submitReview.isPending ? "Submitting…" : "Submit Review"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews list */}
+      {reviewCount > 0 && (
+        <div className="card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-stone-900">
+            Reviews
+            {avgRating !== null && avgRating !== undefined && (
+              <span className="ml-2 text-sm font-normal text-stone-500">
+                {avgRating.toFixed(1)} avg · {reviewCount} total
+              </span>
+            )}
+          </h2>
+          <div className="space-y-4">
+            {reviewsData?.reviews.map((r) => (
+              <div key={r.id} className="border-b border-stone-100 pb-4 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-stone-800">{r.visitor_name || "Rockhound"}</span>
+                  <span className="text-xs text-stone-400">
+                    {new Date(r.created_at).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" })}
+                  </span>
+                </div>
+                <StarRating value={r.rating} />
+                {r.body && <p className="mt-1 text-sm text-stone-600">{r.body}</p>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

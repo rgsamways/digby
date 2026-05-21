@@ -12,6 +12,13 @@ class SiteType(StrEnum):
     COLLECTING_WALK = "collecting-walk"
 
 
+class SeasonalWindow(BaseModel):
+    mineral: str
+    start_month: int   # 1–12
+    end_month: int
+    notes: str = ""    # e.g. "best after spring thaw"
+
+
 class GeoPoint(BaseModel):
     type: str = "Point"
     coordinates: list[float] = Field(..., description="[longitude, latitude]")
@@ -32,6 +39,11 @@ class Site(Document):
     images: list[str] = []
     rules: str = ""
     is_active: bool = True
+    opt_in_mystery: bool = False
+    seasonal_windows: list[SeasonalWindow] = []
+    conservation_contribution: float = 0.0
+    conservation_note: str = ""
+    is_open_today: bool = False
     rating: float = 0.0
     review_count: int = 0
     created_at: datetime = datetime.now(UTC)

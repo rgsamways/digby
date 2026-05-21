@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { Booking, GroupMember } from "@/lib/types";
-import { BookOpen, Calendar, Users } from "lucide-react";
+import type { Booking, GroupMember, WaitlistEntry } from "@/lib/types";
+import { BookOpen, Calendar, Users, Clock, X } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-green-100 text-green-700",
@@ -21,6 +21,16 @@ export default function MyBookingsPage() {
     queryFn: () => api.get("/api/bookings/my", { auth: true }),
   });
 
+  const { data: waitlist = [] } = useQuery<WaitlistEntry[]>({
+    queryKey: ["my-waitlist"],
+    queryFn: () => api.get("/api/waitlist/my", { auth: true }),
+  });
+
+  const leaveWaitlist = useMutation({
+    mutationFn: (entryId: string) => api.del(`/api/waitlist/${entryId}`, { auth: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-waitlist"] }),
+  });
+
   const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
@@ -31,6 +41,34 @@ export default function MyBookingsPage() {
           Find more sites
         </Link>
       </div>
+
+      {waitlist.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-stone-700">
+            <Clock className="h-4 w-4" /> Waitlist
+          </h2>
+          <div className="space-y-2">
+            {waitlist.map((w) => (
+              <div key={w.id} className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-stone-800">{w.site_name}</p>
+                  <p className="text-xs text-stone-400">
+                    {new Date(w.date).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                    {w.notified_at && " · Notified!"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => leaveWaitlist.mutate(w.id)}
+                  disabled={leaveWaitlist.isPending}
+                  className="flex items-center gap-1 text-xs text-stone-400 hover:text-red-500"
+                >
+                  <X className="h-3.5 w-3.5" /> Leave
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-stone-500">Loading…</p>

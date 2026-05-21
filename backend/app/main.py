@@ -4,8 +4,29 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import get_current_user
-from app.api.routes import auth, availability, bookings, diary, guide_bookings, guides, hunts, passport, payments, quiz, sites, weather_alerts, yield_reports
-from app.core.config import settings
+from app.api.routes import (
+    alert_subscriptions,
+    auth,
+    availability,
+    bookings,
+    diary,
+    field_guides,
+    guide_bookings,
+    guide_reviews,
+    guides,
+    hunts,
+    mineral_id,
+    partners,
+    passport,
+    payments,
+    quiz,
+    site_questions,
+    sites,
+    specimens,
+    waitlist,
+    weather_alerts,
+    yield_reports,
+)
 from app.core.database import close_db, init_db
 from app.models.user import User
 
@@ -45,6 +66,14 @@ app.include_router(passport.router, prefix="/api/passport", tags=["passport"])
 app.include_router(hunts.router, prefix="/api/hunts", tags=["hunts"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(diary.router, prefix="/api/diary", tags=["diary"])
+app.include_router(partners.router, prefix="/api/partners", tags=["partners"])
+app.include_router(guide_reviews.router, prefix="/api/guide-reviews", tags=["guide-reviews"])
+app.include_router(mineral_id.router, prefix="/api/mineral-id", tags=["mineral-id"])
+app.include_router(alert_subscriptions.router, prefix="/api/alerts", tags=["alerts"])
+app.include_router(specimens.router, prefix="/api/specimens", tags=["specimens"])
+app.include_router(site_questions.router, prefix="/api/site-questions", tags=["site-questions"])
+app.include_router(field_guides.router, prefix="/api/field-guides", tags=["field-guides"])
+app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

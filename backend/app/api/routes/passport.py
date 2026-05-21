@@ -120,8 +120,17 @@ async def leaderboard() -> list[dict]:
 
 @router.get("/{visitor_id}")
 async def get_passport(visitor_id: str) -> dict:
+    try:
+        oid = PydanticObjectId(visitor_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Passport not found")
+
+    visitor = await User.get(oid)
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Passport not found")
+
     stamps = await PassportStamp.find(
-        PassportStamp.visitor_id == PydanticObjectId(visitor_id)
+        PassportStamp.visitor_id == oid
     ).sort(-PassportStamp.visited_at).to_list()
 
     earned_badges = [b for b in BADGES if len(stamps) >= b["threshold"]]
@@ -130,19 +139,20 @@ async def get_passport(visitor_id: str) -> dict:
         all_minerals.update(s.minerals_found)
 
     hunt_completions = await HuntProgress.find(
-        HuntProgress.visitor_id == PydanticObjectId(visitor_id),
+        HuntProgress.visitor_id == oid,
         HuntProgress.completed_at != None,  # noqa: E711
     ).count()
 
-    quiz_results = await QuizResult.find(QuizResult.visitor_id == PydanticObjectId(visitor_id)).to_list()
+    quiz_results = await QuizResult.find(QuizResult.visitor_id == oid).to_list()
     quiz_points = sum(r.points_awarded for r in quiz_results)
 
-    diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == PydanticObjectId(visitor_id)).to_list()
+    diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == oid).to_list()
     diary_points = sum(e.points_awarded for e in diary_entries)
 
     total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points)
 
     return {
+        "visitor_name": visitor.name,
         "total_visits": len(stamps),
         "total_points": total_points,
         "hunt_completions": hunt_completions,

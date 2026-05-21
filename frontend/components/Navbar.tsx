@@ -21,9 +21,15 @@ export function Navbar() {
 
   const visitorLinks = [
     { href: "/sites", label: "Browse Sites" },
+    { href: "/specimens", label: "Marketplace" },
+    { href: "/community", label: "Community" },
     { href: "/guides", label: "Find a Guide" },
+    { href: "/mystery", label: "Mystery Dig" },
     { href: "/bookings", label: "My Bookings" },
     { href: "/passport", label: "My Passport" },
+    { href: "/mineral-id", label: "Mineral ID" },
+    { href: "/mineral-school", label: "Field Guides" },
+    { href: "/alerts", label: "Alerts" },
     { href: "/diary", label: "Journal" },
     { href: "/quiz", label: "Quiz" },
   ];
@@ -32,6 +38,8 @@ export function Navbar() {
     { href: "/sites", label: "Browse Sites" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/dashboard/sites", label: "My Sites" },
+    { href: "/specimens", label: "Marketplace" },
+    { href: "/mineral-id", label: "Mineral ID" },
   ];
 
   const guideLinks = [

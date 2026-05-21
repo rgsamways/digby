@@ -2,9 +2,10 @@ import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from app.api.deps import get_current_user, require_operator
+from app.api.deps import require_operator
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
+from app.models.specimen_order import OrderStatus, SpecimenOrder
 from app.models.user import User
 
 router = APIRouter()
@@ -47,12 +48,24 @@ async def stripe_webhook(request: Request) -> JSONResponse:
         booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
         if booking:
             await booking.set({Booking.status: BookingStatus.CONFIRMED})
+        else:
+            order = await SpecimenOrder.find_one(SpecimenOrder.stripe_payment_intent_id == pi_id)
+            if order:
+                await order.set({SpecimenOrder.status: OrderStatus.CONFIRMED})
 
     elif event["type"] == "payment_intent.payment_failed":
         pi_id = event["data"]["object"]["id"]
         booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
         if booking:
             await booking.set({Booking.status: BookingStatus.CANCELLED})
+        else:
+            from app.models.specimen import Specimen
+            order = await SpecimenOrder.find_one(SpecimenOrder.stripe_payment_intent_id == pi_id)
+            if order:
+                await order.set({SpecimenOrder.status: OrderStatus.CANCELLED})
+                specimen = await Specimen.get(order.specimen_id)
+                if specimen:
+                    await specimen.set({"available": specimen.available + 1})
 
     elif event["type"] == "account.updated":
         account = event["data"]["object"]

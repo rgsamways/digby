@@ -32,6 +32,8 @@ class Booking(Document):
     stripe_payment_intent_id: str | None = None
     notes: str = ""
     # group booking fields
+    is_mystery: bool = False
+    mystery_province: str = ""
     is_group_booking: bool = False
     group_members: list[GroupMember] = []  # additional members beyond leader
     created_at: datetime = datetime.now(UTC)

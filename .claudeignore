@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies (large, not useful context)
+node_modules/
+frontend/node_modules/
+.venv/
+venv/
+
+# Build output
+.next/
+out/
+dist/
+build/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Caches & generated files
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+*.tsbuildinfo
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lock files (useful for installs, not for reading)
+uv.lock
+package-lock.json
+
+# Coverage / test artifacts
+htmlcov/
+.coverage
+coverage.xml

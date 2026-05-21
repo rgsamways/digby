@@ -14,6 +14,11 @@ export interface Site {
   images: string[];
   rules: string;
   is_active: boolean;
+  opt_in_mystery: boolean;
+  seasonal_windows: SeasonalWindow[];
+  conservation_contribution: number;
+  conservation_note: string;
+  is_open_today: boolean;
   rating: number;
   review_count: number;
 }
@@ -34,6 +39,8 @@ export interface Booking {
   status: "pending" | "confirmed" | "cancelled" | "completed";
   created_at: string;
   is_group_booking?: boolean;
+  is_mystery?: boolean;
+  mystery_province?: string;
   group_members?: GroupMember[];
   notes?: string;
 }
@@ -140,6 +147,89 @@ export interface DiaryEntry {
   photo_urls: string[];
   is_public: boolean;
   points_awarded: number;
+  created_at: string;
+}
+
+export interface SiteQuestion {
+  id: string;
+  site_id: string;
+  visitor_name: string;
+  question: string;
+  answer: string;
+  answered_at: string | null;
+  created_at: string;
+}
+
+export interface FieldGuide {
+  id: string;
+  slug: string;
+  title: string;
+  mineral_tags: string[];
+  difficulty: string;
+  body: string;
+  cover_image: string;
+  is_published: boolean;
+  created_at: string;
+}
+
+export interface WaitlistEntry {
+  id: string;
+  site_id: string;
+  site_name: string;
+  date: string;
+  notified_at: string | null;
+  created_at: string;
+}
+
+export interface SeasonalWindow {
+  mineral: string;
+  start_month: number;
+  end_month: number;
+  notes: string;
+}
+
+export interface AlertSubscription {
+  id: string;
+  email: string;
+  minerals: string[];
+  provinces: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Specimen {
+  id: string;
+  operator_id: string;
+  site_id: string | null;
+  title: string;
+  description: string;
+  minerals: string[];
+  province: string;
+  price: number;
+  images: string[];
+  quantity: number;
+  available: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MineralIdResult {
+  identified_mineral: string;
+  confidence: "high" | "medium" | "low";
+  formation_notes: string;
+  rarity_notes: string;
+  care_tips: string;
+  alternative_minerals: string[];
+}
+
+export interface GuideReview {
+  id: string;
+  guide_id: string;
+  visitor_id: string;
+  guide_booking_id: string;
+  rating: number;
+  body: string;
+  visitor_name: string;
   created_at: string;
 }
 

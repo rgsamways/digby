@@ -1,4 +1,5 @@
-from datetime import datetime
+import random
+from datetime import UTC, datetime
 
 import stripe
 from beanie import PydanticObjectId
@@ -25,6 +26,13 @@ class BookingCreate(BaseModel):
     notes: str = ""
     is_group_booking: bool = False
     group_members: list[GroupMember] = []
+
+
+class MysteryBookingCreate(BaseModel):
+    date: datetime
+    province: str
+    mineral: str
+    party_size: int = 1
 
 
 class MembersUpdate(BaseModel):
@@ -90,6 +98,70 @@ async def create_booking(
     return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)
 
 
+@router.post("/mystery", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
+async def create_mystery_booking(
+    body: MysteryBookingCreate,
+    visitor: User = Depends(get_current_user),
+) -> BookingResponse:
+    all_sites = await Site.find(
+        Site.is_active == True,  # noqa: E712
+        Site.province == body.province,
+    ).to_list()
+
+    mineral_lower = body.mineral.lower()
+    mineral_sites = [s for s in all_sites if mineral_lower in [m.lower() for m in s.minerals]]
+    pool = mineral_sites if mineral_sites else all_sites
+
+    valid: list[tuple[Site, User]] = []
+    for site in pool:
+        if site.max_group_size < body.party_size:
+            continue
+        operator = await User.get(site.operator_id)
+        if not operator or not operator.stripe_account_id or not operator.stripe_account_enabled:
+            continue
+        avail = await Availability.find_one(
+            Availability.site_id == site.id,
+            Availability.date == body.date.date(),
+        )
+        if avail and (avail.is_blocked or avail.slots_remaining < body.party_size):
+            continue
+        valid.append((site, operator))
+
+    if not valid:
+        raise HTTPException(status_code=409, detail="No mystery sites available for those criteria")
+
+    site, operator = random.choice(valid)
+
+    total = round(site.price_per_person * body.party_size, 2)
+    platform_fee = round(total * settings.STRIPE_PLATFORM_FEE_PERCENT / 100, 2)
+    operator_payout = round(total - platform_fee, 2)
+
+    intent = stripe.PaymentIntent.create(
+        amount=int(total * 100),
+        currency="cad",
+        application_fee_amount=int(platform_fee * 100),
+        transfer_data={"destination": operator.stripe_account_id},
+        metadata={"site_id": str(site.id), "visitor_id": str(visitor.id)},
+    )
+
+    booking = Booking(
+        site_id=site.id,
+        visitor_id=visitor.id,
+        operator_id=site.operator_id,
+        date=body.date,
+        party_size=body.party_size,
+        total_amount=total,
+        platform_fee=platform_fee,
+        operator_payout=operator_payout,
+        stripe_payment_intent_id=intent.id,
+        is_mystery=True,
+        mystery_province=body.province,
+        notes=f"Mystery booking — {body.mineral} in {body.province}",
+    )
+    await booking.insert()
+    return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)
+
+
 @router.get("/my")
 async def my_bookings(visitor: User = Depends(get_current_user)) -> list[dict]:
     bookings = await Booking.find(Booking.visitor_id == visitor.id).to_list()
@@ -119,6 +191,27 @@ async def cancel_booking(
         stripe.PaymentIntent.cancel(booking.stripe_payment_intent_id)
 
     await booking.set({Booking.status: BookingStatus.CANCELLED})
+
+    # Notify first waitlist entry for this slot
+    from app.core.email import send_email
+    from app.models.waitlist_entry import WaitlistEntry
+    waiter = await WaitlistEntry.find_one(
+        WaitlistEntry.site_id == booking.site_id,
+        WaitlistEntry.date == booking.date.date(),
+        WaitlistEntry.notified_at == None,  # noqa: E711
+    )
+    if waiter:
+        site = await Site.get(booking.site_id)
+        site_name = site.name if site else "the site"
+        send_email(
+            waiter.email,
+            f"Spot available at {site_name}!",
+            f"A spot just opened at {site_name} on {booking.date.date()}.\n\n"
+            f"Book quickly at https://digby.rocks/sites/{booking.site_id} — "
+            "spots are first-come, first-served.",
+        )
+        await waiter.set({"notified_at": datetime.now(UTC)})
+
     return {"status": "cancelled"}
 
 
@@ -173,9 +266,12 @@ async def complete_booking(
 
 
 def _booking_dict(b: Booking) -> dict:
+    reveal_site = not b.is_mystery or b.status != BookingStatus.PENDING
     return {
         "id": str(b.id),
-        "site_id": str(b.site_id),
+        "site_id": str(b.site_id) if reveal_site else None,
+        "is_mystery": b.is_mystery,
+        "mystery_province": b.mystery_province,
         "date": b.date.isoformat(),
         "party_size": b.party_size,
         "total_amount": b.total_amount,

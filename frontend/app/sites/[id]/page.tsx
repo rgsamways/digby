@@ -1,17 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { BookingForm } from "@/components/BookingForm";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
-import type { Site, YieldReport, WeatherAlert, ScavengerHunt, Booking, DiaryEntry } from "@/lib/types";
-import { MapPin, Clock, Users, AlertTriangle, Map, BookOpen } from "lucide-react";
+import type { Site, YieldReport, WeatherAlert, ScavengerHunt, Booking, DiaryEntry, SiteQuestion, FieldGuide } from "@/lib/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface PartnerBusiness {
+  id: string;
+  name: string;
+  tagline: string;
+  url: string;
+  perk: string;
+  region: string;
+  categories: string[];
+}
+import { MapPin, Clock, Users, AlertTriangle, Map, BookOpen, TrendingUp, Trophy, Leaf, HelpCircle, Send, CheckCircle2 } from "lucide-react";
 
 export default function SitePage() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
+  const qc = useQueryClient();
+  const [question, setQuestion] = useState("");
+  const [questionSent, setQuestionSent] = useState(false);
+  const [waitlistDate, setWaitlistDate] = useState("");
+  const [waitlistJoined, setWaitlistJoined] = useState(false);
 
   const { data: site, isLoading } = useQuery<Site>({
     queryKey: ["site", id],
@@ -36,6 +53,13 @@ export default function SitePage() {
     enabled: !!id,
   });
 
+  const { data: partners = [] } = useQuery<PartnerBusiness[]>({
+    queryKey: ["partners", site?.address],
+    queryFn: () =>
+      api.get(`/api/partners/near?region=${encodeURIComponent(site!.address + " " + site!.province)}`),
+    enabled: !!site,
+  });
+
   const { data: hunt } = useQuery<ScavengerHunt>({
     queryKey: ["site-hunt", id],
     queryFn: () => api.get(`/api/hunts/site/${id}`, { auth: true }),
@@ -43,11 +67,59 @@ export default function SitePage() {
     retry: false,
   });
 
+  const { data: questions = [] } = useQuery<SiteQuestion[]>({
+    queryKey: ["site-questions", id],
+    queryFn: () => api.get(`/api/site-questions/site/${id}`),
+    enabled: !!id,
+  });
+
+  const { data: leaderboard } = useQuery<{ top_minerals: {mineral:string;count:number}[]; top_finders: {name:string;entries:number}[]; total_entries: number }>({
+    queryKey: ["site-leaderboard", id],
+    queryFn: () => api.get(`/api/sites/${id}/leaderboard`),
+    enabled: !!id,
+  });
+
+  const { data: relatedGuides = [] } = useQuery<FieldGuide[]>({
+    queryKey: ["field-guides"],
+    queryFn: () => api.get("/api/field-guides/"),
+    enabled: !!site,
+    select: (guides: FieldGuide[]) => guides.filter((g) =>
+      g.mineral_tags.some((t) => site?.minerals.includes(t))
+    ).slice(0, 3),
+  });
+
+  const askQuestion = useMutation({
+    mutationFn: () => api.post("/api/site-questions/", { site_id: id, question }, { auth: true }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["site-questions", id] });
+      setQuestion("");
+      setQuestionSent(true);
+      setTimeout(() => setQuestionSent(false), 3000);
+    },
+  });
+
+  const joinWaitlist = useMutation({
+    mutationFn: () => api.post("/api/waitlist/", { site_id: id, date: waitlistDate }, { auth: true }),
+    onSuccess: () => {
+      setWaitlistJoined(true);
+      setWaitlistDate("");
+    },
+  });
+
   const { data: myBookings = [] } = useQuery<Booking[]>({
     queryKey: ["my-bookings"],
     queryFn: () => api.get("/api/bookings/my", { auth: true }),
     enabled: !!user,
   });
+
+  // Aggregate community mineral finds from diary entries
+  const mineralCounts = diaryEntries.reduce<Record<string, number>>((acc, e) => {
+    e.minerals_found.forEach((m) => { acc[m] = (acc[m] ?? 0) + 1; });
+    return acc;
+  }, {});
+  const topMinerals = Object.entries(mineralCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
 
   const confirmedBookingForSite = myBookings.find(
     (b) => b.site_id === id && (b.status === "confirmed" || b.status === "completed")
@@ -108,7 +180,14 @@ export default function SitePage() {
           {site.images[0] && (
             <img src={site.images[0]} alt={site.name} className="mb-6 h-64 w-full rounded-xl object-cover" />
           )}
-          <h1 className="mb-2 text-3xl font-extrabold text-stone-900">{site.name}</h1>
+          <div className="mb-2 flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-extrabold text-stone-900">{site.name}</h1>
+            {site.is_open_today && (
+              <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+                <CheckCircle2 className="h-4 w-4" /> Open Today
+              </span>
+            )}
+          </div>
           <p className="mb-4 flex items-center gap-1.5 text-stone-500">
             <MapPin className="h-4 w-4" /> {site.address}, {site.province}
           </p>
@@ -136,6 +215,34 @@ export default function SitePage() {
             <div className="mt-6">
               <h3 className="mb-2 font-semibold text-stone-800">Site rules</h3>
               <p className="whitespace-pre-line text-sm text-stone-600">{site.rules}</p>
+            </div>
+          )}
+
+          {/* Community aggregate minerals */}
+          {topMinerals.length > 0 && (
+            <div className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-brand-600" />
+                <h3 className="font-semibold text-stone-800">
+                  Community finds
+                  <span className="ml-2 text-xs font-normal text-stone-500">
+                    from {diaryEntries.length} field journal{diaryEntries.length !== 1 ? "s" : ""}
+                  </span>
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {topMinerals.map(([mineral, count]) => (
+                  <span
+                    key={mineral}
+                    className="flex items-center gap-1.5 rounded-full bg-white border border-brand-200 px-3 py-1 text-xs font-medium text-brand-700"
+                  >
+                    {mineral}
+                    <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-brand-600 font-semibold">
+                      {count}×
+                    </span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
@@ -190,6 +297,181 @@ export default function SitePage() {
               </div>
             </div>
           )}
+          {/* Leaderboard */}
+          {leaderboard && leaderboard.total_entries > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-500" />
+                <h3 className="font-semibold text-stone-800">Site Leaderboard</h3>
+                <span className="text-xs text-stone-400">{leaderboard.total_entries} journal{leaderboard.total_entries !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {leaderboard.top_minerals.slice(0, 4).length > 0 && (
+                  <div className="rounded-lg border border-stone-200 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Top finds</p>
+                    <div className="space-y-1">
+                      {leaderboard.top_minerals.slice(0, 4).map((m, i) => (
+                        <div key={m.mineral} className="flex items-center justify-between text-sm">
+                          <span className={i === 0 ? "font-semibold text-amber-700" : "text-stone-700"}>{m.mineral}</span>
+                          <span className="text-stone-400 text-xs">{m.count}×</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {leaderboard.top_finders.length > 0 && (
+                  <div className="rounded-lg border border-stone-200 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Top finders</p>
+                    <div className="space-y-1">
+                      {leaderboard.top_finders.slice(0, 4).map((f, i) => (
+                        <div key={f.name + i} className="flex items-center justify-between text-sm">
+                          <span className={i === 0 ? "font-semibold text-amber-700" : "text-stone-700"}>{f.name}</span>
+                          <span className="text-stone-400 text-xs">{f.entries} trip{f.entries !== 1 ? "s" : ""}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Related field guides */}
+          {relatedGuides.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-brand-500" />
+                <h3 className="font-semibold text-stone-800">Field Guides for this Site</h3>
+              </div>
+              <div className="space-y-2">
+                {relatedGuides.map((g) => (
+                  <Link key={g.id} href={`/mineral-school/${g.slug}`}
+                    className="flex items-center justify-between rounded-lg border border-stone-200 p-3 hover:border-brand-300 hover:bg-brand-50 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">{g.title}</p>
+                      <div className="mt-0.5 flex gap-1">
+                        {g.mineral_tags.filter((t) => site.minerals.includes(t)).map((t) => (
+                          <span key={t} className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <span className="text-xs text-stone-400 capitalize">{g.difficulty}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Q&A */}
+          <div className="mt-8">
+            <div className="mb-3 flex items-center gap-2">
+              <HelpCircle className="h-4 w-4 text-stone-500" />
+              <h3 className="font-semibold text-stone-800">Questions & Answers</h3>
+            </div>
+            {questions.length > 0 && (
+              <div className="mb-4 space-y-3">
+                {questions.map((q) => (
+                  <div key={q.id} className="rounded-lg border border-stone-200 p-3">
+                    <p className="text-sm font-medium text-stone-800">Q: {q.question}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">{q.visitor_name}</p>
+                    {q.answer && (
+                      <p className="mt-2 rounded bg-brand-50 p-2 text-sm text-brand-800">A: {q.answer}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {user ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask a question about this site…"
+                  className="input flex-1 text-sm"
+                  onKeyDown={(e) => { if (e.key === "Enter" && question.trim()) askQuestion.mutate(); }}
+                />
+                <button
+                  onClick={() => askQuestion.mutate()}
+                  disabled={!question.trim() || askQuestion.isPending}
+                  className="btn-primary text-sm gap-1"
+                >
+                  {questionSent ? <><CheckCircle2 className="h-4 w-4" /> Sent</> : <><Send className="h-4 w-4" /> Ask</>}
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-stone-400">
+                <Link href="/login" className="text-brand-600 hover:underline">Sign in</Link> to ask a question.
+              </p>
+            )}
+          </div>
+
+          {/* Waitlist */}
+          {user && (
+            <div className="mt-6 rounded-xl border border-stone-200 p-4">
+              <p className="mb-2 text-sm font-medium text-stone-700">Can&apos;t find availability? Join the waitlist.</p>
+              {waitlistJoined ? (
+                <p className="flex items-center gap-1.5 text-sm text-green-700">
+                  <CheckCircle2 className="h-4 w-4" /> You&apos;re on the waitlist — we&apos;ll email you if a spot opens.
+                </p>
+              ) : (
+                <div className="flex gap-2">
+                  <input type="date" value={waitlistDate} onChange={(e) => setWaitlistDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]} className="input text-sm" />
+                  <button
+                    onClick={() => joinWaitlist.mutate()}
+                    disabled={!waitlistDate || joinWaitlist.isPending}
+                    className="btn-secondary text-sm whitespace-nowrap"
+                  >
+                    {joinWaitlist.isPending ? "Joining…" : "Join waitlist"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Local partners */}
+          {partners.length > 0 && (
+            <div className="mt-8">
+              <h3 className="mb-3 text-sm font-medium text-stone-400 uppercase tracking-wide">
+                Near this site
+              </h3>
+              <div className="space-y-2">
+                {partners.map((p) => (
+                  <div key={p.id} className="flex items-start gap-3 rounded-lg border border-stone-100 bg-stone-50 p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        {p.url ? (
+                          <a
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-stone-800 hover:text-brand-600"
+                          >
+                            {p.name}
+                          </a>
+                        ) : (
+                          <span className="text-sm font-medium text-stone-800">{p.name}</span>
+                        )}
+                        {p.categories[0] && (
+                          <span className="text-xs text-stone-400">{p.categories[0]}</span>
+                        )}
+                      </div>
+                      {p.tagline && (
+                        <p className="text-xs text-stone-500 mt-0.5">{p.tagline}</p>
+                      )}
+                      {p.perk && (
+                        <p className="mt-1 text-xs font-medium text-brand-700 bg-brand-50 border border-brand-100 rounded px-2 py-0.5 inline-block">
+                          {p.perk}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-stone-300">Partner listings</p>
+            </div>
+          )}
         </div>
 
         {/* Booking panel */}
@@ -199,7 +481,16 @@ export default function SitePage() {
               ${site.price_per_person.toFixed(2)}
               <span className="text-base font-normal text-stone-500"> / person</span>
             </p>
-            <p className="mb-5 text-xs uppercase tracking-wide text-stone-500">{site.site_type.replace("-", " ")}</p>
+            <p className="mb-4 text-xs uppercase tracking-wide text-stone-500">{site.site_type.replace("-", " ")}</p>
+            {site.conservation_contribution > 0 && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg bg-green-50 border border-green-200 p-3 text-xs">
+                <Leaf className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                <div>
+                  <span className="font-semibold text-green-800">${site.conservation_contribution.toFixed(2)} per booking</span>
+                  <span className="text-green-700"> {site.conservation_note || "goes to conservation"}</span>
+                </div>
+              </div>
+            )}
             <BookingForm site={site} />
           </div>
         </div>
