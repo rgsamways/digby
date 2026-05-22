@@ -14,6 +14,7 @@ const exploreLinks = [
   { href: "/mystery", label: "Mystery Dig" },
   { href: "/mineral-id", label: "Mineral ID" },
   { href: "/mineral-school", label: "Field Guides" },
+  { href: "/learn", label: "GIS Education" },
   { href: "/alerts", label: "Alerts" },
   { href: "/quiz", label: "Quiz" },
 ];
@@ -79,8 +80,9 @@ export function Navbar() {
       ]
     : [
         { href: "/sites", label: "Browse Sites" },
+        { href: "/map", label: "Map" },
         { href: "/shop", label: "Shop" },
-        { href: "/specimens", label: "Marketplace" },
+        { href: "/strata", label: "Strata" },
       ];
 
   // All links for mobile (flat list)
