@@ -213,13 +213,36 @@ export interface Specimen {
   created_at: string;
 }
 
+export interface MineralIdAlternative {
+  mineral: string;
+  reason: string;
+  field_test: string;
+}
+
 export interface MineralIdResult {
   identified_mineral: string;
   confidence: "high" | "medium" | "low";
+  confidence_reason: string;
+  visual_clues: string[];
   formation_notes: string;
-  rarity_notes: string;
+  ontario_context: {
+    province: string;
+    typical_formations: string[];
+    typical_localities: string[];
+  };
+  physical_properties: {
+    hardness: string;
+    cleavage: string;
+    fracture: string;
+    lustre: string;
+    streak: string;
+    specific_gravity: string;
+  };
+  specimen_quality: string;
+  uv_fluorescence: string;
   care_tips: string;
-  alternative_minerals: string[];
+  rarity_notes: string;
+  alternatives: MineralIdAlternative[];
 }
 
 export interface GuideReview {
