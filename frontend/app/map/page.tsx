@@ -11,8 +11,11 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 const TILESET_BEDROCK = process.env.NEXT_PUBLIC_MAPBOX_TILESET_BEDROCK ?? "";
+// OMI (Ontario Mineral Inventory) covers both occurrences and past mines in one shapefile
 const TILESET_MDI = process.env.NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES ?? "";
-const TILESET_MINES = process.env.NEXT_PUBLIC_MAPBOX_TILESET_PAST_MINES ?? "";
+
+// STATUS values in OMI that represent past mines
+const MINE_STATUSES = ["Past Producing Mine", "Past Producing Mine (Low Tonnage)", "Past Producing Quarry"];
 
 // Ontario centred view
 const ONTARIO = { longitude: -84.5, latitude: 48.0, zoom: 5.5 };
@@ -136,17 +139,29 @@ export default function MapPage() {
     }
   }, []);
 
-  // Occurrence layer filter by mineral — field name TBC once MDI tileset is uploaded
-  // OGS MDI commonly uses COMMOD1 or MINERAL as the commodity field
-  const occurrenceFilter: FilterSpecification | null = mineralFilter
-    ? ["==", ["get", "COMMOD1"], mineralFilter]
+  // P_COMMOD is comma-separated (e.g. "Gold, Silver, Actinolite")
+  // Use ["in"] for substring match so "Gold" matches "Actinolite, Gold, Talc"
+  const commodityFilter: FilterSpecification | null = mineralFilter
+    ? ["in", mineralFilter, ["get", "P_COMMOD"]] as FilterSpecification
     : null;
+  // Occurrences: exclude mine-category STATUS entries
+  const occurrenceFilter: FilterSpecification = [
+    "all",
+    ["!", ["match", ["get", "STATUS"], MINE_STATUSES, true, false]],
+    ...(commodityFilter ? [commodityFilter] : []),
+  ] as FilterSpecification;
+  // Past mines filter
+  const mineFilter: FilterSpecification = [
+    "all",
+    ["match", ["get", "STATUS"], MINE_STATUSES, true, false],
+    ...(commodityFilter ? [commodityFilter] : []),
+  ] as FilterSpecification;
 
   const layerToggles = [
     { key: "bedrock" as const, label: "Bedrock geology", available: !!TILESET_BEDROCK },
     { key: "occurrences" as const, label: "Mineral occurrences", available: !!TILESET_MDI },
     { key: "sites" as const, label: "Digby sites", available: true },
-    { key: "mines" as const, label: "Past producing mines", available: !!TILESET_MINES },
+    { key: "mines" as const, label: "Past producing mines", available: !!TILESET_MDI },
   ];
 
   const Sidebar = (
@@ -211,7 +226,8 @@ export default function MapPage() {
         <div className="m-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
           <p className="text-xs font-semibold text-amber-800 mb-1">OGS layers not configured</p>
           <p className="text-xs text-amber-700">
-            Download OGS shapefiles and upload to Mapbox Studio to enable bedrock and mineral occurrence layers.
+            Upload MRD126 (bedrock) and OMI (mineral inventory) shapefiles to Mapbox Studio,
+            then set the tileset IDs in your environment variables.
           </p>
         </div>
       )}
@@ -267,7 +283,7 @@ export default function MapPage() {
               <Layer
                 id="bedrock-outline"
                 type="line"
-                source-layer="layer-name"
+                source-layer="Geopoly"
                 paint={{
                   "line-color": "#78716c",
                   "line-width": 0.5,
@@ -277,48 +293,39 @@ export default function MapPage() {
             </Source>
           )}
 
-          {/* Mineral occurrences layer */}
-          {TILESET_MDI && layers.occurrences && (
-            <Source
-              id="mdi"
-              type="vector"
-              url={`mapbox://${TILESET_MDI}`}
-            >
-              <Layer
-                id="mdi-circles"
-                type="circle"
-                source-layer="MDI_POINT"
-                {...(occurrenceFilter ? { filter: occurrenceFilter } : {})}
-                paint={{
-                  "circle-radius": 5,
-                  "circle-color": "#f59e0b",
-                  "circle-stroke-width": 1,
-                  "circle-stroke-color": "#ffffff",
-                  "circle-opacity": 0.8,
-                }}
-              />
-            </Source>
-          )}
-
-          {/* Past producing mines */}
-          {TILESET_MINES && layers.mines && (
-            <Source
-              id="mines"
-              type="vector"
-              url={`mapbox://${TILESET_MINES}`}
-            >
-              <Layer
-                id="mines-circles"
-                type="circle"
-                source-layer="MINES_POINT"
-                paint={{
-                  "circle-radius": 4,
-                  "circle-color": "#6b7280",
-                  "circle-stroke-width": 1,
-                  "circle-stroke-color": "#ffffff",
-                  "circle-opacity": 0.5,
-                }}
-              />
+          {/* OMI layer — one tileset, two filtered layers (occurrences + past mines) */}
+          {TILESET_MDI && (
+            <Source id="omi" type="vector" url={`mapbox://${TILESET_MDI}`}>
+              {layers.occurrences && (
+                <Layer
+                  id="omi-occurrences"
+                  type="circle"
+                  source-layer="OMI"
+                  filter={occurrenceFilter}
+                  paint={{
+                    "circle-radius": 5,
+                    "circle-color": "#f59e0b",
+                    "circle-stroke-width": 1,
+                    "circle-stroke-color": "#ffffff",
+                    "circle-opacity": 0.8,
+                  }}
+                />
+              )}
+              {layers.mines && (
+                <Layer
+                  id="omi-mines"
+                  type="circle"
+                  source-layer="OMI"
+                  filter={mineFilter}
+                  paint={{
+                    "circle-radius": 4,
+                    "circle-color": "#6b7280",
+                    "circle-stroke-width": 1,
+                    "circle-stroke-color": "#ffffff",
+                    "circle-opacity": 0.6,
+                  }}
+                />
+              )}
             </Source>
           )}
 
