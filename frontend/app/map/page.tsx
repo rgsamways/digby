@@ -17,33 +17,28 @@ const TILESET_MINES = process.env.NEXT_PUBLIC_MAPBOX_TILESET_PAST_MINES ?? "";
 // Ontario centred view
 const ONTARIO = { longitude: -84.5, latitude: 48.0, zoom: 5.5 };
 
-// Province colours for bedrock layer
+// Province colours for bedrock layer — field is PROVINCE_P, values are uppercase
+// Dataset: MRD126 Revision 1 (OGS 1:250,000 Bedrock Geology of Ontario)
 const PROVINCE_COLOURS = [
-  "match", ["get", "GEO_PROV"],
-  // TODO: update field name after inspecting tileset in Mapbox Studio
-  "Grenville",   "#c084fc",
-  "Superior",    "#60a5fa",
-  "Southern",    "#86efac",
-  "Churchill",   "#fbbf24",
-  /* fallback */ "#d1d5db",
+  "match", ["get", "PROVINCE_P"],
+  "GRENVILLE",              "#c084fc",
+  "SUPERIOR",               "#60a5fa",
+  "SOUTHERN and SUPERIOR",  "#86efac",
+  /* fallback */            "#d1d5db",
 ];
 
 const PROVINCE_BLURBS: Record<string, { title: string; body: string }> = {
-  Grenville: {
+  GRENVILLE: {
     title: "Grenville Province",
     body: "Ontario's mineral heartland. Ancient continental collision ~1 billion years ago created ideal conditions for pegmatite minerals. Bancroft sits here — expect sodalite, amazonite, corundum, calcite, apatite, feldspar, and mica.",
   },
-  Superior: {
+  SUPERIOR: {
     title: "Superior Province",
     body: "2.5–3 billion years old. Greenstone belts associated with gold, silver, and base metals. Thunder Bay is one of the world's best amethyst sources. Also native copper, prehnite, and epidote along the Lake Superior shore.",
   },
-  Southern: {
-    title: "Southern Province",
-    body: "Younger sedimentary rock overlying the Shield. Better for fossils than minerals — brachiopods, corals, and trilobites from the Ordovician sea. Also celestite, gypsum, and halite in evaporite sequences.",
-  },
-  Churchill: {
-    title: "Churchill Province",
-    body: "Northern Ontario's ancient terrain, reworked during multiple orogenies. Complex geological history supporting base metal and iron ore deposits.",
+  "SOUTHERN and SUPERIOR": {
+    title: "Southern / Superior Transition",
+    body: "Younger sedimentary rock overlying the Shield margin. Better for fossils than minerals — brachiopods, corals, and trilobites from the Ordovician sea. Also celestite, gypsum, and halite in evaporite sequences.",
   },
 };
 
@@ -107,11 +102,11 @@ export default function MapPage() {
 
     if (bedrockFeatures.length > 0) {
       const props = bedrockFeatures[0].properties ?? {};
-      // TODO: update field names after inspecting tileset
-      const name = props.FORMATION ?? props.formation ?? props.UNIT_NAME ?? props.GEO_NAME ?? "Unknown formation";
-      const prov = props.GEO_PROV ?? props.PROVINCE ?? "";
-      const age = props.AGE ?? props.GEO_AGE ?? "";
-      const rock = props.ROCK_TYPE ?? props.LITHOLOGY ?? "";
+      // Field names from MRD126 Revision 1 (OGS 1:250,000 Bedrock Geology)
+      const name = props.UNITNAME_P ?? "Unknown formation";
+      const prov = props.PROVINCE_P ?? "";
+      const age = props.ERA_P ?? "";
+      const rock = props.ROCKTYPE_P ?? "";
       const parts = [name, age, rock].filter(Boolean).join(" · ");
       setHoverInfo({ x: e.point.x, y: e.point.y, text: parts });
       if (prov && PROVINCE_BLURBS[prov]) setActiveProvince(prov);
@@ -141,10 +136,10 @@ export default function MapPage() {
     }
   }, []);
 
-  // Occurrence layer filter by mineral
+  // Occurrence layer filter by mineral — field name TBC once MDI tileset is uploaded
+  // OGS MDI commonly uses COMMOD1 or MINERAL as the commodity field
   const occurrenceFilter: FilterSpecification | null = mineralFilter
-    ? // TODO: update field name after inspecting tileset
-      ["==", ["get", "MINERAL"], mineralFilter]
+    ? ["==", ["get", "COMMOD1"], mineralFilter]
     : null;
 
   const layerToggles = [
@@ -261,8 +256,9 @@ export default function MapPage() {
               <Layer
                 id="bedrock-fill"
                 type="fill"
-                // TODO: replace "layer-name" with the actual source layer name from Mapbox Studio
-                source-layer="layer-name"
+                // source-layer = shapefile name without extension (Mapbox convention)
+                // MRD126 Geopoly.shp → likely "Geopoly" — confirm in Studio feature inspector
+                source-layer="Geopoly"
                 paint={{
                   "fill-color": PROVINCE_COLOURS as unknown as mapboxgl.Expression,
                   "fill-opacity": 0.35,
@@ -291,7 +287,7 @@ export default function MapPage() {
               <Layer
                 id="mdi-circles"
                 type="circle"
-                source-layer="layer-name"
+                source-layer="MDI_POINT"
                 {...(occurrenceFilter ? { filter: occurrenceFilter } : {})}
                 paint={{
                   "circle-radius": 5,
@@ -314,7 +310,7 @@ export default function MapPage() {
               <Layer
                 id="mines-circles"
                 type="circle"
-                source-layer="layer-name"
+                source-layer="MINES_POINT"
                 paint={{
                   "circle-radius": 4,
                   "circle-color": "#6b7280",
