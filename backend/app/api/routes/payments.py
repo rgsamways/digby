@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 import stripe
 from beanie import PydanticObjectId
@@ -11,6 +12,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.product import Product
 from app.models.shop_order import ShopOrder, ShopOrderItem, ShopOrderStatus
 from app.models.specimen_order import OrderStatus, SpecimenOrder
+from app.models.strata import StrataStatus, StrataSubscription
 from app.models.user import User
 
 router = APIRouter()
@@ -77,6 +79,45 @@ async def stripe_webhook(request: Request) -> JSONResponse:
                 specimen = await Specimen.get(order.specimen_id)
                 if specimen:
                     await specimen.set({"available": specimen.available + 1})
+
+    elif event["type"] == "invoice.payment_succeeded":
+        invoice = event["data"]["object"]
+        sub_id = invoice.get("subscription")
+        if sub_id:
+            sub = await StrataSubscription.find_one(
+                StrataSubscription.stripe_subscription_id == sub_id
+            )
+            if sub:
+                lines = invoice.get("lines", {}).get("data", [{}])
+                period_end = lines[0].get("period", {}).get("end") if lines else None
+                update: dict = {"status": StrataStatus.ACTIVE, "updated_at": datetime.now(UTC)}
+                if period_end:
+                    update["current_period_end"] = datetime.fromtimestamp(period_end, tz=UTC)
+                for k, v in update.items():
+                    setattr(sub, k, v)
+                await sub.save()
+
+    elif event["type"] == "invoice.payment_failed":
+        invoice = event["data"]["object"]
+        sub_id = invoice.get("subscription")
+        if sub_id:
+            sub = await StrataSubscription.find_one(
+                StrataSubscription.stripe_subscription_id == sub_id
+            )
+            if sub:
+                sub.status = StrataStatus.PAST_DUE
+                sub.updated_at = datetime.now(UTC)
+                await sub.save()
+
+    elif event["type"] == "customer.subscription.deleted":
+        stripe_sub = event["data"]["object"]
+        sub = await StrataSubscription.find_one(
+            StrataSubscription.stripe_subscription_id == stripe_sub["id"]
+        )
+        if sub:
+            sub.status = StrataStatus.CANCELLED
+            sub.updated_at = datetime.now(UTC)
+            await sub.save()
 
     elif event["type"] == "account.updated":
         account = event["data"]["object"]

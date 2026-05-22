@@ -26,6 +26,7 @@ from app.api.routes import (
     site_questions,
     sites,
     specimens,
+    strata,
     waitlist,
     weather_alerts,
     yield_reports,
@@ -80,6 +81,7 @@ app.include_router(field_guides.router, prefix="/api/field-guides", tags=["field
 app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(shop_orders.router, prefix="/api/shop/orders", tags=["shop-orders"])
+app.include_router(strata.router, prefix="/api/strata", tags=["strata"])
 
 
 @app.get("/api/auth/me", tags=["auth"])
