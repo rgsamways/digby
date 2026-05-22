@@ -31,6 +31,9 @@ from app.api.routes import (
     weather_alerts,
     yield_reports,
 )
+from app.api.routes import (
+    map as map_routes,
+)
 from app.core.database import close_db, init_db
 from app.models.user import User
 
@@ -82,6 +85,7 @@ app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(shop_orders.router, prefix="/api/shop/orders", tags=["shop-orders"])
 app.include_router(strata.router, prefix="/api/strata", tags=["strata"])
+app.include_router(map_routes.router, prefix="/api/map", tags=["map"])
 
 
 @app.get("/api/auth/me", tags=["auth"])
