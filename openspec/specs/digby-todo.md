@@ -103,22 +103,24 @@ _Last updated: May 2026. Maintained by Claude Code. Hand back to Claude (chat) f
 
 ## 6. Find Journal + Citizen Science
 > OGS partnership proposal commits this to Q3 2026.
-- [ ] Find journal data model (location, date, site, mineral ID, formation, specimen quality, photos, notes, visibility, verification status)
-- [ ] Verification pipeline: AI-likely → community-verified → OGS-reviewed (three tiers — must match OGS proposal exactly)
-- [ ] Formation auto-population from GPS coordinates vs OGS bedrock layer
-- [ ] Private find journal UI (log, browse, edit)
-- [ ] Public find feed (full-bleed, filterable) — foundation for Youth & Social strategy
-- [ ] Individual find page at /finds/:id with open graph meta
-- [ ] Save/bookmark mechanic on find feed
-- [ ] Weekly featured finds (curation flag)
-- [ ] Citizen science quality criteria check (GPS + photo + AI-likely+ + host rock + opted in)
-- [ ] Citizen science status surfaced to user as achievement
-- [ ] Junior find logging (flagged as junior_submission, parent opt-in for citizen science)
-- [ ] GET /api/finds/feed (paginated, filterable public feed)
-- [ ] POST /api/finds (create find)
-- [ ] GET /api/finds/:id
-- [ ] POST /api/finds/:id/save
-- [ ] OGS citizen science data export (GPS, date, mineral ID, formation match, host rock, verification status, photo, site context)
+- [x] Find journal data model (location, date, site, mineral, formation, quality, photos, notes, visibility, verification)
+- [x] Verification pipeline: unverified → ai_likely → community_verified → ogs_reviewed (matches OGS proposal)
+- [ ] Formation auto-population from GPS coordinates vs OGS bedrock layer (needs OGS tileset integration)
+- [x] Private find journal UI — /finds/my (log, browse, delete)
+- [x] Public find feed — /finds (filterable by mineral/province/featured, paginated)
+- [x] Individual find page — /finds/[id] with OG meta (SSR, 60s revalidation)
+- [x] Save/bookmark mechanic with toggle POST /api/finds/{id}/save
+- [x] Weekly featured finds (is_featured flag, admin sets manually in DB)
+- [x] Citizen science eligibility: GPS + photo + ai_likely+ + host_rock + opted_in (auto-computed on save)
+- [ ] Citizen science status surfaced as achievement on passport — depends on passport integration
+- [x] Junior find logging (is_junior_submission field + form checkbox)
+- [x] GET /api/finds/feed (paginated, filterable)
+- [x] GET /api/finds/feed/saved (user saved finds)
+- [x] POST /api/finds/ (create)
+- [x] PATCH /api/finds/{id} + DELETE /api/finds/{id}
+- [x] POST /api/finds/{id}/save (toggle)
+- [x] GET /api/finds/admin/export (CSV for OGS with all citizen science fields)
+- [ ] Photo upload to S3 — currently photos captured client-side but not uploaded (S3 integration pending)
 
 ## 7. GIS Education Content
 > Spec: Claude Code Handoff Document (Section 3, May 2026).
