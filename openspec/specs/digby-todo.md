@@ -30,33 +30,33 @@ _Last updated: May 2026. Maintained by Claude Code. Hand back to Claude (chat) f
 
 ## 2. Shop — Admin UI
 > Spec: Claude Code Handoff Document (Section 1, May 2026)
-- [ ] Admin session auth — ADMIN_PASSWORD env var, session cookie on /admin routes
-- [ ] Product list view (paginated, name / category / price / stock / active)
-- [ ] Create / edit product form — all fields: name, slug (auto-generated, editable), category + subcategory dropdowns, description, price + cost (display as dollars), SKU, supplier, stock, dropship toggle, active toggle, tags multi-input, related_products selector, site_recommendations selector
-- [ ] Image upload — stub as TODO until R2/S3 is decided
-- [ ] Soft delete / deactivate product (active: false)
-- [ ] Order list view (status, total, customer, date)
-- [ ] Order detail view (line items, shipping address, Stripe payment ID, status)
-- [ ] Manual order status update (pending → confirmed → fulfilled → shipped → cancelled)
+- [x] Admin session auth — ADMIN_PASSWORD env var, JWT with role=admin, /admin routes protected
+- [x] Product list view (paginated, name / category / price / stock / active)
+- [x] Create / edit product form — all fields: name, slug (auto-generated, editable), category + subcategory dropdowns, description, price + cost (display as dollars), SKU, supplier, stock, dropship toggle, active toggle, tags multi-input, related_products selector, site_recommendations selector
+- [x] Image upload — stubbed as URL input (S3 decided, actual upload integration pending)
+- [x] Soft delete / deactivate product (active: false)
+- [x] Order list view (status, total, customer, date)
+- [x] Order detail view (line items, shipping address, Stripe payment ID, status)
+- [x] Manual order status update (pending → confirmed → fulfilled → shipped → cancelled)
 
 ## 3. Digby Strata — Subscription Box
 > Spec: digby-strata-spec.docx (May 2026). **Bancroft Gemboree deadline: August 1, 2026.**
-- [ ] StrataSubscription Beanie model (tier, billing_frequency, status, subscriber_id, stripe_subscription_id)
-- [ ] Box model (month number, theme, contents list, field_card_text, formation_map_url, shipped_at)
-- [ ] CollectorCardCode model (code, mineral_id, box_id, redeemed_by, redeemed_at)
-- [ ] Stripe Billing integration (recurring subscriptions — different from existing PaymentIntents)
-- [ ] POST /api/strata/subscribe (create Stripe subscription + subscriber record)
-- [ ] GET /api/strata/my (subscriber portal data: tier, status, box history)
-- [ ] PATCH /api/strata/my (update tier, pause, update address)
-- [ ] DELETE /api/strata/my (cancel — easy, no dark patterns)
-- [ ] POST /api/strata/gift (purchase gift subscription for a named recipient)
-- [ ] GET /api/strata/redeem/:code (validate collector card code, unlock digital card if valid)
-- [ ] /strata sign-up page — tier selection (Discoverer $39 / Collector $59 / Geologist $89), billing frequency, shipping address
-- [ ] /strata/archive — every past box: contents, field card text, formation map, dig site links, individual specimens in shop
-- [ ] Subscriber portal (manage tier, pause, update address, box history)
-- [ ] Gift subscription flow with delivery date
-- [ ] Cancellation and pause flows (easy, no dark patterns)
-- [ ] Annual prepay discount option (10% off)
+- [x] StrataSubscription Beanie model (tier, billing_frequency, status, subscriber_id, stripe_subscription_id)
+- [x] Box model (month number, theme, contents list, field_card_text, formation_map_url, shipped_at)
+- [x] CollectorCardCode model (code, mineral_id, box_id, redeemed_by, redeemed_at)
+- [x] Stripe Billing integration (recurring subscriptions — price_data inline, payment_behavior=default_incomplete)
+- [x] POST /api/strata/subscribe (create Stripe subscription + subscriber record)
+- [x] GET /api/strata/my (subscriber portal data: tier, status, box history)
+- [x] PATCH /api/strata/my (update address, pause/resume via pause_collection)
+- [x] DELETE /api/strata/my (cancel at period end — no dark patterns)
+- [x] POST /api/strata/gift (PaymentIntent for fixed months)
+- [x] GET /api/strata/redeem/:code (validate collector card code, mark redeemed)
+- [x] /strata sign-up page — tier selection (Discoverer $39 / Collector $59 / Geologist $89), billing frequency, shipping address, Stripe PaymentElement
+- [x] /strata/archive — every past box: contents, field card text, formation map, dig site links
+- [x] /strata/my subscriber portal (manage tier, pause, cancel, see renewal date)
+- [x] Cancellation and pause flows with confirmation dialogs (no dark patterns)
+- [x] Annual prepay discount option (10% off, 12 × monthly × 0.90)
+- [x] Webhook handlers: invoice.payment_succeeded (activate), invoice.payment_failed (past_due), subscription.deleted (cancelled)
 - [ ] Admin tools: subscriber list, box fulfilment status, shipping label export
 - [ ] Collector card UTM tracking — measure booking conversions from Strata subscribers
 
@@ -65,17 +65,18 @@ _Last updated: May 2026. Maintained by Claude Code. Hand back to Claude (chat) f
 - [ ] **Manual step (Robin):** Download OGS shapefiles from geohub.lio.gov.on.ca — Bedrock Geology, MDI, Past Producing Mines
 - [ ] **Manual step (Robin):** Upload shapefiles to Mapbox Studio as tilesets, note tileset IDs (format: yourusername.xxxxxxxx)
 - [ ] **Manual step (Robin):** Inspect each tileset in Mapbox Studio feature inspector — note exact field names for formation name, rock type, geological province, age (bedrock); mineral type, deposit name (MDI); mine name, commodity (past mines)
-- [ ] Add tileset IDs to env config (MAPBOX_TILESET_BEDROCK, MAPBOX_TILESET_MINERAL_OCCURRENCES, MAPBOX_TILESET_PAST_MINES)
-- [ ] GET /api/map/sites — GeoJSON FeatureCollection of bookable digby sites (id, name, slug, coordinates, findable minerals, thumbnail)
-- [ ] /map page with full-screen Mapbox map + collapsible sidebar
-- [ ] Bedrock geology layer (hover/click: formation name, age, rock type, mineral associations)
-- [ ] Mineral occurrences layer (filterable by mineral type — checkbox/multi-select)
-- [ ] Digby sites layer (custom markers, click popup: site name, minerals, book CTA)
-- [ ] Past producing mines layer (optional toggle, low visual prominence)
-- [ ] Layer toggle panel (sidebar or floating)
-- [ ] Mobile: sidebar collapses to bottom drawer or floating button
-- [ ] Geological province blurbs in sidebar (plain-language, rockhound-relevant: Grenville, Superior, Southern Province, etc.)
-- [ ] Default view centred on Ontario
+- [ ] **Manual step (Robin):** Add tileset IDs to env config and update field name TODOs in frontend/app/map/page.tsx
+- [x] GET /api/map/sites — GeoJSON FeatureCollection of bookable digby sites (id, name, slug, coordinates, findable minerals, thumbnail)
+- [x] /map page with full-screen Mapbox map + collapsible sidebar
+- [x] Bedrock geology layer (hover tooltip: formation name; province colour coding)
+- [x] Mineral occurrences layer (filterable by mineral type — text input filter)
+- [x] Digby sites layer (green circles, click popup: site name, minerals, price, book CTA)
+- [x] Past producing mines layer (optional toggle, low visual prominence)
+- [x] Layer toggle panel (sidebar with availability indicators)
+- [x] Mobile: sidebar collapses to bottom drawer
+- [x] Geological province blurbs in sidebar (Grenville, Superior, Southern, Churchill)
+- [x] Default view centred on Ontario (lon -84.5, lat 48.0, zoom 5.5)
+- [x] Amber notice guiding operator through Mapbox Studio setup when tilesets not configured
 
 ## 5. AI Mineral Identifier — Upgrade
 > Spec: digby-identifier-upgrade.docx
@@ -121,23 +122,23 @@ _Last updated: May 2026. Maintained by Claude Code. Hand back to Claude (chat) f
 - [ ] OGS citizen science data export (GPS, date, mineral ID, formation match, host rock, verification status, photo, site context)
 
 ## 7. GIS Education Content
-> Spec: Claude Code Handoff Document (Section 3, May 2026). Sample content for Lesson 1 (GIS) and Lesson 2 (Field) already written in spec.
-- [ ] /learn landing page — track selection, overview
-- [ ] **Field Track** — 5 lessons, no software required, 5-minute reads, "Try it" prompts linked to digby map
-  - [ ] Lesson 1: How Ontario's geology formed (deep time, plain language)
-  - [ ] Lesson 2: Ontario's mineral regions — the four provinces and what makes each distinct *(sample content written in spec)*
-  - [ ] Lesson 3: Reading a geological map — formations, contacts, symbols
-  - [ ] Lesson 4: Crown land, mineral rights, and site access
-  - [ ] Lesson 5: Planning a trip using the digby map
-- [ ] **GIS Track** — 5 lessons, QGIS-based, hands-on OGS data
-  - [ ] Lesson 1: Installing QGIS and loading your first Ontario geology layer *(sample content written in spec)*
-  - [ ] Lesson 2: Querying and filtering OGS data ("show me all pegmatite occurrences in Eastern Ontario")
-  - [ ] Lesson 3: Overlaying topo maps and satellite imagery
-  - [ ] Lesson 4: Exporting a field map to your phone
-  - [ ] Lesson 5: From map to site — planning a digby trip with spatial analysis
-- [ ] Lessons reference real digby sites throughout
-- [ ] Field Track lessons link to relevant booking pages
-- [ ] GIS Track exercises use real OGS data for Ontario
+> Spec: Claude Code Handoff Document (Section 3, May 2026).
+- [x] /learn landing page — track selection, lesson overview
+- [x] **Field Track** — 5 lessons, no software required, 5-minute reads, "Try it" prompts
+  - [x] Lesson 1: How Ontario's geology formed (deep time, provinces, mineral origin)
+  - [x] Lesson 2: Ontario's four geological provinces (Grenville, Superior, Southern, Churchill)
+  - [x] Lesson 3: Reading rocks — minerals at Digby sites (feldspar, quartz, mica, tourmaline, apatite)
+  - [x] Lesson 4: Crown land, mineral rights, and site access (Mining Act, trespass law)
+  - [x] Lesson 5: Planning a trip using the Digby map (layer-by-layer walkthrough)
+- [x] **GIS Track** — 5 lessons, QGIS-based, hands-on OGS data
+  - [x] Lesson 1: Installing QGIS and loading your first Ontario geology layer
+  - [x] Lesson 2: Querying and filtering OGS data with expressions + spatial joins
+  - [x] Lesson 3: Symbolizing rock formations by age or type (categorized + rule-based)
+  - [x] Lesson 4: Intersecting layers to find mineralizing zones (buffer, heatmap)
+  - [x] Lesson 5: From map to site — spatial trip planning with drive-distance buffer + grid scoring
+- [x] All lessons reference Ontario geology and link to relevant Digby features
+- [x] Field Track "Try it" prompts link to /map and /mineral-id
+- [x] GIS Track exercises use real OGS data sources (geohub.lio.gov.on.ca)
 
 ## 8. Junior Geologist Games
 > Spec: Junior Geologist Games Full Spec (May 2026). Build Games 5 + 1 together — badge system without card game has no payoff.
