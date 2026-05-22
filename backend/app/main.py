@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import get_current_user
 from app.api.routes import (
+    admin,
     alert_subscriptions,
     auth,
     availability,
@@ -55,6 +56,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(sites.router, prefix="/api/sites", tags=["sites"])
 app.include_router(bookings.router, prefix="/api/bookings", tags=["bookings"])
