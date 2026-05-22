@@ -5,6 +5,7 @@ from app.core.security import decode_token
 from app.models.user import User, UserRole
 
 bearer = HTTPBearer()
+bearer_optional = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -37,6 +38,18 @@ async def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
     return user
+
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_optional),
+) -> User | None:
+    if not credentials:
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+    except ValueError:
+        return None
+    return await User.get(payload["sub"])
 
 
 async def require_admin_token(

@@ -245,6 +245,47 @@ export interface MineralIdResult {
   alternatives: MineralIdAlternative[];
 }
 
+export type VerificationStatus =
+  | "unverified"
+  | "ai_likely"
+  | "community_verified"
+  | "ogs_reviewed"
+  | "disputed";
+
+export interface Find {
+  id: string;
+  user_id: string;
+  author_name: string;
+  date: string;
+  mineral_name: string;
+  notes: string;
+  photo_urls: string[];
+  gps_lat: number | null;
+  gps_lng: number | null;
+  site_id: string | null;
+  site_name: string | null;
+  host_rock: string | null;
+  geological_province: string | null;
+  formation: string | null;
+  specimen_quality: string | null;
+  verification_status: VerificationStatus;
+  citizen_science_opted_in: boolean;
+  citizen_science_eligible: boolean;
+  visibility: "private" | "public";
+  save_count: number;
+  is_featured: boolean;
+  is_junior_submission: boolean;
+  saved: boolean;
+  created_at: string;
+}
+
+export interface FindFeedResponse {
+  total: number;
+  skip: number;
+  limit: number;
+  items: Find[];
+}
+
 export interface GuideReview {
   id: string;
   guide_id: string;

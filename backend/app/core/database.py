@@ -7,6 +7,7 @@ from app.models.availability import Availability
 from app.models.booking import Booking
 from app.models.diary_entry import DiaryEntry
 from app.models.field_guide import FieldGuide
+from app.models.find import Find, FindSave
 from app.models.guide_booking import GuideBooking
 from app.models.guide_review import GuideReview
 from app.models.hunt_progress import HuntProgress
@@ -42,6 +43,7 @@ async def init_db() -> None:
             GuideReview, AlertSubscription, Specimen, SpecimenOrder,
             SiteQuestion, FieldGuide, WaitlistEntry, Product, ShopOrder,
             StrataSubscription, StrataBox, CollectorCardCode,
+            Find, FindSave,
         ],
     )
 

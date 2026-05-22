@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 const exploreLinks = [
+  { href: "/finds", label: "Find Feed" },
   { href: "/community", label: "Community" },
   { href: "/guides", label: "Find a Guide" },
   { href: "/mystery", label: "Mystery Dig" },
@@ -22,7 +23,8 @@ const exploreLinks = [
 const myDigbyLinks = [
   { href: "/bookings", label: "My Bookings" },
   { href: "/passport", label: "My Passport" },
-  { href: "/diary", label: "Journal" },
+  { href: "/diary", label: "Trip Journal" },
+  { href: "/finds/my", label: "Find Journal" },
 ];
 
 export function Navbar() {

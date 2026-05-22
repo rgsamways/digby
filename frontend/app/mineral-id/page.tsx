@@ -110,7 +110,7 @@ export default function MineralIdPage() {
 
       const base = process.env.NEXT_PUBLIC_API_URL ?? "";
       const headers: Record<string, string> = {};
-      const token = typeof window !== "undefined" ? localStorage.getItem("digby-token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("digby_token") : null;
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const resp = await fetch(`${base}/api/mineral-id/`, { method: "POST", body: form, headers });

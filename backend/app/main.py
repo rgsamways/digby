@@ -12,6 +12,7 @@ from app.api.routes import (
     bookings,
     diary,
     field_guides,
+    finds,
     guide_bookings,
     guide_reviews,
     guides,
@@ -74,6 +75,7 @@ app.include_router(passport.router, prefix="/api/passport", tags=["passport"])
 app.include_router(hunts.router, prefix="/api/hunts", tags=["hunts"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(diary.router, prefix="/api/diary", tags=["diary"])
+app.include_router(finds.router, prefix="/api/finds", tags=["finds"])
 app.include_router(partners.router, prefix="/api/partners", tags=["partners"])
 app.include_router(guide_reviews.router, prefix="/api/guide-reviews", tags=["guide-reviews"])
 app.include_router(mineral_id.router, prefix="/api/mineral-id", tags=["mineral-id"])
