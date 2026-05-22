@@ -80,27 +80,26 @@ _Last updated: May 2026. Maintained by Claude Code. Hand back to Claude (chat) f
 
 ## 5. AI Mineral Identifier — Upgrade
 > Spec: digby-identifier-upgrade.docx
-- [ ] Review existing bare-bones implementation before rebuilding anything
-- [ ] Multi-photo input (up to 4 images)
-- [ ] Optional context fields (location, host rock type, UV behaviour)
-- [ ] Claude claude-sonnet-4-20250514 vision API with structured JSON response schema
-- [ ] Confidence scoring (high / medium / low) with plain-language framing
-- [ ] Visual clues breakdown ("why we think so")
-- [ ] Differential diagnosis (up to 3 alternatives with practical field tests)
-- [ ] Ontario geological context (province, formation, digby site links)
-- [ ] Physical properties reference card
-- [ ] Specimen quality assessment
-- [ ] UV fluorescence guidance
-- [ ] One-tap log to find journal (pre-populated)
-- [ ] Image compression client-side (max 1200px, JPEG 85)
-- [ ] HEIC to JPEG conversion server-side
-- [ ] EXIF stripping before API call
-- [ ] Rate limiting (10/day free, unlimited registered)
-- [ ] Result caching by image hash
-- [ ] POST /api/identify route
-- [ ] Ontario mineral reference JSON (Grenville, Superior, Sudbury, widespread species)
-- [ ] Verification status system (unverified / AI-likely / community-verified / expert-verified / disputed)
-- [ ] User correction flow ("disagree with this ID")
+- [x] Review existing bare-bones implementation
+- [x] Multi-photo input (up to 4 images)
+- [x] Optional context fields (location, host rock type, UV behaviour, geological province)
+- [x] Upgraded to claude-sonnet-4-6 vision API with structured JSON schema
+- [x] Confidence scoring with plain-language confidence_reason field
+- [x] Visual clues breakdown ("why we think so")
+- [x] Differential diagnosis — 2-3 alternatives with practical field tests
+- [x] Ontario geological context (province, typical formations, known localities)
+- [x] Physical properties reference card (collapsible)
+- [x] Specimen quality assessment
+- [x] UV fluorescence guidance
+- [ ] One-tap log to find journal (pre-populated) — depends on Section 6 Find Journal
+- [x] Client-side canvas compression: max 1200px, JPEG@85 (strips EXIF too)
+- [ ] HEIC to JPEG conversion — rejected with 415; needs system libheif (deferred)
+- [x] Rate limiting: 10/day per IP for unauthenticated; authenticated users exempt
+- [x] Result cache: 1h TTL keyed on SHA-256 of images + context
+- [x] POST /api/mineral-id/ (existing route, upgraded in place)
+- [ ] Ontario mineral reference JSON (static context for system prompt enrichment)
+- [ ] Verification status system — depends on Section 6 Find Journal
+- [ ] User correction flow — depends on Section 6 Find Journal
 
 ## 6. Find Journal + Citizen Science
 > OGS partnership proposal commits this to Q3 2026.
