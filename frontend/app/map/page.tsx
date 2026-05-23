@@ -123,7 +123,8 @@ export default function MapPage() {
       return;
     }
 
-    const bedrockFeatures = TILESET_BEDROCK
+    const bedrockLayerExists = TILESET_BEDROCK && map.getLayer("bedrock-fill") !== undefined;
+    const bedrockFeatures = bedrockLayerExists
       ? map.queryRenderedFeatures(e.point, { layers: ["bedrock-fill"] })
       : [];
 
