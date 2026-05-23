@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@digby.rocks"
 
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_S3_BUCKET: str = ""
+    AWS_S3_REGION: str = "ca-central-1"
+
     ADMIN_PASSWORD: str = ""
 
     BACKEND_CORS_ORIGINS: str = (

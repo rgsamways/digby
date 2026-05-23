@@ -28,6 +28,7 @@ from app.api.routes import (
     sites,
     specimens,
     strata,
+    uploads,
     waitlist,
     weather_alerts,
     yield_reports,
@@ -87,6 +88,7 @@ app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(shop_orders.router, prefix="/api/shop/orders", tags=["shop-orders"])
 app.include_router(strata.router, prefix="/api/strata", tags=["strata"])
+app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(map_routes.router, prefix="/api/map", tags=["map"])
 
 

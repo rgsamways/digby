@@ -88,12 +88,26 @@ export default function NewFindPage() {
     }
   }, [images.length]);
 
+  const [uploading, setUploading] = useState(false);
+
   const mutation = useMutation({
     mutationFn: async () => {
-      // If photos: upload as multipart to a stub URL list (S3 TBD — use data URLs for now)
-      // For now we'll store empty photo_urls and let user add via URL manually
-      // TODO: replace with S3 upload when image storage is wired up
-      const photoUrls: string[] = [];
+      let photoUrls: string[] = [];
+
+      if (images.length > 0) {
+        setUploading(true);
+        const form = new FormData();
+        images.forEach((img) => form.append("files", img.blob, "photo.jpg"));
+        const token = localStorage.getItem("digby_token");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/uploads/images`,
+          { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form }
+        );
+        setUploading(false);
+        if (!res.ok) throw new Error("Photo upload failed");
+        const data = await res.json() as { urls: string[] };
+        photoUrls = data.urls;
+      }
 
       return api.post("/api/finds/", {
         mineral_name: mineralName,
@@ -173,9 +187,6 @@ export default function NewFindPage() {
             )}
           </div>
           {imageError && <p className="text-xs text-red-600">{imageError}</p>}
-          <p className="text-xs text-stone-400">
-            Photo upload to cloud storage coming soon — photos are compressed locally but not yet saved to server.
-          </p>
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
             onChange={(e) => addFiles(e.target.files)} />
         </div>
@@ -286,10 +297,10 @@ export default function NewFindPage() {
 
         <button
           onClick={() => mutation.mutate()}
-          disabled={!mineralName || !date || mutation.isPending}
+          disabled={!mineralName || !date || mutation.isPending || uploading}
           className="btn-primary w-full"
         >
-          {mutation.isPending ? "Saving…" : "Save find"}
+          {uploading ? "Uploading photos…" : mutation.isPending ? "Saving…" : "Save find"}
         </button>
       </div>
     </div>
