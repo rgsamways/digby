@@ -38,12 +38,27 @@ from app.api.routes import (
     map as map_routes,
 )
 from app.core.database import close_db, init_db
+from app.models.junior import Badge, DetectiveCase, JuniorMineral
 from app.models.user import User
+
+
+async def _seed_junior_content() -> None:
+    from app.api.routes.junior_seed import BADGES, DETECTIVE_CASES, MINERALS
+    for data in MINERALS:
+        if not await JuniorMineral.find_one(JuniorMineral.mineral_id == data["mineral_id"]):
+            await JuniorMineral(**data).insert()
+    for data in BADGES:
+        if not await Badge.find_one(Badge.badge_id == data["badge_id"]):
+            await Badge(**data).insert()
+    for data in DETECTIVE_CASES:
+        if not await DetectiveCase.find_one(DetectiveCase.case_id == data["case_id"]):
+            await DetectiveCase(**data).insert()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await _seed_junior_content()
     yield
     await close_db()
 
