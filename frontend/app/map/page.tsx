@@ -71,6 +71,15 @@ interface SitePopup {
   site: DigbySite["properties"];
 }
 
+interface OmiPopup {
+  lng: number;
+  lat: number;
+  name: string;
+  status: string;
+  commodity: string;
+  mdiIdent: string;
+}
+
 export default function MapPage() {
   const mapRef = useRef<MapRef>(null);
 
@@ -85,6 +94,7 @@ export default function MapPage() {
   const [activeProvince, setActiveProvince] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number; text: string } | null>(null);
   const [sitePopup, setSitePopup] = useState<SitePopup | null>(null);
+  const [omiPopup, setOmiPopup] = useState<OmiPopup | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const { data: sitesGeoJson } = useQuery({
@@ -99,13 +109,26 @@ export default function MapPage() {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
+    const omiLayers = ["omi-occurrences", "omi-mines"].filter(
+      (id) => map.getLayer(id) !== undefined
+    );
+    const omiFeatures = TILESET_MDI && omiLayers.length
+      ? map.queryRenderedFeatures(e.point, { layers: omiLayers })
+      : [];
+
+    if (omiFeatures.length > 0) {
+      const props = omiFeatures[0].properties ?? {};
+      const label = [props.NAME, props.P_COMMOD].filter(Boolean).join(" · ");
+      setHoverInfo({ x: e.point.x, y: e.point.y, text: label || "Mineral deposit" });
+      return;
+    }
+
     const bedrockFeatures = TILESET_BEDROCK
       ? map.queryRenderedFeatures(e.point, { layers: ["bedrock-fill"] })
       : [];
 
     if (bedrockFeatures.length > 0) {
       const props = bedrockFeatures[0].properties ?? {};
-      // Field names from MRD126 Revision 1 (OGS 1:250,000 Bedrock Geology)
       const name = props.UNITNAME_P ?? "Unknown formation";
       const prov = props.PROVINCE_P ?? "";
       const age = props.ERA_P ?? "";
@@ -126,6 +149,7 @@ export default function MapPage() {
     if (siteFeatures.length > 0 && siteFeatures[0].properties) {
       const props = siteFeatures[0].properties;
       const coords = (siteFeatures[0].geometry as GeoJSON.Point).coordinates as [number, number];
+      setOmiPopup(null);
       setSitePopup({
         lng: coords[0],
         lat: coords[1],
@@ -134,9 +158,32 @@ export default function MapPage() {
           minerals: typeof props.minerals === "string" ? JSON.parse(props.minerals) : props.minerals,
         } as DigbySite["properties"],
       });
-    } else {
-      setSitePopup(null);
+      return;
     }
+
+    const omiLayers = ["omi-occurrences", "omi-mines"].filter(
+      (id) => map.getLayer(id) !== undefined
+    );
+    const omiFeatures = TILESET_MDI && omiLayers.length
+      ? map.queryRenderedFeatures(e.point, { layers: omiLayers })
+      : [];
+    if (omiFeatures.length > 0 && omiFeatures[0].properties) {
+      const props = omiFeatures[0].properties;
+      const coords = (omiFeatures[0].geometry as GeoJSON.Point).coordinates as [number, number];
+      setSitePopup(null);
+      setOmiPopup({
+        lng: coords[0],
+        lat: coords[1],
+        name: props.NAME ?? "Unknown deposit",
+        status: props.STATUS ?? "",
+        commodity: props.P_COMMOD ?? "",
+        mdiIdent: props.MDI_IDENT ?? "",
+      });
+      return;
+    }
+
+    setSitePopup(null);
+    setOmiPopup(null);
   }, []);
 
   // P_COMMOD is comma-separated (e.g. "Gold, Silver, Actinolite")
@@ -352,6 +399,34 @@ export default function MapPage() {
                 }}
               />
             </Source>
+          )}
+
+          {/* OMI deposit popup */}
+          {omiPopup && (
+            <Popup
+              longitude={omiPopup.lng}
+              latitude={omiPopup.lat}
+              closeOnClick={false}
+              onClose={() => setOmiPopup(null)}
+              className="z-50"
+            >
+              <div className="min-w-[200px] p-1">
+                <p className="font-semibold text-stone-900 text-sm leading-tight">{omiPopup.name}</p>
+                {omiPopup.status && (
+                  <span className="mt-1 inline-block rounded-full bg-stone-100 px-2 py-0.5 text-[10px] text-stone-500">
+                    {omiPopup.status}
+                  </span>
+                )}
+                {omiPopup.commodity && (
+                  <p className="mt-1.5 text-xs text-stone-600">
+                    <span className="font-medium">Commodities:</span> {omiPopup.commodity}
+                  </p>
+                )}
+                {omiPopup.mdiIdent && (
+                  <p className="mt-1 text-[10px] text-stone-400 font-mono">{omiPopup.mdiIdent}</p>
+                )}
+              </div>
+            </Popup>
           )}
 
           {/* Site popup */}
