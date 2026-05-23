@@ -18,7 +18,7 @@ const TILESET_MDI = process.env.NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES ?
 const MINE_STATUSES = ["Past Producing Mine", "Past Producing Mine (Low Tonnage)", "Past Producing Quarry"];
 
 // Ontario centred view
-const ONTARIO = { longitude: -84.5, latitude: 48.0, zoom: 5.5 };
+const ONTARIO = { longitude: -84.5, latitude: 48.0, zoom: 6.2 };
 
 // Province colours for bedrock layer — field is PROVINCE_P, values are uppercase
 // Dataset: MRD126 Revision 1 (OGS 1:250,000 Bedrock Geology of Ontario)
@@ -274,7 +274,7 @@ export default function MapPage() {
                 type="fill"
                 // source-layer = shapefile name without extension (Mapbox convention)
                 // MRD126 Geopoly.shp → likely "Geopoly" — confirm in Studio feature inspector
-                source-layer="Geopoly"
+                source-layer="Geopoly-4krfbs"
                 paint={{
                   "fill-color": PROVINCE_COLOURS as unknown as mapboxgl.Expression,
                   "fill-opacity": 0.35,
@@ -283,7 +283,7 @@ export default function MapPage() {
               <Layer
                 id="bedrock-outline"
                 type="line"
-                source-layer="Geopoly"
+                source-layer="Geopoly-4krfbs"
                 paint={{
                   "line-color": "#78716c",
                   "line-width": 0.5,
