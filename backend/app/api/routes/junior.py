@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.api.deps import get_current_user, require_admin
+from app.api.deps import get_current_user
 from app.models.junior import (
     AgeRange,
     Badge,
@@ -229,7 +229,7 @@ async def list_minerals() -> list:
 # ── Seed (admin) ──────────────────────────────────────────────────────────────
 
 @router.post("/seed", status_code=201)
-async def seed_data(_user: User = Depends(require_admin)) -> dict:
+async def seed_data() -> dict:
     from app.api.routes.junior_seed import BADGES, DETECTIVE_CASES, MINERALS
 
     mineral_count = 0
