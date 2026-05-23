@@ -452,7 +452,11 @@ async def submit_detective_answer(
     # Reload to get updated attempts count
     history = await DetectiveCaseHistory.get(history.id)
 
-    correct = body.answer_id == case.correct_id
+    # Options are mineral names; correct_id is a mineral slug — look up the name to compare
+    correct_mineral = await JuniorMineral.find_one(JuniorMineral.mineral_id == case.correct_id)
+    correct_name = correct_mineral.name if correct_mineral else case.correct_id
+    correct = body.answer_id == correct_name
+
     card_reward: str | None = None
     new_badges: list[str] = []
 
@@ -471,7 +475,7 @@ async def submit_detective_answer(
     return {
         "correct": correct,
         "explanation": case.explanation if correct else None,
-        "correct_mineral": case.correct_id if correct else None,
+        "correct_mineral": correct_name,
         "card_reward": card_reward,
         "attempts": history.attempts if history else 1,
         "new_badges": new_badges,
