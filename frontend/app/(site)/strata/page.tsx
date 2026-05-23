@@ -131,21 +131,27 @@ export default function StrataPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="max-w-5xl mx-auto">
       {/* Hero */}
-      <div className="mb-12 text-center">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-brand-600">Digby Strata</p>
-        <h1 className="text-4xl font-extrabold text-stone-900">Ontario geology, delivered monthly.</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-stone-500">
-          Not a rock box. A time machine. Each month, a curated collection of Ontario specimens anchored
-          to a real geological event — with field cards, formation maps, and site links.
-        </p>
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <Link href="/strata/archive" className="text-sm text-brand-600 hover:text-brand-700">
-            See past boxes →
-          </Link>
+      <div className="relative overflow-hidden bg-stone-900 px-6 py-20 text-center text-white mb-12">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(202,138,4,0.2),_transparent_60%)]" />
+        <div className="relative">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-400">Digby Strata</p>
+          <h1 className="font-display mb-5 text-5xl text-white sm:text-6xl">
+            Ontario geology,<br />delivered monthly.
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg text-stone-300">
+            Not a rock box. A time machine. Each month, a curated collection of Ontario specimens anchored
+            to a real geological event — with field cards, formation maps, and site links.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <Link href="/strata/archive" className="text-sm font-medium text-brand-400 hover:text-brand-300">
+              See past boxes →
+            </Link>
+          </div>
         </div>
       </div>
+      <div className="px-4 pb-12">
 
       {stage === "tiers" && (
         <>
@@ -309,6 +315,7 @@ export default function StrataPage() {
           </Elements>
         </div>
       )}
+    </div>
     </div>
   );
 }

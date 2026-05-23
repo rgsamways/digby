@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import type { Booking, GroupMember, WaitlistEntry } from "@/lib/types";
 import { BookOpen, Calendar, Users, Clock, X } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-green-100 text-green-700",
@@ -36,7 +37,7 @@ export default function MyBookingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-900">My bookings</h1>
+        <h1 className="font-display text-3xl text-stone-900">My Bookings</h1>
         <Link href="/sites" className="btn-secondary text-sm">
           Find more sites
         </Link>
@@ -73,10 +74,12 @@ export default function MyBookingsPage() {
       {isLoading ? (
         <p className="text-stone-500">Loading…</p>
       ) : bookings.length === 0 ? (
-        <div className="card p-10 text-center">
-          <p className="mb-4 text-stone-500">You haven't made any bookings yet.</p>
-          <Link href="/sites" className="btn-primary">Browse sites</Link>
-        </div>
+        <EmptyState
+          icon="📅"
+          title="No bookings yet"
+          body="You haven't booked any sites. Find your next collecting spot below."
+          action={{ label: "Browse sites", href: "/sites" }}
+        />
       ) : (
         <div className="space-y-3">
           {bookings.map((b) => (
