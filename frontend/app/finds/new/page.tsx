@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { Camera, X } from "lucide-react";
@@ -48,6 +48,14 @@ function compressImage(file: File): Promise<{ blob: Blob; preview: string }> {
 interface ImageEntry { preview: string; blob: Blob }
 
 export default function NewFindPage() {
+  return (
+    <Suspense>
+      <NewFindForm />
+    </Suspense>
+  );
+}
+
+function NewFindForm() {
   const router = useRouter();
   const params = useSearchParams();
   const { user } = useAuthStore();
