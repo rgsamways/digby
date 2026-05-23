@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Package, ShoppingBag, LogOut, Layers, Gem } from "lucide-react";
+import { Package, ShoppingBag, LogOut, Layers, Gem, Users, MapPin, CalendarCheck, BarChart2 } from "lucide-react";
 import { isAdminAuthenticated, clearAdminToken } from "@/lib/admin";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +35,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/products", label: "Products", icon: Package },
     { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
     { href: "/admin/strata", label: "Strata", icon: Layers },
+    { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/sites", label: "Sites", icon: MapPin },
+    { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+    { href: "/admin/revenue", label: "Revenue", icon: BarChart2 },
   ];
 
   return (

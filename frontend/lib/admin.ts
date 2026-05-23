@@ -164,4 +164,123 @@ export const strataAdminApi = {
     const token = getAdminToken();
     return `${API_BASE}/api/admin/strata/shipping-labels/${boxMonth}?token=${token ?? ""}`;
   },
+
+  getBox: (month: number) =>
+    adminFetch(`/api/admin/strata/boxes/${month}`) as Promise<StrataBoxDetail>,
+
+  createBox: (data: StrataBoxFormData) =>
+    adminFetch("/api/admin/strata/boxes", { method: "POST", body: JSON.stringify(data) }) as Promise<StrataBoxDetail>,
+
+  updateBox: (month: number, data: StrataBoxFormData) =>
+    adminFetch(`/api/admin/strata/boxes/${month}`, { method: "PUT", body: JSON.stringify(data) }) as Promise<StrataBoxDetail>,
+};
+
+export interface StrataBoxDetail extends StrataBoxSummary {
+  subtitle: string;
+  field_card_text: string;
+  formation_map_url: string;
+  cover_image_url: string;
+  contents: string[];
+  site_links: { site_slug: string; site_name: string; mineral: string }[];
+  created_at: string;
+}
+
+export type StrataBoxFormData = Omit<StrataBoxDetail, "shipped_at" | "created_at">;
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+  is_verified: boolean;
+  stripe_account_enabled: boolean;
+  created_at: string;
+}
+
+export const usersAdminApi = {
+  list: (role?: string, active?: boolean) => {
+    const params = new URLSearchParams();
+    if (role) params.set("role", role);
+    if (active !== undefined) params.set("active", String(active));
+    return adminFetch(`/api/admin/users?${params}`) as Promise<AdminUser[]>;
+  },
+  setRole: (id: string, role: string) =>
+    adminFetch(`/api/admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }) as Promise<AdminUser>,
+  setStatus: (id: string, is_active: boolean) =>
+    adminFetch(`/api/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ is_active }) }) as Promise<AdminUser>,
+};
+
+// ── Sites ─────────────────────────────────────────────────────────────────────
+
+export interface AdminSite {
+  id: string;
+  name: string;
+  operator_id: string;
+  operator_name: string;
+  province: string;
+  minerals: string[];
+  price_per_person: number;
+  site_type: string;
+  is_active: boolean;
+  rating: number;
+  review_count: number;
+  created_at: string;
+}
+
+export const sitesAdminApi = {
+  list: (active?: boolean) => {
+    const params = new URLSearchParams();
+    if (active !== undefined) params.set("active", String(active));
+    return adminFetch(`/api/admin/sites?${params}`) as Promise<AdminSite[]>;
+  },
+  setStatus: (id: string, is_active: boolean) =>
+    adminFetch(`/api/admin/sites/${id}/status`, { method: "PATCH", body: JSON.stringify({ is_active }) }),
+};
+
+// ── Bookings ──────────────────────────────────────────────────────────────────
+
+export interface AdminBooking {
+  id: string;
+  site_id: string;
+  site_name: string;
+  visitor_id: string;
+  visitor_name: string;
+  date: string;
+  party_size: number;
+  total_amount: number;
+  platform_fee: number;
+  operator_payout: number;
+  status: string;
+  is_group_booking: boolean;
+  created_at: string;
+}
+
+export const bookingsAdminApi = {
+  list: (status?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    return adminFetch(`/api/admin/bookings?${params}`) as Promise<AdminBooking[]>;
+  },
+  setStatus: (id: string, status: string) =>
+    adminFetch(`/api/admin/bookings/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+};
+
+// ── Revenue ───────────────────────────────────────────────────────────────────
+
+export interface AdminRevenue {
+  booking_gmv: number;
+  booking_fee_revenue: number;
+  order_gmv: number;
+  active_subscriptions: number;
+  subscription_mrr: number;
+  total_bookings: number;
+  total_orders: number;
+  monthly: { month: string; bookings_gmv: number; fee: number; orders_gmv: number }[];
+}
+
+export const revenueAdminApi = {
+  get: () => adminFetch("/api/admin/revenue") as Promise<AdminRevenue>,
 };

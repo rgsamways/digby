@@ -10,10 +10,18 @@ from pydantic import BaseModel
 from app.api.deps import require_admin_token
 from app.core.config import settings
 from app.core.security import create_access_token
+from app.models.booking import Booking, BookingStatus
 from app.models.product import Product
 from app.models.shop_order import ShopOrder, ShopOrderStatus
-from app.models.strata import StrataBox, StrataFulfilment, StrataStatus, StrataSubscription
-from app.models.user import User
+from app.models.site import Site
+from app.models.strata import (
+    BoxSiteLink,
+    StrataBox,
+    StrataFulfilment,
+    StrataStatus,
+    StrataSubscription,
+)
+from app.models.user import User, UserRole
 
 router = APIRouter()
 
@@ -391,5 +399,352 @@ async def admin_shipping_labels_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="strata-box-{box_month}-labels.csv"'},
+        headers={"Content-Disposition": f'attachment; filename="strata-box-{box_month}-labels.csv"'},  # noqa: E501
     )
+
+
+# ── Strata box editor ─────────────────────────────────────────────────────────
+
+class BoxSiteLinkIn(BaseModel):
+    site_slug: str
+    site_name: str
+    mineral: str
+
+
+class StrataBoxIn(BaseModel):
+    month_number: int
+    theme: str
+    subtitle: str = ""
+    field_card_text: str = ""
+    formation_map_url: str = ""
+    cover_image_url: str = ""
+    contents: list[str] = []
+    site_links: list[BoxSiteLinkIn] = []
+    is_published: bool = False
+
+
+def _box_dict(b: StrataBox) -> dict:
+    return {
+        "month_number": b.month_number,
+        "theme": b.theme,
+        "subtitle": b.subtitle,
+        "field_card_text": b.field_card_text,
+        "formation_map_url": b.formation_map_url,
+        "cover_image_url": b.cover_image_url,
+        "contents": b.contents,
+        "site_links": [sl.model_dump() for sl in b.site_links],
+        "shipped_at": b.shipped_at.isoformat() if b.shipped_at else None,
+        "is_published": b.is_published,
+        "created_at": b.created_at.isoformat(),
+    }
+
+
+@router.get("/strata/boxes/{month_number}")
+async def admin_get_box(
+    month_number: int,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    box = await StrataBox.find_one(StrataBox.month_number == month_number)
+    if not box:
+        raise HTTPException(status_code=404, detail="Box not found")
+    return _box_dict(box)
+
+
+@router.post("/strata/boxes")
+async def admin_create_box(
+    body: StrataBoxIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    if await StrataBox.find_one(StrataBox.month_number == body.month_number):
+        raise HTTPException(status_code=409, detail="Box month already exists")
+    box = StrataBox(
+        month_number=body.month_number,
+        theme=body.theme,
+        subtitle=body.subtitle,
+        field_card_text=body.field_card_text,
+        formation_map_url=body.formation_map_url,
+        cover_image_url=body.cover_image_url,
+        contents=body.contents,
+        site_links=[BoxSiteLink(**sl.model_dump()) for sl in body.site_links],
+        is_published=body.is_published,
+    )
+    await box.insert()
+    return _box_dict(box)
+
+
+@router.put("/strata/boxes/{month_number}")
+async def admin_update_box(
+    month_number: int,
+    body: StrataBoxIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    box = await StrataBox.find_one(StrataBox.month_number == month_number)
+    if not box:
+        raise HTTPException(status_code=404, detail="Box not found")
+    box.theme = body.theme
+    box.subtitle = body.subtitle
+    box.field_card_text = body.field_card_text
+    box.formation_map_url = body.formation_map_url
+    box.cover_image_url = body.cover_image_url
+    box.contents = body.contents
+    box.site_links = [BoxSiteLink(**sl.model_dump()) for sl in body.site_links]
+    box.is_published = body.is_published
+    await box.save()
+    return _box_dict(box)
+
+
+# ── Users ─────────────────────────────────────────────────────────────────────
+
+def _user_dict(u: User) -> dict:
+    return {
+        "id": str(u.id),
+        "email": u.email,
+        "name": u.name,
+        "role": u.role,
+        "is_active": u.is_active,
+        "is_verified": u.is_verified,
+        "stripe_account_enabled": u.stripe_account_enabled,
+        "created_at": u.created_at.isoformat(),
+    }
+
+
+@router.get("/users")
+async def admin_list_users(
+    role: str | None = None,
+    active: bool | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    query: dict = {}
+    if role:
+        query["role"] = role
+    if active is not None:
+        query["is_active"] = active
+    users = await User.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
+    return [_user_dict(u) for u in users]
+
+
+class UserRoleIn(BaseModel):
+    role: str
+
+
+@router.patch("/users/{user_id}/role")
+async def admin_set_user_role(
+    user_id: str,
+    body: UserRoleIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        user = await User.get(PydanticObjectId(user_id))
+    except Exception:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user.role = UserRole(body.role)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
+    await user.save()
+    return _user_dict(user)
+
+
+class UserStatusIn(BaseModel):
+    is_active: bool
+
+
+@router.patch("/users/{user_id}/status")
+async def admin_set_user_status(
+    user_id: str,
+    body: UserStatusIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        user = await User.get(PydanticObjectId(user_id))
+    except Exception:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_active = body.is_active
+    await user.save()
+    return _user_dict(user)
+
+
+# ── Sites (all) ───────────────────────────────────────────────────────────────
+
+async def _site_dict(s: Site) -> dict:
+    operator_name = ""
+    try:
+        op = await User.get(s.operator_id)
+        if op:
+            operator_name = op.name
+    except Exception:
+        pass
+    return {
+        "id": str(s.id),
+        "name": s.name,
+        "operator_id": str(s.operator_id),
+        "operator_name": operator_name,
+        "province": s.province,
+        "minerals": s.minerals,
+        "price_per_person": s.price_per_person,
+        "site_type": s.site_type,
+        "is_active": s.is_active,
+        "rating": s.rating,
+        "review_count": s.review_count,
+        "created_at": s.created_at.isoformat(),
+    }
+
+
+@router.get("/sites")
+async def admin_list_sites(
+    active: bool | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    query: dict = {}
+    if active is not None:
+        query["is_active"] = active
+    sites = await Site.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
+    return [await _site_dict(s) for s in sites]
+
+
+class SiteStatusIn(BaseModel):
+    is_active: bool
+
+
+@router.patch("/sites/{site_id}/status")
+async def admin_set_site_status(
+    site_id: str,
+    body: SiteStatusIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        site = await Site.get(PydanticObjectId(site_id))
+    except Exception:
+        raise HTTPException(status_code=404, detail="Site not found")
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    site.is_active = body.is_active
+    await site.save()
+    return {"ok": True, "is_active": site.is_active}
+
+
+# ── Bookings (all) ────────────────────────────────────────────────────────────
+
+async def _booking_dict(b: Booking) -> dict:
+    visitor_name, site_name = "", ""
+    try:
+        visitor = await User.get(b.visitor_id)
+        if visitor:
+            visitor_name = visitor.name
+    except Exception:
+        pass
+    try:
+        site = await Site.get(b.site_id)
+        if site:
+            site_name = site.name
+    except Exception:
+        pass
+    return {
+        "id": str(b.id),
+        "site_id": str(b.site_id),
+        "site_name": site_name,
+        "visitor_id": str(b.visitor_id),
+        "visitor_name": visitor_name,
+        "date": b.date.isoformat(),
+        "party_size": b.party_size,
+        "total_amount": b.total_amount,
+        "platform_fee": b.platform_fee,
+        "operator_payout": b.operator_payout,
+        "status": b.status,
+        "is_group_booking": b.is_group_booking,
+        "created_at": b.created_at.isoformat(),
+    }
+
+
+@router.get("/bookings")
+async def admin_list_bookings(
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    query: dict = {}
+    if status:
+        query["status"] = status
+    bookings = await Booking.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
+    return [await _booking_dict(b) for b in bookings]
+
+
+class BookingStatusIn(BaseModel):
+    status: str
+
+
+@router.patch("/bookings/{booking_id}/status")
+async def admin_set_booking_status(
+    booking_id: str,
+    body: BookingStatusIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        booking = await Booking.get(PydanticObjectId(booking_id))
+    except Exception:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    try:
+        booking.status = BookingStatus(body.status)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {body.status}")
+    await booking.save()
+    return {"ok": True, "status": booking.status}
+
+
+# ── Revenue ───────────────────────────────────────────────────────────────────
+
+@router.get("/revenue")
+async def admin_revenue(
+    _: None = Depends(require_admin_token),
+) -> dict:
+    bookings = await Booking.find({"status": {"$in": ["confirmed", "completed"]}}).to_list()
+    orders = await ShopOrder.find({"status": {"$ne": ShopOrderStatus.CANCELLED}}).to_list()
+    subs = await StrataSubscription.find({"status": {"$ne": StrataStatus.CANCELLED}}).to_list()
+
+    booking_gmv = sum(b.total_amount for b in bookings)
+    booking_fee = sum(b.platform_fee for b in bookings)
+    order_gmv = sum(o.total / 100 for o in orders)
+    active_subs = sum(1 for s in subs if s.status == StrataStatus.ACTIVE)
+    sub_mrr = 0.0
+    for s in subs:
+        if s.status != StrataStatus.ACTIVE:
+            continue
+        from app.models.strata import TIER_MONTHLY_CENTS
+        sub_mrr += TIER_MONTHLY_CENTS.get(s.tier, 0) / 100
+
+    # Bookings by month (last 6 months of completed/confirmed)
+    from collections import defaultdict
+    monthly: dict[str, dict] = defaultdict(
+        lambda: {"bookings_gmv": 0.0, "fee": 0.0, "orders_gmv": 0.0}
+    )
+    for b in bookings:
+        key = b.created_at.strftime("%Y-%m")
+        monthly[key]["bookings_gmv"] += b.total_amount
+        monthly[key]["fee"] += b.platform_fee
+    for o in orders:
+        key = o.created_at.strftime("%Y-%m")
+        monthly[key]["orders_gmv"] += o.total / 100
+
+    sorted_monthly = [{"month": k, **v} for k, v in sorted(monthly.items())[-6:]]
+
+    return {
+        "booking_gmv": round(booking_gmv, 2),
+        "booking_fee_revenue": round(booking_fee, 2),
+        "order_gmv": round(order_gmv, 2),
+        "active_subscriptions": active_subs,
+        "subscription_mrr": round(sub_mrr, 2),
+        "total_bookings": len(bookings),
+        "total_orders": len(orders),
+        "monthly": sorted_monthly,
+    }

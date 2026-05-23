@@ -60,9 +60,14 @@ export default function AdminStrataPage() {
               <option key={s} value={s}>{s || "All statuses"}</option>
             ))}
           </select>
-          <Link href="/admin/strata/fulfilment" className="btn-primary text-sm">
-            Box Fulfilment →
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/admin/strata/boxes" className="btn-secondary text-sm">
+              Box Editor →
+            </Link>
+            <Link href="/admin/strata/fulfilment" className="btn-primary text-sm">
+              Fulfilment →
+            </Link>
+          </div>
         </div>
       </div>
 
