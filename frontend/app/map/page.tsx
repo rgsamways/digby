@@ -300,7 +300,7 @@ export default function MapPage() {
                 <Layer
                   id="omi-occurrences"
                   type="circle"
-                  source-layer="OMI"
+                  source-layer="OMI-67byij"
                   filter={occurrenceFilter}
                   paint={{
                     "circle-radius": 5,
@@ -315,7 +315,7 @@ export default function MapPage() {
                 <Layer
                   id="omi-mines"
                   type="circle"
-                  source-layer="OMI"
+                  source-layer="OMI-67byij"
                   filter={mineFilter}
                   paint={{
                     "circle-radius": 4,
