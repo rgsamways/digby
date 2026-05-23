@@ -11,6 +11,15 @@ from app.models.find import Find, FindSave
 from app.models.guide_booking import GuideBooking
 from app.models.guide_review import GuideReview
 from app.models.hunt_progress import HuntProgress
+from app.models.junior import (
+    Badge,
+    BadgeState,
+    DetectiveCase,
+    DetectiveCaseHistory,
+    JuniorCollection,
+    JuniorMineral,
+    JuniorProfile,
+)
 from app.models.partner_business import PartnerBusiness
 from app.models.passport_stamp import PassportStamp
 from app.models.product import Product
@@ -44,6 +53,8 @@ async def init_db() -> None:
             SiteQuestion, FieldGuide, WaitlistEntry, Product, ShopOrder,
             StrataSubscription, StrataBox, CollectorCardCode,
             Find, FindSave,
+            JuniorProfile, JuniorMineral, JuniorCollection,
+            Badge, BadgeState, DetectiveCase, DetectiveCaseHistory,
         ],
     )
 

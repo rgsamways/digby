@@ -25,6 +25,7 @@ const myDigbyLinks = [
   { href: "/passport", label: "My Passport" },
   { href: "/diary", label: "Trip Journal" },
   { href: "/finds/my", label: "Find Journal" },
+  { href: "/junior", label: "Junior Club 🪨" },
 ];
 
 export function Navbar() {

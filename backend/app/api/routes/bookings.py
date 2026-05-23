@@ -10,6 +10,7 @@ from app.api.deps import get_current_user, require_operator
 from app.core.config import settings
 from app.models.availability import Availability
 from app.models.booking import Booking, BookingStatus, GroupMember
+from app.models.junior import JuniorProfile
 from app.models.passport_stamp import PassportStamp
 from app.models.site import Site
 from app.models.user import User
@@ -262,6 +263,15 @@ async def complete_booking(
         await stamp.insert()
 
     await booking.set({Booking.status: BookingStatus.COMPLETED})
+
+    # Award junior booking badge to all junior profiles under the visitor account
+    visitor_id = str(booking.visitor_id)
+    junior_profiles = await JuniorProfile.find(JuniorProfile.parent_id == visitor_id).to_list()
+    if junior_profiles:
+        from app.api.routes.junior import award_booking_badge
+        for jp in junior_profiles:
+            await award_booking_badge(visitor_id, str(jp.id))
+
     return {"status": "completed"}
 
 
