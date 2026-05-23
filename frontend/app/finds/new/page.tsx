@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { Camera, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -49,18 +49,19 @@ interface ImageEntry { preview: string; blob: Blob }
 
 export default function NewFindPage() {
   const router = useRouter();
+  const params = useSearchParams();
   const { user } = useAuthStore();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [mineralName, setMineralName] = useState("");
+  const [mineralName, setMineralName] = useState(params.get("mineral") ?? "");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(params.get("notes") ?? "");
   const [images, setImages] = useState<ImageEntry[]>([]);
-  const [hostRock, setHostRock] = useState("");
-  const [province, setProvince] = useState("");
+  const [hostRock, setHostRock] = useState(params.get("host_rock") ?? "");
+  const [province, setProvince] = useState(params.get("province") ?? "");
   const [formation, setFormation] = useState("");
   const [quality, setQuality] = useState("");
-  const [verification, setVerification] = useState("unverified");
+  const [verification, setVerification] = useState(params.get("verification") ?? "unverified");
   const [siteName, setSiteName] = useState("");
   const [gpsLat, setGpsLat] = useState("");
   const [gpsLng, setGpsLng] = useState("");
@@ -133,7 +134,12 @@ export default function NewFindPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-extrabold text-stone-900 mb-8">Log a Find</h1>
+      <h1 className="text-2xl font-extrabold text-stone-900 mb-2">Log a Find</h1>
+      {params.get("mineral") && (
+        <p className="mb-6 text-sm text-brand-700 bg-brand-50 rounded-lg px-3 py-2 border border-brand-100">
+          Pre-filled from AI Mineral ID — review and add any missing details before saving.
+        </p>
+      )}
 
       <div className="space-y-5">
         {/* Mineral + date */}

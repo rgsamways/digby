@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { AlertCircle, Camera, FlaskConical, Loader, Sparkles, X, Zap } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, BookOpen, Camera, FlaskConical, Loader, Sparkles, X, Zap } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import type { MineralIdResult } from "@/lib/types";
 
@@ -240,13 +241,33 @@ export default function MineralIdPage() {
         </div>
       )}
 
-      {result && <ResultCard result={result} />}
+      {result && <ResultCard result={result} hostRock={hostRock} province={province} />}
     </div>
   );
 }
 
-function ResultCard({ result }: { result: MineralIdResult }) {
+function ResultCard({
+  result,
+  hostRock,
+  province,
+}: {
+  result: MineralIdResult;
+  hostRock: string;
+  province: string;
+}) {
   const [showPhysical, setShowPhysical] = useState(false);
+
+  const logParams = new URLSearchParams({
+    mineral: result.identified_mineral,
+    verification: "ai_likely",
+    notes: result.confidence_reason,
+    ...(hostRock ? { host_rock: hostRock } : {}),
+    ...(province && province !== "Unknown"
+      ? { province }
+      : result.ontario_context.province
+      ? { province: result.ontario_context.province }
+      : {}),
+  });
 
   return (
     <div className="mt-6 space-y-4">
@@ -259,6 +280,13 @@ function ResultCard({ result }: { result: MineralIdResult }) {
           </span>
         </div>
         <p className="text-sm text-stone-600">{result.confidence_reason}</p>
+        <Link
+          href={`/finds/new?${logParams.toString()}`}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          Log to Find Journal
+        </Link>
       </div>
 
       {/* Visual clues */}
