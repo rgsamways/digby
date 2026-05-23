@@ -145,7 +145,10 @@ export default function MapPage() {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const siteFeatures = map.queryRenderedFeatures(e.point, { layers: ["digby-sites-circle"] });
+    const siteLayerExists = map.getLayer("digby-sites-circle") !== undefined;
+    const siteFeatures = siteLayerExists
+      ? map.queryRenderedFeatures(e.point, { layers: ["digby-sites-circle"] })
+      : [];
     if (siteFeatures.length > 0 && siteFeatures[0].properties) {
       const props = siteFeatures[0].properties;
       const coords = (siteFeatures[0].geometry as GeoJSON.Point).coordinates as [number, number];
