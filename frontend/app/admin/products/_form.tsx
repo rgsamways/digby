@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
-import { adminApi, type AdminProduct, type ProductFormData } from "@/lib/admin";
+import { Camera, Loader, Plus, X } from "lucide-react";
+import { adminApi, getAdminToken, type AdminProduct, type ProductFormData } from "@/lib/admin";
 
 const CATEGORIES = [
   { value: "get-started", label: "Get Started" },
@@ -59,7 +59,9 @@ export default function ProductForm({ product }: Props) {
   const [relInput, setRelInput] = useState("");
   const [siteInput, setSiteInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof ProductFormData>(key: K, value: ProductFormData[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -78,6 +80,29 @@ export default function ProductForm({ product }: Props) {
 
   function removeItem(field: "tags" | "related_products" | "site_recommendations", index: number) {
     setForm((f) => ({ ...f, [field]: f[field].filter((_, i) => i !== index) }));
+  }
+
+  async function handleImageFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setError("");
+    const currentImages = form.images;
+    try {
+      const fd = new FormData();
+      Array.from(files).slice(0, 8).forEach((f) => fd.append("files", f));
+      const token = getAdminToken();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/uploads/images`,
+        { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd }
+      );
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json() as { urls: string[] };
+      set("images", [...currentImages, ...data.urls]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -218,12 +243,50 @@ export default function ProductForm({ product }: Props) {
       </div>
 
       {/* Images */}
-      <div className="card p-6 space-y-2">
+      <div className="card p-6 space-y-3">
         <h2 className="font-semibold text-stone-800">Images</h2>
-        <p className="text-sm text-stone-400">
-          {/* TODO: wire up Cloudflare R2 or S3 image upload once storage is decided */}
-          Image upload not yet configured. Add image URLs manually below.
-        </p>
+
+        {/* Thumbnail previews */}
+        {form.images.length > 0 && (
+          <div className="grid grid-cols-4 gap-2">
+            {form.images.map((url, i) => (
+              <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-stone-200 bg-stone-50">
+                <img src={url} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => set("images", form.images.filter((_, j) => j !== i))}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 group-hover:opacity-100 transition"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload button */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => imgInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-stone-300 px-4 py-2 text-sm text-stone-600 hover:border-brand-400 hover:text-brand-600 transition disabled:opacity-50"
+          >
+            {uploading ? <Loader className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            {uploading ? "Uploading…" : "Upload images"}
+          </button>
+          <span className="text-xs text-stone-400">or paste URLs below</span>
+        </div>
+        <input
+          ref={imgInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => handleImageFiles(e.target.files)}
+        />
+
+        {/* Manual URL inputs */}
         {form.images.map((url, i) => (
           <div key={i} className="flex items-center gap-2">
             <input
@@ -245,7 +308,7 @@ export default function ProductForm({ product }: Props) {
           onClick={() => set("images", [...form.images, ""])}
           className="flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
         >
-          <Plus className="h-3.5 w-3.5" /> Add URL
+          <Plus className="h-3.5 w-3.5" /> Add URL manually
         </button>
       </div>
 
