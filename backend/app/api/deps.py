@@ -53,10 +53,14 @@ async def get_current_user_optional(
 
 
 async def require_admin_token(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_optional),
+    token: str | None = None,
 ) -> None:
+    raw = credentials.credentials if credentials else token
+    if not raw:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
-        payload = decode_token(credentials.credentials)
+        payload = decode_token(raw)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     if payload.get("role") != "admin":

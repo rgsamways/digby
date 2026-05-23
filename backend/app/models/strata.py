@@ -89,6 +89,21 @@ class StrataBox(Document):
         ]
 
 
+class StrataFulfilment(Document):
+    subscription_id: str
+    box_month: int
+    shipped_at: datetime | None = None
+    tracking_number: str = ""
+    created_at: datetime = datetime.now(UTC)
+
+    class Settings:
+        name = "strata_fulfilment"
+        indexes = [
+            IndexModel([("subscription_id", ASCENDING), ("box_month", ASCENDING)], unique=True),
+            IndexModel([("box_month", ASCENDING)]),
+        ]
+
+
 class CollectorCardCode(Document):
     code: str
     mineral_id: str = ""

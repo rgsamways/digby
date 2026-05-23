@@ -109,3 +109,59 @@ export interface AdminOrder {
 }
 
 export type ProductFormData = Omit<AdminProduct, "id" | "created_at" | "updated_at">;
+
+// ── Strata ────────────────────────────────────────────────────────────────────
+
+export interface StrataSubscriber {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  tier: string;
+  billing_frequency: string;
+  status: string;
+  shipping_address: Record<string, string>;
+  is_gift: boolean;
+  current_period_end: string | null;
+  created_at: string;
+}
+
+export interface StrataFulfilmentRow extends StrataSubscriber {
+  shipped: boolean;
+  shipped_at: string | null;
+  tracking_number: string;
+}
+
+export interface StrataBoxSummary {
+  month_number: number;
+  theme: string;
+  is_published: boolean;
+  shipped_at: string | null;
+}
+
+export const strataAdminApi = {
+  listSubscribers: (status?: string) =>
+    adminFetch(`/api/admin/strata/subscribers${status ? `?status=${status}` : ""}`) as Promise<StrataSubscriber[]>,
+
+  listBoxes: () =>
+    adminFetch("/api/admin/strata/boxes") as Promise<StrataBoxSummary[]>,
+
+  getFulfilment: (boxMonth: number) =>
+    adminFetch(`/api/admin/strata/fulfilment/${boxMonth}`) as Promise<StrataFulfilmentRow[]>,
+
+  markShipped: (boxMonth: number, subscriptionId: string, trackingNumber = "") =>
+    adminFetch(`/api/admin/strata/fulfilment/${boxMonth}/${subscriptionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tracking_number: trackingNumber }),
+    }),
+
+  unmarkShipped: (boxMonth: number, subscriptionId: string) =>
+    adminFetch(`/api/admin/strata/fulfilment/${boxMonth}/${subscriptionId}`, {
+      method: "DELETE",
+    }),
+
+  shippingLabelsUrl: (boxMonth: number) => {
+    const token = getAdminToken();
+    return `${API_BASE}/api/admin/strata/shipping-labels/${boxMonth}?token=${token ?? ""}`;
+  },
+};

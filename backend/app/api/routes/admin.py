@@ -1,7 +1,10 @@
+import csv
+import io
 from datetime import UTC, datetime
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.api.deps import require_admin_token
@@ -9,6 +12,7 @@ from app.core.config import settings
 from app.core.security import create_access_token
 from app.models.product import Product
 from app.models.shop_order import ShopOrder, ShopOrderStatus
+from app.models.strata import StrataBox, StrataFulfilment, StrataStatus, StrataSubscription
 from app.models.user import User
 
 router = APIRouter()
@@ -217,3 +221,175 @@ async def admin_update_order_status(
         order.tracking_number = body.tracking_number
     await order.save()
     return {"ok": True, "status": order.status}
+
+
+# ── Strata ────────────────────────────────────────────────────────────────────
+
+async def _enrich_sub(s: StrataSubscription) -> dict:
+    user_name, user_email = "", ""
+    try:
+        user = await User.get(PydanticObjectId(s.user_id))
+        if user:
+            user_name = user.name
+            user_email = user.email or ""
+    except Exception:
+        pass
+    return {
+        "id": str(s.id),
+        "user_id": s.user_id,
+        "user_name": user_name,
+        "user_email": user_email,
+        "tier": s.tier,
+        "billing_frequency": s.billing_frequency,
+        "status": s.status,
+        "shipping_address": s.shipping_address,
+        "is_gift": s.is_gift,
+        "current_period_end": s.current_period_end.isoformat() if s.current_period_end else None,
+        "created_at": s.created_at.isoformat(),
+    }
+
+
+@router.get("/strata/subscribers")
+async def admin_strata_subscribers(
+    status: str | None = None,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    query: dict = {"status": {"$ne": StrataStatus.CANCELLED}} if not status else {"status": status}
+    subs = await StrataSubscription.find(query).sort("-created_at").to_list()
+    return [await _enrich_sub(s) for s in subs]
+
+
+@router.get("/strata/boxes")
+async def admin_strata_boxes(
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    boxes = await StrataBox.find().sort("month_number").to_list()
+    return [
+        {
+            "month_number": b.month_number,
+            "theme": b.theme,
+            "is_published": b.is_published,
+            "shipped_at": b.shipped_at.isoformat() if b.shipped_at else None,
+        }
+        for b in boxes
+    ]
+
+
+@router.get("/strata/fulfilment/{box_month}")
+async def admin_strata_fulfilment(
+    box_month: int,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    subs = await StrataSubscription.find(
+        {"status": {"$ne": StrataStatus.CANCELLED}}
+    ).sort("-created_at").to_list()
+    fulfilments = await StrataFulfilment.find(StrataFulfilment.box_month == box_month).to_list()
+    ful_map = {f.subscription_id: f for f in fulfilments}
+
+    result = []
+    for s in subs:
+        sub_id = str(s.id)
+        ful = ful_map.get(sub_id)
+        row = await _enrich_sub(s)
+        row["shipped"] = ful is not None and ful.shipped_at is not None
+        row["shipped_at"] = ful.shipped_at.isoformat() if ful and ful.shipped_at else None
+        row["tracking_number"] = ful.tracking_number if ful else ""
+        result.append(row)
+    return result
+
+
+class ShipIn(BaseModel):
+    tracking_number: str = ""
+
+
+@router.patch("/strata/fulfilment/{box_month}/{subscription_id}")
+async def admin_mark_shipped(
+    box_month: int,
+    subscription_id: str,
+    body: ShipIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    existing = await StrataFulfilment.find_one(
+        StrataFulfilment.subscription_id == subscription_id,
+        StrataFulfilment.box_month == box_month,
+    )
+    if existing:
+        existing.shipped_at = datetime.now(UTC)
+        existing.tracking_number = body.tracking_number
+        await existing.save()
+    else:
+        await StrataFulfilment(
+            subscription_id=subscription_id,
+            box_month=box_month,
+            shipped_at=datetime.now(UTC),
+            tracking_number=body.tracking_number,
+        ).insert()
+    return {"ok": True}
+
+
+@router.delete("/strata/fulfilment/{box_month}/{subscription_id}")
+async def admin_unmark_shipped(
+    box_month: int,
+    subscription_id: str,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    existing = await StrataFulfilment.find_one(
+        StrataFulfilment.subscription_id == subscription_id,
+        StrataFulfilment.box_month == box_month,
+    )
+    if existing:
+        existing.shipped_at = None
+        existing.tracking_number = ""
+        await existing.save()
+    return {"ok": True}
+
+
+@router.get("/strata/shipping-labels/{box_month}")
+async def admin_shipping_labels_csv(
+    box_month: int,
+    _: None = Depends(require_admin_token),
+) -> StreamingResponse:
+    subs = await StrataSubscription.find(
+        {"status": {"$ne": StrataStatus.CANCELLED}}
+    ).to_list()
+    fulfilments = await StrataFulfilment.find(
+        StrataFulfilment.box_month == box_month,
+        StrataFulfilment.shipped_at != None,  # noqa: E711
+    ).to_list()
+    shipped_ids = {f.subscription_id for f in fulfilments}
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        "name", "email", "tier", "line1", "line2", "city", "province", "postal_code", "country",
+    ])
+    writer.writeheader()
+    for s in subs:
+        if str(s.id) in shipped_ids:
+            continue
+        user_name, user_email = "", ""
+        try:
+            user = await User.get(PydanticObjectId(s.user_id))
+            if user:
+                user_name = user.name
+                user_email = user.email or ""
+        except Exception:
+            pass
+        addr = s.shipping_address
+        writer.writerow({
+            "name": addr.get("name") or user_name,
+            "email": user_email,
+            "tier": s.tier,
+            "line1": addr.get("line1", ""),
+            "line2": addr.get("line2", ""),
+            "city": addr.get("city", ""),
+            "province": addr.get("province", ""),
+            "postal_code": addr.get("postal_code", ""),
+            "country": addr.get("country", "CA"),
+        })
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="strata-box-{box_month}-labels.csv"'},
+    )
