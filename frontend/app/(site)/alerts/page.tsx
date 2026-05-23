@@ -58,13 +58,10 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-          <Bell className="h-6 w-6 text-brand-600" />
-        </div>
-        <h1 className="text-2xl font-extrabold text-stone-900">Seasonal Dig Alerts</h1>
-        <p className="mt-1 text-stone-500">
+    <div className="mx-auto max-w-2xl px-4 py-10">
+      <div className="mb-8">
+        <h1 className="font-display text-4xl text-stone-900">Seasonal Dig Alerts</h1>
+        <p className="mt-2 text-stone-400">
           Get notified when your minerals are in peak season at Ontario sites.
         </p>
       </div>

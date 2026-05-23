@@ -129,12 +129,9 @@ export default function MineralIdPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-          <Camera className="h-6 w-6 text-brand-600" />
-        </div>
-        <h1 className="text-2xl font-extrabold text-stone-900">AI Mineral ID</h1>
-        <p className="mt-1 text-stone-500">
+      <div className="mb-8">
+        <h1 className="font-display text-4xl text-stone-900">AI Mineral ID</h1>
+        <p className="mt-2 text-stone-400">
           Upload up to 4 photos of your specimen for the most accurate identification.
         </p>
         {!user && (

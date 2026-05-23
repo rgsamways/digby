@@ -136,7 +136,7 @@ export default function CartPage() {
         <ArrowLeft className="h-4 w-4" /> Continue Shopping
       </Link>
 
-      <h1 className="mb-8 text-2xl font-bold text-stone-900">
+      <h1 className="mb-8 font-display text-4xl text-stone-900">
         {stage === "payment" ? "Payment" : stage === "address" ? "Shipping Address" : "Your Cart"}
       </h1>
 

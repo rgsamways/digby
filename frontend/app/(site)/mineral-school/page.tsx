@@ -31,15 +31,10 @@ export default function MineralSchoolPage() {
   const allMinerals = Array.from(new Set(guides.flatMap((g) => g.mineral_tags))).sort();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100">
-            <BookOpen className="h-5 w-5 text-brand-600" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-stone-900">Mineral School</h1>
-        </div>
-        <p className="text-stone-500">
+        <h1 className="font-display text-4xl text-stone-900">Mineral School</h1>
+        <p className="mt-2 text-stone-400">
           Field guides for rockhounds — identification, formation, and collecting tips.
         </p>
       </div>

@@ -56,49 +56,40 @@ export default function PublicPassportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-600">
-          <Gem className="h-8 w-8 text-white" />
-        </div>
-        <h1 className="text-3xl font-extrabold text-stone-900">
-          {data.visitor_name}&apos;s Rockhound Passport
-        </h1>
-        <p className="mt-1 text-stone-500">
-          {data.total_visits} site{data.total_visits !== 1 ? "s" : ""} visited
-        </p>
+    <div className="mx-auto max-w-3xl px-4 py-12">
 
-        <div className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3">
-          <Star className="h-5 w-5 fill-brand-300 text-brand-300" />
-          <span className="text-2xl font-extrabold text-white">
-            {data.total_points.toLocaleString()}
-          </span>
-          <span className="text-sm font-medium text-brand-200">pts</span>
+      {/* Dark hero — matches /passport */}
+      <div className="relative mb-10 overflow-hidden rounded-2xl bg-stone-900 px-8 py-8 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(202,138,4,0.25),_transparent_60%)]" />
+        <div className="relative flex flex-wrap items-start justify-between gap-6">
+          <div>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">Rockhound Passport</p>
+            <h1 className="font-display text-3xl text-white">{data.visitor_name}</h1>
+            <p className="mt-2 text-sm text-stone-400">
+              {data.total_visits} visit{data.total_visits !== 1 ? "s" : ""}
+              {" · "}{data.unique_minerals.length} mineral{data.unique_minerals.length !== 1 ? "s" : ""}
+              {data.hunt_completions > 0 && ` · ${data.hunt_completions} hunt${data.hunt_completions !== 1 ? "s" : ""}`}
+              {data.diary_entries > 0 && ` · ${data.diary_entries} journal entr${data.diary_entries !== 1 ? "ies" : "y"}`}
+            </p>
+          </div>
+          <div className="rounded-full bg-amber-400 px-6 py-3 text-center shadow-[0_4px_16px_rgba(202,138,4,0.4)]">
+            <p className="font-mono text-2xl font-bold leading-none text-stone-900">{data.total_points.toLocaleString()}</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-stone-700">points</p>
+          </div>
         </div>
-
-        {data.total_points > 0 && (
-          <p className="mt-2 text-xs text-stone-400">
-            {data.total_visits} visit{data.total_visits !== 1 ? "s" : ""}
-            {" · "}{data.unique_minerals.length} mineral{data.unique_minerals.length !== 1 ? "s" : ""}
-            {data.hunt_completions > 0 && ` · ${data.hunt_completions} hunt${data.hunt_completions !== 1 ? "s" : ""}`}
-            {data.diary_entries > 0 && ` · ${data.diary_entries} journal entr${data.diary_entries !== 1 ? "ies" : "y"}`}
-            {data.quiz_sessions > 0 && ` · ${data.quiz_sessions} quiz${data.quiz_sessions !== 1 ? "zes" : ""}`}
-          </p>
-        )}
       </div>
 
       {/* Badges */}
       {data.badges.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold text-stone-800">Badges Earned</h2>
+        <section className="mb-10">
+          <h2 className="mb-4 font-display text-xl text-stone-900">Badges</h2>
           <div className="flex flex-wrap gap-3">
             {data.badges.map((badge) => (
-              <div key={badge.id} className="card flex items-center gap-3 px-4 py-3">
+              <div key={badge.id} className="flex items-center gap-3 rounded-xl border border-amber-200/60 bg-amber-50 px-4 py-3">
                 <span className="text-2xl">{BADGE_ICONS[badge.id] ?? "🎖️"}</span>
                 <div>
                   <p className="font-semibold text-stone-900">{badge.name}</p>
-                  <p className="text-xs text-stone-500">{badge.description}</p>
+                  <p className="text-xs text-stone-400">{badge.description}</p>
                 </div>
               </div>
             ))}
@@ -108,14 +99,11 @@ export default function PublicPassportPage() {
 
       {/* Minerals */}
       {data.unique_minerals.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-stone-800">Minerals Found</h2>
+        <section className="mb-10">
+          <h2 className="mb-4 font-display text-xl text-stone-900">Minerals Collected</h2>
           <div className="flex flex-wrap gap-2">
             {data.unique_minerals.map((m) => (
-              <span
-                key={m}
-                className="rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-700"
-              >
+              <span key={m} className="rounded-full bg-stone-100 px-3 py-1 text-sm font-medium capitalize text-stone-600">
                 {m}
               </span>
             ))}
@@ -125,56 +113,49 @@ export default function PublicPassportPage() {
 
       {/* Stamps */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-stone-800">Site Stamps</h2>
+        <h2 className="mb-4 font-display text-xl text-stone-900">
+          Stamps
+          {data.stamps.length > 0 && <span className="ml-2 font-sans text-sm font-normal text-stone-400">{data.stamps.length}</span>}
+        </h2>
         {data.stamps.length === 0 ? (
-          <p className="text-stone-500">No stamps yet.</p>
+          <p className="text-stone-400">No stamps yet.</p>
         ) : (
-          <div className="space-y-3">
-            {data.stamps.map((stamp) => (
-              <div key={stamp.id} className="card flex items-start gap-4 p-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xl text-white">
-                  🪨
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-stone-900">{stamp.site_name}</p>
-                  <p className="text-sm text-stone-500">
-                    {new Date(stamp.visited_at).toLocaleDateString("en-CA", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {data.stamps.map((stamp) => {
+              const date  = new Date(stamp.visited_at);
+              const month = date.toLocaleString("en-CA", { month: "short" }).toUpperCase();
+              return (
+                <div key={stamp.id} className="relative overflow-hidden rounded-lg border-2 border-stone-300/50 bg-[#FAFAF7] p-4 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)]">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="text-center">
+                      <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-stone-400">{month}</p>
+                      <p className="font-display text-3xl leading-none text-stone-800">{date.getDate()}</p>
+                      <p className="font-mono text-[10px] text-stone-400">{date.getFullYear()}</p>
+                    </div>
+                    <span className="select-none text-2xl opacity-15">🪨</span>
+                  </div>
+                  <p className="mb-2 font-semibold leading-snug text-stone-900 line-clamp-2">{stamp.site_name}</p>
                   {stamp.minerals_found.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {stamp.minerals_found.map((m) => (
-                        <span
-                          key={m}
-                          className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600"
-                        >
-                          {m}
-                        </span>
+                        <span key={m} className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-stone-600">{m}</span>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
       {/* CTA */}
-      <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6 text-center">
-        <Trophy className="mx-auto mb-2 h-8 w-8 text-brand-600" />
-        <p className="font-semibold text-stone-900">
-          Want your own Rockhound Passport?
-        </p>
-        <p className="mt-1 text-sm text-stone-500">
-          Book a dig, earn stamps, and track every mineral you find.
-        </p>
-        <div className="mt-4 flex justify-center gap-3">
+      <div className="rounded-2xl bg-stone-900 p-8 text-center">
+        <p className="font-display text-xl text-white">Want your own Rockhound Passport?</p>
+        <p className="mt-2 text-sm text-stone-400">Book a dig, earn stamps, and track every mineral you find.</p>
+        <div className="mt-6 flex justify-center gap-3">
           <Link href="/sites" className="btn-primary">Browse sites</Link>
-          <Link href="/register" className="btn-secondary">Sign up free</Link>
+          <Link href="/register" className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-stone-500 hover:text-white">Sign up free</Link>
         </div>
       </div>
     </div>

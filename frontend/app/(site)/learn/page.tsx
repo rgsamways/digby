@@ -6,12 +6,11 @@ export const metadata = { title: "Learn — Digby" };
 
 export default function LearnPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl font-extrabold text-stone-900">GIS Education</h1>
-        <p className="mt-3 text-stone-500 max-w-xl mx-auto">
-          Two tracks. One goal: understand Ontario&apos;s geology well enough to find your own
-          minerals.
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="mb-10">
+        <h1 className="font-display text-4xl text-stone-900">GIS Education</h1>
+        <p className="mt-2 text-stone-400">
+          Two tracks. One goal: understand Ontario&apos;s geology well enough to find your own minerals.
         </p>
       </div>
 

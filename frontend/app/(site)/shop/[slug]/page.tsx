@@ -100,7 +100,7 @@ export default function ProductPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">
               {product.subcategory || product.category}
             </p>
-            <h1 className="mt-1 text-3xl font-extrabold text-stone-900">{product.name}</h1>
+            <h1 className="mt-1 font-display text-4xl text-stone-900">{product.name}</h1>
           </div>
 
           <p className="text-3xl font-bold text-stone-900">{fmt(product.price)}</p>

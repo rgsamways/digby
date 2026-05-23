@@ -24,7 +24,7 @@ export default function DiaryEntryPage() {
     <div className="mx-auto max-w-2xl px-4 py-10">
       <Link href="/diary" className="mb-6 inline-block text-sm text-stone-400 hover:text-stone-600">← Field Journal</Link>
 
-      <h1 className="mb-3 text-3xl font-extrabold text-stone-900">{entry.title}</h1>
+      <h1 className="mb-3 font-display text-4xl text-stone-900">{entry.title}</h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-4 text-sm text-stone-500">
         <span className="flex items-center gap-1.5">

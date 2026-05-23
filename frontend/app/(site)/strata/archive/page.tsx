@@ -24,11 +24,11 @@ export default function StrataArchivePage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8">
-        <Link href="/strata" className="text-sm text-brand-600 hover:text-brand-700">← Digby Strata</Link>
-        <h1 className="mt-2 text-3xl font-extrabold text-stone-900">Box Archive</h1>
-        <p className="mt-1 text-stone-500">Every box, every geological chapter — a growing reference library.</p>
+        <Link href="/strata" className="text-sm text-stone-400 hover:text-stone-600">← Digby Strata</Link>
+        <h1 className="mt-3 font-display text-4xl text-stone-900">Box Archive</h1>
+        <p className="mt-2 text-stone-400">Every box, every geological chapter — a growing reference library.</p>
       </div>
 
       {isLoading && <p className="text-stone-500">Loading…</p>}

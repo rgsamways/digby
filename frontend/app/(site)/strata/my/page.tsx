@@ -85,7 +85,7 @@ export default function StrataPortalPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-8 text-2xl font-bold text-stone-900">Your Strata Subscription</h1>
+      <h1 className="mb-8 font-display text-4xl text-stone-900">Your Subscription</h1>
 
       {/* Status card */}
       <div className="card mb-4 p-5">

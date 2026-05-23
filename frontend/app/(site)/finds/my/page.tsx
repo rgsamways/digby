@@ -44,8 +44,8 @@ export default function MyFindsPage() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-stone-900">My Find Journal</h1>
-          <p className="text-sm text-stone-500 mt-0.5">
+          <h1 className="font-display text-4xl text-stone-900">My Find Journal</h1>
+          <p className="mt-2 text-stone-400">
             {finds.length} finds · {publicCount} public · {csCount} citizen science eligible
           </p>
         </div>

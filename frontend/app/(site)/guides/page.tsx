@@ -12,10 +12,10 @@ export default function GuidesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-stone-900">Find a Guide</h1>
-        <p className="mt-1 text-stone-500">
+        <h1 className="font-display text-4xl text-stone-900">Find a Guide</h1>
+        <p className="mt-2 text-stone-400">
           Book a local expert for a day of rockhounding on Crown land or private sites.
         </p>
       </div>

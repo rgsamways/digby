@@ -40,7 +40,7 @@ export default function ShopOrdersPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-900">My Orders</h1>
+        <h1 className="font-display text-4xl text-stone-900">My Orders</h1>
         <Link href="/shop" className="btn-secondary text-sm">Continue Shopping</Link>
       </div>
 

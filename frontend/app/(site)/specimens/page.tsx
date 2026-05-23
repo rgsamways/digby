@@ -32,8 +32,8 @@ export default function SpecimensPage() {
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-extrabold text-stone-900">Specimen Marketplace</h1>
-          <p className="mt-1 text-stone-500">
+          <h1 className="font-display text-4xl text-stone-900">Specimen Marketplace</h1>
+          <p className="mt-2 text-stone-400">
             Real specimens from Canadian rockhounding sites, shipped to your door.
           </p>
         </div>

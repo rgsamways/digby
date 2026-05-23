@@ -130,8 +130,8 @@ export default function GuideDetailPage() {
             ) : "🧭"}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-extrabold text-stone-900">{guide.name}</h1>
-            {guide.guide_location && <p className="text-stone-500">{guide.guide_location}</p>}
+            <h1 className="font-display text-3xl text-stone-900">{guide.name}</h1>
+            {guide.guide_location && <p className="text-stone-400">{guide.guide_location}</p>}
             {guide.years_experience > 0 && (
               <p className="text-sm text-stone-500">{guide.years_experience} years experience</p>
             )}

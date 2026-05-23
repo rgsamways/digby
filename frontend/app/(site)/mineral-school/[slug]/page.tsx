@@ -80,7 +80,7 @@ export default function FieldGuidePage() {
         ))}
       </div>
 
-      <h1 className="mb-6 text-3xl font-extrabold text-stone-900">{guide.title}</h1>
+      <h1 className="mb-6 font-display text-4xl text-stone-900">{guide.title}</h1>
 
       {guide.body ? (
         <SimpleBody body={guide.body} />
