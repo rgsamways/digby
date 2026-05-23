@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Package, ShoppingBag, LogOut, LayoutDashboard, Layers } from "lucide-react";
+import { Package, ShoppingBag, LogOut, Layers, Gem } from "lucide-react";
 import { isAdminAuthenticated, clearAdminToken } from "@/lib/admin";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -38,44 +38,51 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="flex min-h-screen bg-stone-50">
-      {/* Sidebar */}
-      <aside className="flex w-56 shrink-0 flex-col border-r border-stone-200 bg-white">
-        <div className="border-b border-stone-200 px-4 py-4">
+    <div className="flex min-h-screen bg-[#F7F6F2]">
+      {/* Dark sidebar */}
+      <aside className="flex w-56 shrink-0 flex-col bg-stone-900">
+        {/* Logo */}
+        <div className="px-4 py-5 border-b border-stone-800">
           <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5 text-brand-600" />
-            <span className="font-bold text-stone-900">Admin</span>
+            <Gem className="h-4 w-4 text-amber-400" />
+            <span className="font-extrabold text-white tracking-tight">
+              digby<span className="text-amber-400">.rocks</span>
+            </span>
           </div>
-          <p className="mt-0.5 text-xs text-stone-400">digby.rocks</p>
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-widest text-stone-500">Admin</p>
         </div>
-        <nav className="flex-1 p-3">
+
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-3 space-y-0.5">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith(href)
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                  ? "bg-amber-400/10 text-amber-400"
+                  : "text-stone-400 hover:bg-stone-800 hover:text-stone-100"
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               {label}
             </Link>
           ))}
         </nav>
-        <div className="border-t border-stone-200 p-3">
+
+        {/* Logout */}
+        <div className="px-2 py-3 border-t border-stone-800">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-50 hover:text-stone-900"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-stone-500 transition-colors hover:bg-stone-800 hover:text-stone-300"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 shrink-0" />
             Log out
           </button>
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main content */}
       <main className="flex-1 overflow-auto p-8">{children}</main>
     </div>
   );
