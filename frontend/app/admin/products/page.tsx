@@ -44,61 +44,68 @@ export default function AdminProductsPage() {
     }
   }
 
+  const active = products.filter((p) => p.active).length;
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-900">Products</h1>
-        <Link href="/admin/products/new" className="btn-primary flex items-center gap-1.5">
+        <div>
+          <h1 className="text-xl font-bold text-stone-900 tracking-tight">Products</h1>
+          <p className="mt-0.5 text-sm text-stone-400">{active} active · {products.length} total</p>
+        </div>
+        <Link href="/admin/products/new" className="btn-primary flex items-center gap-1.5 text-sm">
           <Plus className="h-4 w-4" /> New Product
         </Link>
       </div>
 
       {loading ? (
-        <p className="text-stone-500">Loading…</p>
+        <p className="text-sm text-stone-400">Loading…</p>
       ) : products.length === 0 ? (
-        <p className="text-stone-500">No products yet.</p>
+        <p className="text-sm text-stone-400">No products yet.</p>
       ) : (
-        <div className="card overflow-hidden">
+        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100 bg-stone-50 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3 text-right">Stock</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3" />
+              <tr className="border-b border-stone-100 text-left text-[11px] font-semibold uppercase tracking-widest text-stone-400">
+                <th className="px-4 py-2.5">Name</th>
+                <th className="px-4 py-2.5">Category</th>
+                <th className="px-4 py-2.5">SKU</th>
+                <th className="px-4 py-2.5 text-right">Price</th>
+                <th className="px-4 py-2.5 text-right">Stock</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
-              {products.map((p) => (
-                <tr key={p.id} className={`hover:bg-stone-50 ${!p.active ? "opacity-50" : ""}`}>
-                  <td className="px-4 py-3 font-medium text-stone-900">{p.name}</td>
-                  <td className="px-4 py-3 text-stone-500">{CATEGORY_LABELS[p.category] ?? p.category}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-stone-700">{fmt(p.price)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-stone-700">
+            <tbody>
+              {products.map((p, i) => (
+                <tr key={p.id} className={`border-b border-stone-50 last:border-0 hover:bg-stone-50/60 transition-colors ${i % 2 === 1 ? "bg-stone-50/40" : ""} ${!p.active ? "opacity-50" : ""}`}>
+                  <td className="px-4 py-2.5 font-medium text-stone-900">{p.name}</td>
+                  <td className="px-4 py-2.5 text-stone-500 text-xs">{CATEGORY_LABELS[p.category] ?? p.category}</td>
+                  <td className="px-4 py-2.5 font-mono text-[11px] text-stone-400">{p.sku || "—"}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-sm font-medium text-stone-900">{fmt(p.price)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-sm text-stone-600">
                     {p.dropship ? <span className="text-xs text-stone-400">dropship</span> : p.stock}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                      p.active ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
+                  <td className="px-4 py-2.5">
+                    <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-semibold tracking-wide ${
+                      p.active ? "bg-emerald-400/10 text-emerald-600" : "bg-stone-200 text-stone-400"
                     }`}>
                       {p.active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link href={`/admin/products/${p.id}`} className="text-stone-400 hover:text-brand-600">
-                        <Pencil className="h-4 w-4" />
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link href={`/admin/products/${p.id}`} className="text-stone-400 hover:text-amber-600 transition-colors">
+                        <Pencil className="h-3.5 w-3.5" />
                       </Link>
                       {p.active && (
                         <button
                           onClick={() => handleDeactivate(p.id, p.name)}
                           disabled={deactivating === p.id}
-                          className="text-stone-400 hover:text-red-500"
+                          className="text-stone-300 hover:text-red-500 transition-colors disabled:opacity-40"
                           title="Deactivate"
                         >
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>

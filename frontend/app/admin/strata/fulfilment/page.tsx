@@ -5,9 +5,9 @@ import { Download, Check, X } from "lucide-react";
 import { strataAdminApi, type StrataFulfilmentRow, type StrataBoxSummary } from "@/lib/admin";
 
 const TIER_STYLES: Record<string, string> = {
-  discoverer: "bg-sky-100 text-sky-700",
-  collector: "bg-violet-100 text-violet-700",
-  geologist: "bg-amber-100 text-amber-700",
+  discoverer: "bg-sky-400/10 text-sky-600",
+  collector:  "bg-violet-400/10 text-violet-600",
+  geologist:  "bg-amber-400/10 text-amber-600",
 };
 
 export default function AdminStrataFulfilmentPage() {
@@ -21,9 +21,7 @@ export default function AdminStrataFulfilmentPage() {
   useEffect(() => {
     strataAdminApi.listBoxes().then((data) => {
       setBoxes(data);
-      if (data.length > 0) {
-        setSelectedMonth(data[data.length - 1].month_number);
-      }
+      if (data.length > 0) setSelectedMonth(data[data.length - 1].month_number);
     });
   }, []);
 
@@ -76,28 +74,27 @@ export default function AdminStrataFulfilmentPage() {
 
   const shipped = rows.filter((r) => r.shipped).length;
   const total = rows.length;
-
   const selectedBox = boxes.find((b) => b.month_number === selectedMonth);
 
   return (
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Box Fulfilment</h1>
+          <h1 className="text-xl font-bold text-stone-900 tracking-tight">Box Fulfilment</h1>
           {selectedBox && (
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-0.5 text-sm text-stone-400">
               Month {selectedBox.month_number} — {selectedBox.theme}
             </p>
           )}
           {total > 0 && (
-            <p className="mt-0.5 text-sm text-stone-500">
-              {shipped} / {total} shipped
+            <p className="mt-0.5 text-sm text-stone-400">
+              <span className="text-emerald-600 font-medium">{shipped}</span> / {total} shipped
             </p>
           )}
         </div>
         <div className="flex items-center gap-3">
           <select
-            className="input w-48"
+            className="input w-52 text-sm"
             value={selectedMonth ?? ""}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
           >
@@ -121,72 +118,71 @@ export default function AdminStrataFulfilmentPage() {
       </div>
 
       {loading ? (
-        <p className="text-stone-500">Loading…</p>
+        <p className="text-sm text-stone-400">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="text-stone-500">No subscribers.</p>
+        <p className="text-sm text-stone-400">No subscribers.</p>
       ) : (
-        <div className="card overflow-hidden">
+        <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100 bg-stone-50 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">
-                <th className="px-4 py-3">Subscriber</th>
-                <th className="px-4 py-3">Tier</th>
-                <th className="px-4 py-3">Ship to</th>
-                <th className="px-4 py-3">Tracking #</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3" />
+              <tr className="border-b border-stone-100 text-left text-[11px] font-semibold uppercase tracking-widest text-stone-400">
+                <th className="px-4 py-2.5">Subscriber</th>
+                <th className="px-4 py-2.5">Tier</th>
+                <th className="px-4 py-2.5">Ship to</th>
+                <th className="px-4 py-2.5">Tracking #</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
-              {rows.map((r) => (
-                <tr key={r.id} className={r.shipped ? "bg-green-50/40" : "hover:bg-stone-50"}>
-                  <td className="px-4 py-3">
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} className={`border-b border-stone-50 last:border-0 transition-colors ${r.shipped ? "bg-emerald-50/30" : i % 2 === 1 ? "bg-stone-50/40" : ""} hover:bg-stone-50/60`}>
+                  <td className="px-4 py-2.5">
                     <p className="font-medium text-stone-900">{r.user_name || "—"}</p>
-                    <p className="text-xs text-stone-400">{r.user_email}</p>
+                    <p className="text-[11px] text-stone-400">{r.user_email}</p>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${TIER_STYLES[r.tier] ?? "bg-stone-100 text-stone-500"}`}>
+                  <td className="px-4 py-2.5">
+                    <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-semibold capitalize tracking-wide ${TIER_STYLES[r.tier] ?? "bg-stone-100 text-stone-400"}`}>
                       {r.tier}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">{fmtAddress(r.shipping_address)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5 text-[11px] text-stone-400">{fmtAddress(r.shipping_address)}</td>
+                  <td className="px-4 py-2.5">
                     <input
                       type="text"
-                      className="input w-36 py-1 text-xs"
+                      className="input w-36 py-1 text-xs font-mono"
                       placeholder="optional"
                       value={tracking[r.id] ?? ""}
                       onChange={(e) => setTracking((prev) => ({ ...prev, [r.id]: e.target.value }))}
                       disabled={r.shipped}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     {r.shipped ? (
-                      <span className="flex items-center gap-1 text-xs font-medium text-green-700">
-                        <Check className="h-3.5 w-3.5" />
-                        Shipped {r.shipped_at ? new Date(r.shipped_at).toLocaleDateString("en-CA") : ""}
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                        <Check className="h-3 w-3" />
+                        {r.shipped_at ? new Date(r.shipped_at).toLocaleDateString("en-CA") : "Shipped"}
                       </span>
                     ) : (
-                      <span className="text-xs text-stone-400">Pending</span>
+                      <span className="text-[11px] text-stone-400">Pending</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-2.5 text-right">
                     {r.shipped ? (
                       <button
                         onClick={() => unmarkShipped(r.id)}
                         disabled={saving === r.id}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+                        className="flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-stone-400 hover:bg-stone-100 hover:text-stone-600 disabled:opacity-40"
                       >
-                        <X className="h-3.5 w-3.5" />
-                        Unmark
+                        <X className="h-3 w-3" /> Unmark
                       </button>
                     ) : (
                       <button
                         onClick={() => markShipped(r.id)}
                         disabled={saving === r.id}
-                        className="flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                        className="flex items-center gap-1 rounded bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-40"
                       >
-                        <Check className="h-3.5 w-3.5" />
+                        <Check className="h-3 w-3" />
                         {saving === r.id ? "Saving…" : "Mark shipped"}
                       </button>
                     )}
