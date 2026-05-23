@@ -21,6 +21,29 @@ interface PartnerBusiness {
 }
 import { MapPin, Clock, Users, AlertTriangle, Map, BookOpen, TrendingUp, Trophy, Leaf, HelpCircle, Send, CheckCircle2 } from "lucide-react";
 
+const MINERAL_COLORS: Record<string, { bg: string; text: string }> = {
+  amethyst:       { bg: "bg-violet-100",  text: "text-violet-700" },
+  sodalite:       { bg: "bg-blue-100",    text: "text-blue-700" },
+  feldspar:       { bg: "bg-sky-100",     text: "text-sky-700" },
+  amazonite:      { bg: "bg-teal-100",    text: "text-teal-700" },
+  garnet:         { bg: "bg-red-100",     text: "text-red-700" },
+  calcite:        { bg: "bg-amber-100",   text: "text-amber-800" },
+  pyrite:         { bg: "bg-yellow-100",  text: "text-yellow-700" },
+  quartz:         { bg: "bg-stone-100",   text: "text-stone-600" },
+  apatite:        { bg: "bg-cyan-100",    text: "text-cyan-700" },
+  tourmaline:     { bg: "bg-pink-100",    text: "text-pink-700" },
+  mica:           { bg: "bg-stone-100",   text: "text-stone-500" },
+  corundum:       { bg: "bg-rose-100",    text: "text-rose-700" },
+  fluorite:       { bg: "bg-purple-100",  text: "text-purple-700" },
+  "native silver":{ bg: "bg-slate-100",   text: "text-slate-600" },
+  "native copper":{ bg: "bg-orange-100",  text: "text-orange-700" },
+  granite:        { bg: "bg-stone-200",   text: "text-stone-600" },
+  fossil:         { bg: "bg-lime-100",    text: "text-lime-700" },
+};
+function mStyle(m: string) {
+  return MINERAL_COLORS[m.toLowerCase()] ?? { bg: "bg-emerald-100", text: "text-emerald-700" };
+}
+
 export default function SitePage() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
@@ -178,10 +201,10 @@ export default function SitePage() {
         {/* Details */}
         <div className="lg:col-span-3">
           {site.images[0] && (
-            <img src={site.images[0]} alt={site.name} className="mb-6 h-64 w-full rounded-xl object-cover" />
+            <img src={site.images[0]} alt={site.name} className="mb-6 h-80 w-full rounded-lg object-cover shadow-[0_4px_20px_rgba(0,0,0,0.12)]" />
           )}
           <div className="mb-2 flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-extrabold text-stone-900">{site.name}</h1>
+            <h1 className="font-display text-4xl text-stone-900">{site.name}</h1>
             {site.is_open_today && (
               <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
                 <CheckCircle2 className="h-4 w-4" /> Open Today
@@ -193,9 +216,12 @@ export default function SitePage() {
           </p>
 
           <div className="mb-6 flex flex-wrap gap-2">
-            {site.minerals.map((m) => (
-              <span key={m} className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700">{m}</span>
-            ))}
+            {site.minerals.map((m) => {
+              const { bg, text } = mStyle(m);
+              return (
+                <span key={m} className={`rounded-full px-3 py-1 text-xs font-medium ${bg} ${text}`}>{m}</span>
+              );
+            })}
           </div>
 
           <p className="mb-6 leading-relaxed text-stone-700">{site.description}</p>

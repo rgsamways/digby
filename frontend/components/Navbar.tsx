@@ -100,9 +100,9 @@ export function Navbar() {
     <nav ref={navRef} className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-extrabold text-stone-900">
+        <Link href="/" className="flex items-center gap-2">
           <Gem className="h-5 w-5 text-brand-600" />
-          <span>
+          <span className="font-display text-lg text-stone-900 tracking-tight">
             digby<span className="text-brand-600">.rocks</span>
           </span>
         </Link>
@@ -114,8 +114,10 @@ export function Navbar() {
               key={href}
               href={href}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-brand-600",
-                pathname === href ? "text-brand-600" : "text-stone-600"
+                "relative px-3 py-2 text-sm font-medium transition-colors hover:text-brand-600",
+                pathname === href
+                  ? "text-brand-600 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-brand-500"
+                  : "text-stone-600"
               )}
             >
               {label}
