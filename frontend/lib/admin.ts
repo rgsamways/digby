@@ -284,3 +284,34 @@ export interface AdminRevenue {
 export const revenueAdminApi = {
   get: () => adminFetch("/api/admin/revenue") as Promise<AdminRevenue>,
 };
+
+// ── Expert applications ───────────────────────────────────────────────────────
+
+export interface ExpertApplication {
+  id: string;
+  name: string;
+  email: string;
+  credential_type: string;
+  credential_reference: string | null;
+  expert_specialisations: string[];
+  institutional_affiliation: string | null;
+  years_experience: number;
+  bio: string;
+  expert_tier: string | null;
+  created_at: string;
+}
+
+export const expertAdminApi = {
+  listApplications: () =>
+    adminFetch("/api/admin/expert/applications") as Promise<ExpertApplication[]>,
+  approve: (userId: string, tier: string) =>
+    adminFetch(`/api/admin/expert/applications/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tier, reject: false }),
+    }),
+  reject: (userId: string) =>
+    adminFetch(`/api/admin/expert/applications/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tier: "verified_expert", reject: true }),
+    }),
+};

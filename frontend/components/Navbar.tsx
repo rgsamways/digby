@@ -13,6 +13,7 @@ const exploreLinks = [
   { href: "/gallery/uv", label: "UV Gallery" },
   { href: "/drops", label: "Specimen Drops" },
   { href: "/creators", label: "Creators" },
+  { href: "/experts", label: "Expert Network" },
   { href: "/community", label: "Community" },
   { href: "/guides", label: "Find a Guide" },
   { href: "/mystery", label: "Mystery Dig" },

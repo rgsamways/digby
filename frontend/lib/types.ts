@@ -358,6 +358,22 @@ export interface SpecimenDrop {
   available_count: number;
 }
 
+export interface Expert {
+  id: string;
+  name: string;
+  bio: string;
+  avatar_url: string | null;
+  expert_tier: "verified_expert" | "community_reviewer" | "ogs_endorsed" | null;
+  credential_type: string | null;
+  expert_specialisations: string[];
+  institutional_affiliation: string | null;
+  publications_url: string | null;
+  years_experience: number;
+  guide_location: string | null;
+  expert_review_count: number;
+  expert_agreement_rate: number;
+}
+
 export interface Creator {
   id: string;
   name: string;

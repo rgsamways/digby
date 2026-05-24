@@ -13,6 +13,7 @@ from app.api.routes import (
     creators,
     diary,
     drops,
+    experts,
     field_guides,
     finds,
     guide_bookings,
@@ -111,6 +112,7 @@ app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(map_routes.router, prefix="/api/map", tags=["map"])
 app.include_router(drops.router, prefix="/api/drops", tags=["drops"])
 app.include_router(creators.router, prefix="/api/creators", tags=["creators"])
+app.include_router(experts.router, prefix="/api/experts", tags=["experts"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

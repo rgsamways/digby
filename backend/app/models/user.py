@@ -41,6 +41,15 @@ class User(Document):
     social_tiktok: str | None = None
     social_youtube: str | None = None
     content_url: str | None = None
+    # Expert programme fields
+    expert_tier: str | None = None          # verified_expert | community_reviewer | ogs_endorsed
+    credential_type: str | None = None      # P.Geo | P.Eng | MSc/PhD | OGS/GSC | Faculty | GIS | Other
+    credential_reference: str | None = None  # private — licence/institution for admin verification
+    expert_specialisations: list[str] = []
+    institutional_affiliation: str | None = None
+    publications_url: str | None = None
+    expert_review_count: int = 0
+    expert_agreement_rate: float = 0.0
 
     class Settings:
         name = "users"

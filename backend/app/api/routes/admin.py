@@ -748,3 +748,65 @@ async def admin_revenue(
         "total_orders": len(orders),
         "monthly": sorted_monthly,
     }
+
+
+# ── Expert applications ───────────────────────────────────────────────────────
+
+def _expert_application_dict(u: User) -> dict:
+    return {
+        "id": str(u.id),
+        "name": u.name,
+        "email": u.email,
+        "credential_type": u.credential_type,
+        "credential_reference": u.credential_reference,
+        "expert_specialisations": u.expert_specialisations,
+        "institutional_affiliation": u.institutional_affiliation,
+        "years_experience": u.years_experience,
+        "bio": u.bio,
+        "expert_tier": u.expert_tier,
+        "created_at": u.created_at.isoformat(),
+    }
+
+
+@router.get("/expert/applications")
+async def admin_expert_applications(
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    pending = await User.find(
+        {"credential_type": {"$ne": None}, "expert_tier": None}
+    ).sort("-created_at").to_list()
+    return [_expert_application_dict(u) for u in pending]
+
+
+class ExpertApprovalIn(BaseModel):
+    tier: str   # verified_expert | community_reviewer | ogs_endorsed
+    reject: bool = False
+
+
+@router.patch("/expert/applications/{user_id}")
+async def admin_review_expert_application(
+    user_id: str,
+    body: ExpertApprovalIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        user = await User.get(PydanticObjectId(user_id))
+    except Exception:
+        raise HTTPException(404, "User not found")
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    if body.reject:
+        await user.set({
+            "credential_type": None,
+            "credential_reference": None,
+            "expert_tier": None,
+        })
+        return {"ok": True, "action": "rejected"}
+
+    valid_tiers = {"verified_expert", "community_reviewer", "ogs_endorsed"}
+    if body.tier not in valid_tiers:
+        raise HTTPException(400, f"Invalid tier: {body.tier}")
+
+    await user.set({"expert_tier": body.tier})
+    return {"ok": True, "action": "approved", "tier": body.tier}
