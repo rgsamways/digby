@@ -31,6 +31,7 @@ from app.models.site import Site
 from app.models.site_question import SiteQuestion
 from app.models.specimen import Specimen
 from app.models.specimen_order import SpecimenOrder
+from app.models.specimen_drop import SpecimenDrop
 from app.models.strata import CollectorCardCode, StrataBox, StrataFulfilment, StrataSubscription
 from app.models.user import User
 from app.models.waitlist_entry import WaitlistEntry
@@ -52,6 +53,7 @@ async def init_db() -> None:
             GuideReview, AlertSubscription, Specimen, SpecimenOrder,
             SiteQuestion, FieldGuide, WaitlistEntry, Product, ShopOrder,
             StrataSubscription, StrataBox, CollectorCardCode, StrataFulfilment,
+            SpecimenDrop,
             Find, FindSave,
             JuniorProfile, JuniorMineral, JuniorCollection,
             Badge, BadgeState, DetectiveCase, DetectiveCaseHistory,

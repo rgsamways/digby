@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 const exploreLinks = [
   { href: "/finds", label: "Find Feed" },
   { href: "/gallery/uv", label: "UV Gallery" },
+  { href: "/drops", label: "Specimen Drops" },
+  { href: "/creators", label: "Creators" },
   { href: "/community", label: "Community" },
   { href: "/guides", label: "Find a Guide" },
   { href: "/mystery", label: "Mystery Dig" },

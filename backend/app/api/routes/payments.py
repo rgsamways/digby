@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
 from app.models.product import Product
 from app.models.shop_order import ShopOrder, ShopOrderItem, ShopOrderStatus
+from app.models.specimen_drop import SpecimenDrop
 from app.models.specimen_order import OrderStatus, SpecimenOrder
 from app.models.strata import StrataStatus, StrataSubscription
 from app.models.user import User
@@ -53,8 +54,11 @@ async def stripe_webhook(request: Request) -> JSONResponse:
     if event["type"] == "payment_intent.succeeded":
         pi = event["data"]["object"]
         pi_id = pi["id"]
-        if pi.get("metadata", {}).get("order_type") == "shop":
+        order_type = pi.get("metadata", {}).get("order_type")
+        if order_type == "shop":
             await _handle_shop_order_succeeded(pi)
+        elif order_type == "drop":
+            await _handle_drop_piece_succeeded(pi)
         else:
             booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
             if booking:
@@ -126,6 +130,25 @@ async def stripe_webhook(request: Request) -> JSONResponse:
             await user.set({"stripe_account_enabled": account.get("charges_enabled", False)})
 
     return JSONResponse({"received": True})
+
+
+async def _handle_drop_piece_succeeded(pi: dict) -> None:
+    metadata = pi.get("metadata", {})
+    drop_slug = metadata.get("drop_slug", "")
+    piece_id = metadata.get("piece_id", "")
+    buyer_city = metadata.get("buyer_city", "")
+
+    drop = await SpecimenDrop.find_one(SpecimenDrop.slug == drop_slug)
+    if not drop:
+        return
+
+    for piece in drop.pieces:
+        if piece.id == piece_id:
+            piece.status = "sold"
+            piece.buyer_city = buyer_city or None
+            break
+
+    await drop.save()
 
 
 async def _handle_shop_order_succeeded(pi: dict) -> None:

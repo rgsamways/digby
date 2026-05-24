@@ -10,7 +10,9 @@ from app.api.routes import (
     auth,
     availability,
     bookings,
+    creators,
     diary,
+    drops,
     field_guides,
     finds,
     guide_bookings,
@@ -107,6 +109,8 @@ app.include_router(junior.router, prefix="/api/junior", tags=["junior"])
 app.include_router(strata.router, prefix="/api/strata", tags=["strata"])
 app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 app.include_router(map_routes.router, prefix="/api/map", tags=["map"])
+app.include_router(drops.router, prefix="/api/drops", tags=["drops"])
+app.include_router(creators.router, prefix="/api/creators", tags=["creators"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

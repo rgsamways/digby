@@ -34,6 +34,13 @@ class User(Document):
     is_verified: bool = False
     is_active: bool = True
     created_at: datetime = datetime.now(UTC)
+    # Creator programme fields
+    is_creator: bool = False
+    creator_tier: str | None = None   # explorer | field_geologist | resident_geologist
+    social_instagram: str | None = None
+    social_tiktok: str | None = None
+    social_youtube: str | None = None
+    content_url: str | None = None
 
     class Settings:
         name = "users"

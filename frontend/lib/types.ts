@@ -333,6 +333,45 @@ export interface ShopOrder {
   created_at: string;
 }
 
+export interface DropPiece {
+  id: string;
+  mineral_name: string;
+  formation: string | null;
+  photo_url: string | null;
+  price_cad: number;
+  description: string | null;
+  status: "available" | "reserved" | "sold";
+  buyer_city: string | null;
+}
+
+export interface SpecimenDrop {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  opens_at: string;
+  closes_at: string;
+  status: "upcoming" | "active" | "closed";
+  pieces: DropPiece[];
+  total_pieces: number;
+  available_count: number;
+}
+
+export interface Creator {
+  id: string;
+  name: string;
+  bio: string;
+  avatar_url: string | null;
+  creator_tier: "explorer" | "field_geologist" | "resident_geologist" | null;
+  specialties: string[];
+  guide_location: string | null;
+  social_instagram: string | null;
+  social_tiktok: string | null;
+  social_youtube: string | null;
+  content_url: string | null;
+}
+
 export interface GuideBooking {
   id: string;
   guide_id: string;
