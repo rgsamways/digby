@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Calendar, Building2, ArrowRight, Gem, Map } from "lucide-react";
+import { MapPin, Calendar, Building2, ArrowRight, Gem, Map, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { SiteCard } from "@/components/SiteCard";
-import type { Site } from "@/lib/types";
+import type { Find, FindFeedResponse, Site } from "@/lib/types";
 
 const HOW_IT_WORKS = [
   {
@@ -33,6 +33,12 @@ export default function HomePage() {
     queryKey: ["featured-sites"],
     queryFn: () => api.get("/api/sites?limit=3"),
   });
+
+  const { data: haulData } = useQuery<FindFeedResponse>({
+    queryKey: ["homepage-haul"],
+    queryFn: () => api.get("/api/finds/feed?haul_only=true&limit=1"),
+  });
+  const featuredHaul = haulData?.items[0] ?? null;
 
   return (
     <div>
@@ -110,6 +116,90 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ── Featured haul ────────────────────────────────────────────── */}
+      {featuredHaul && (
+        <section className="border-t border-stone-200/60 bg-stone-50 px-6 py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-8 flex items-end justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500 mb-1">
+                  What&apos;s in the bag
+                </p>
+                <h2 className="font-display text-3xl text-stone-900 sm:text-4xl">Latest haul</h2>
+              </div>
+              <Link href="/finds?haul_only=true" className="hidden items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 sm:flex">
+                All hauls <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <Link
+              href={`/finds/${featuredHaul.id}`}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm hover:shadow-md transition sm:flex-row"
+            >
+              {featuredHaul.photo_urls.length > 0 && (
+                <div className="aspect-video overflow-hidden bg-stone-100 sm:aspect-square sm:w-72 shrink-0">
+                  <img
+                    src={featuredHaul.photo_urls[0]}
+                    alt={featuredHaul.mineral_name}
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                </div>
+              )}
+              <div className="flex flex-col justify-center p-6 gap-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-brand-500" />
+                  <span className="text-xs font-semibold uppercase tracking-widest text-brand-600">Haul</span>
+                </div>
+                <h3 className="font-display text-2xl text-stone-900">{featuredHaul.mineral_name}</h3>
+                {featuredHaul.notes && (
+                  <p className="text-stone-500 line-clamp-3">{featuredHaul.notes}</p>
+                )}
+                <div className="flex items-center gap-3 text-sm text-stone-400">
+                  <span>{featuredHaul.author_name}</span>
+                  {featuredHaul.site_name && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {featuredHaul.site_name}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* ── UV Gallery promo ──────────────────────────────────────────── */}
+      <section className="border-t border-stone-900 bg-stone-950 px-6 py-20">
+        <div className="mx-auto max-w-5xl flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left sm:items-start sm:gap-16">
+          <div className="shrink-0 grid grid-cols-2 gap-1.5 w-40">
+            {["shadow-[0_0_20px_rgba(74,222,128,0.6)]","shadow-[0_0_20px_rgba(96,165,250,0.6)]","shadow-[0_0_20px_rgba(248,113,113,0.6)]","shadow-[0_0_20px_rgba(251,191,36,0.6)]"].map((glow, i) => (
+              <div key={i} className={`aspect-square rounded-lg bg-stone-800 ${glow}`} />
+            ))}
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500 mb-2">UV Gallery</p>
+            <h2 className="font-display text-3xl text-white sm:text-4xl">
+              Ontario minerals under ultraviolet light
+            </h2>
+            <p className="mt-3 text-stone-400 max-w-lg">
+              Sodalite glows orange. Calcite lights up pink. Willemite goes radioactive green.
+              These are real rocks from real sites — an hour and a half from Toronto.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link href="/gallery/uv" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-2.5 text-sm font-semibold text-stone-900 hover:bg-stone-100 transition">
+                Browse the gallery <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/shop?tag=uv" className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-700 px-6 py-2.5 text-sm font-semibold text-stone-300 hover:border-stone-500 hover:text-white transition">
+                UV lamps from $29
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Operator CTA ─────────────────────────────────────────────── */}
       <section className="border-t border-stone-200/60 px-6 py-20">

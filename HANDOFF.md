@@ -500,10 +500,10 @@ Gated. Requires legal review (PIPEDA, App Store sensor data policies), OGS pre-c
 
 ## Strata Admin Tools (Deadline: Aug 1, 2026)
 
-Two of three items complete before Bancroft Gemboree:
+All three items complete:
 1. ✅ Admin: subscriber list (name, tier, status, renewal date, shipping address) — `/admin/strata`
 2. ✅ Admin: box fulfilment status (which subscribers received which box months) — `/admin/strata/fulfilment`
-3. ⬜ Admin: shipping label CSV export — not yet built
+3. ✅ Admin: shipping label CSV export — "Labels CSV" button in fulfilment page → `GET /api/admin/strata/shipping-labels/{box_month}` (returns CSV, excludes already-shipped)
 
 ---
 
@@ -541,8 +541,7 @@ Two of three items complete before Bancroft Gemboree:
 
 ## Suggested Next Priorities
 
-1. **Strata shipping label CSV export** — last Strata admin item before Bancroft Gemboree (Aug 1, 2026)
-2. **Junior Formation Explorer (full spec)** — province unlock mechanic, per-user state, find-based progression
+1. **Junior Formation Explorer (full spec)** — province unlock mechanic, per-user state, find-based progression
 3. **Junior find → card cross-trigger** — log find X → unlock junior card for mineral X
 4. **Section 9 remainder** — "What's In Your Bag" flat-lay template, specimen drops, creator directory
 5. **Expert features (Section 10)** — large spec, start with expert profile + credentialing

@@ -299,8 +299,8 @@ function NewFindForm() {
               <option value="multi">Multi-colour</option>
             </select>
           </div>
-          <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 cursor-pointer pt-2">
               <input
                 type="checkbox"
                 checked={isHaul}
@@ -309,6 +309,15 @@ function NewFindForm() {
               />
               <span className="text-sm font-medium text-stone-900">This is a haul</span>
             </label>
+            {isHaul && (
+              <p className="text-xs text-stone-500 rounded-lg bg-stone-50 border border-stone-200 px-3 py-2 leading-relaxed">
+                <span className="font-medium text-stone-700">What&apos;s in your bag?</span>{" "}
+                Lay everything out on a flat surface before separating the specimens and photograph
+                it from above — full-bleed, neutral background, good light. That flat-lay is the
+                most shareable thing you can post. Log individual specimens as separate finds
+                once you&apos;re back home.
+              </p>
+            )}
           </div>
         </div>
 
