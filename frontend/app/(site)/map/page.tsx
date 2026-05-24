@@ -10,9 +10,9 @@ import { api } from "@/lib/api";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-const TILESET_BEDROCK = process.env.NEXT_PUBLIC_MAPBOX_TILESET_BEDROCK ?? "";
-// OMI (Ontario Mineral Inventory) covers both occurrences and past mines in one shapefile
-const TILESET_MDI = process.env.NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES ?? "";
+// OGS layers served as local GeoJSON (converted from MRD126 + OMI shapefiles)
+const BEDROCK_GEOJSON = "/geodata/bedrock.geojson";
+const OMI_GEOJSON = "/geodata/omi.geojson";
 
 // STATUS values in OMI that represent past mines
 const MINE_STATUSES = ["Past Producing Mine", "Past Producing Mine (Low Tonnage)", "Past Producing Quarry"];
@@ -112,7 +112,7 @@ export default function MapPage() {
     const omiLayers = ["omi-occurrences", "omi-mines"].filter(
       (id) => map.getLayer(id) !== undefined
     );
-    const omiFeatures = TILESET_MDI && omiLayers.length
+    const omiFeatures = omiLayers.length
       ? map.queryRenderedFeatures(e.point, { layers: omiLayers })
       : [];
 
@@ -123,7 +123,7 @@ export default function MapPage() {
       return;
     }
 
-    const bedrockLayerExists = TILESET_BEDROCK && map.getLayer("bedrock-fill") !== undefined;
+    const bedrockLayerExists = map.getLayer("bedrock-fill") !== undefined;
     const bedrockFeatures = bedrockLayerExists
       ? map.queryRenderedFeatures(e.point, { layers: ["bedrock-fill"] })
       : [];
@@ -168,7 +168,7 @@ export default function MapPage() {
     const omiLayers = ["omi-occurrences", "omi-mines"].filter(
       (id) => map.getLayer(id) !== undefined
     );
-    const omiFeatures = TILESET_MDI && omiLayers.length
+    const omiFeatures = omiLayers.length
       ? map.queryRenderedFeatures(e.point, { layers: omiLayers })
       : [];
     if (omiFeatures.length > 0 && omiFeatures[0].properties) {
@@ -209,10 +209,10 @@ export default function MapPage() {
   ] as FilterSpecification;
 
   const layerToggles = [
-    { key: "bedrock" as const, label: "Bedrock geology", available: !!TILESET_BEDROCK },
-    { key: "occurrences" as const, label: "Mineral occurrences", available: !!TILESET_MDI },
+    { key: "bedrock" as const, label: "Bedrock geology", available: true },
+    { key: "occurrences" as const, label: "Mineral occurrences", available: true },
     { key: "sites" as const, label: "Digby sites", available: true },
-    { key: "mines" as const, label: "Past producing mines", available: !!TILESET_MDI },
+    { key: "mines" as const, label: "Past producing mines", available: true },
   ];
 
   const Sidebar = (
@@ -241,7 +241,7 @@ export default function MapPage() {
       </div>
 
       {/* Mineral filter */}
-      {layers.occurrences && TILESET_MDI && (
+      {layers.occurrences && (
         <div className="px-4 py-3 border-b border-stone-100">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Filter occurrences</p>
           <select
@@ -272,16 +272,6 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Setup notice */}
-      {(!TILESET_BEDROCK || !TILESET_MDI) && (
-        <div className="m-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
-          <p className="text-xs font-semibold text-amber-800 mb-1">OGS layers not configured</p>
-          <p className="text-xs text-amber-700">
-            Upload MRD126 (bedrock) and OMI (mineral inventory) shapefiles to Mapbox Studio,
-            then set the tileset IDs in your environment variables.
-          </p>
-        </div>
-      )}
     </div>
   );
 
@@ -313,19 +303,12 @@ export default function MapPage() {
           onClick={onClick}
           cursor={hoverInfo ? "crosshair" : "grab"}
         >
-          {/* Bedrock geology layer */}
-          {TILESET_BEDROCK && layers.bedrock && (
-            <Source
-              id="bedrock"
-              type="vector"
-              url={`mapbox://${TILESET_BEDROCK}`}
-            >
+          {/* Bedrock geology layer — local GeoJSON (MRD126 Revision 1, OGS) */}
+          {layers.bedrock && (
+            <Source id="bedrock" type="geojson" data={BEDROCK_GEOJSON}>
               <Layer
                 id="bedrock-fill"
                 type="fill"
-                // source-layer = shapefile name without extension (Mapbox convention)
-                // MRD126 Geopoly.shp → likely "Geopoly" — confirm in Studio feature inspector
-                source-layer="Geopoly-4krfbs"
                 paint={{
                   "fill-color": PROVINCE_COLOURS as unknown as mapboxgl.Expression,
                   "fill-opacity": 0.35,
@@ -334,7 +317,6 @@ export default function MapPage() {
               <Layer
                 id="bedrock-outline"
                 type="line"
-                source-layer="Geopoly-4krfbs"
                 paint={{
                   "line-color": "#78716c",
                   "line-width": 0.5,
@@ -344,41 +326,37 @@ export default function MapPage() {
             </Source>
           )}
 
-          {/* OMI layer — one tileset, two filtered layers (occurrences + past mines) */}
-          {TILESET_MDI && (
-            <Source id="omi" type="vector" url={`mapbox://${TILESET_MDI}`}>
-              {layers.occurrences && (
-                <Layer
-                  id="omi-occurrences"
-                  type="circle"
-                  source-layer="OMI-67byij"
-                  filter={occurrenceFilter}
-                  paint={{
-                    "circle-radius": 5,
-                    "circle-color": "#f59e0b",
-                    "circle-stroke-width": 1,
-                    "circle-stroke-color": "#ffffff",
-                    "circle-opacity": 0.8,
-                  }}
-                />
-              )}
-              {layers.mines && (
-                <Layer
-                  id="omi-mines"
-                  type="circle"
-                  source-layer="OMI-67byij"
-                  filter={mineFilter}
-                  paint={{
-                    "circle-radius": 4,
-                    "circle-color": "#6b7280",
-                    "circle-stroke-width": 1,
-                    "circle-stroke-color": "#ffffff",
-                    "circle-opacity": 0.6,
-                  }}
-                />
-              )}
-            </Source>
-          )}
+          {/* OMI layer — local GeoJSON (Ontario Mineral Inventory) */}
+          <Source id="omi" type="geojson" data={OMI_GEOJSON}>
+            {layers.occurrences && (
+              <Layer
+                id="omi-occurrences"
+                type="circle"
+                filter={occurrenceFilter}
+                paint={{
+                  "circle-radius": 5,
+                  "circle-color": "#f59e0b",
+                  "circle-stroke-width": 1,
+                  "circle-stroke-color": "#ffffff",
+                  "circle-opacity": 0.8,
+                }}
+              />
+            )}
+            {layers.mines && (
+              <Layer
+                id="omi-mines"
+                type="circle"
+                filter={mineFilter}
+                paint={{
+                  "circle-radius": 4,
+                  "circle-color": "#6b7280",
+                  "circle-stroke-width": 1,
+                  "circle-stroke-color": "#ffffff",
+                  "circle-opacity": 0.6,
+                }}
+              />
+            )}
+          </Source>
 
           {/* Digby sites */}
           {sitesGeoJson && layers.sites && (
@@ -516,7 +494,7 @@ export default function MapPage() {
                   {!available && <span className="text-xs text-stone-400 ml-auto">setup needed</span>}
                 </label>
               ))}
-              {layers.occurrences && TILESET_MDI && (
+              {layers.occurrences && (
                 <div className="mt-3">
                   <label className="label text-xs">Filter by mineral</label>
                   <select
