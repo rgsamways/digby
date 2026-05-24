@@ -153,10 +153,10 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Welcome back, {user?.name}</h1>
-          <p className="text-stone-500">Operator dashboard</p>
+          <h1 className="font-display text-4xl text-stone-900">Welcome back, {user?.name}</h1>
+          <p className="mt-2 text-stone-400">Operator dashboard</p>
         </div>
         <Link href="/dashboard/sites/new" className="btn-primary gap-2">
           <Plus className="h-4 w-4" /> Add site
@@ -251,8 +251,11 @@ export default function DashboardPage() {
         {/* Create alert */}
         <div className="mb-4 rounded-lg bg-stone-50 p-4 space-y-3">
           <p className="text-sm font-medium text-stone-700">Post a new alert</p>
-          <input type="text" placeholder="Site ID" value={alertForm.site_id}
-            onChange={(e) => setAlertForm((f) => ({ ...f, site_id: e.target.value }))} className="input" />
+          <select value={alertForm.site_id}
+            onChange={(e) => setAlertForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
+            <option value="">Select site…</option>
+            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
           <input type="text" placeholder="Message (e.g. Site closed due to flooding)"
             value={alertForm.message}
             onChange={(e) => setAlertForm((f) => ({ ...f, message: e.target.value }))} className="input" />
@@ -289,8 +292,11 @@ export default function DashboardPage() {
 
         <div className="mb-4 rounded-lg bg-stone-50 p-4 space-y-3">
           <p className="text-sm font-medium text-stone-700">Log a new session</p>
-          <input type="text" placeholder="Site ID" value={reportForm.site_id}
-            onChange={(e) => setReportForm((f) => ({ ...f, site_id: e.target.value }))} className="input" />
+          <select value={reportForm.site_id}
+            onChange={(e) => setReportForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
+            <option value="">Select site…</option>
+            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
           <input type="date" value={reportForm.session_date}
             onChange={(e) => setReportForm((f) => ({ ...f, session_date: e.target.value }))} className="input" />
           <input type="text" placeholder="Minerals found (comma-separated)" value={reportForm.minerals_found}
