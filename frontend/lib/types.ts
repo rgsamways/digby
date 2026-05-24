@@ -275,6 +275,8 @@ export interface Find {
   save_count: number;
   is_featured: boolean;
   is_junior_submission: boolean;
+  uv_fluorescence: string | null;
+  is_haul: boolean;
   saved: boolean;
   created_at: string;
 }

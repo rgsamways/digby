@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, MapPin, PlusCircle, Star } from "lucide-react";
+import { Bookmark, BookmarkCheck, MapPin, PlusCircle, Star, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { Find, FindFeedResponse } from "@/lib/types";
@@ -24,15 +24,17 @@ export default function FindsFeedPage() {
   const [mineral, setMineral] = useState("");
   const [province, setProvince] = useState("");
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [haulOnly, setHaulOnly] = useState(false);
   const [skip, setSkip] = useState(0);
 
   const { data, isLoading } = useQuery<FindFeedResponse>({
-    queryKey: ["finds-feed", mineral, province, featuredOnly, skip],
+    queryKey: ["finds-feed", mineral, province, featuredOnly, haulOnly, skip],
     queryFn: () => {
       const p = new URLSearchParams();
       if (mineral) p.set("mineral", mineral);
       if (province) p.set("province", province);
       if (featuredOnly) p.set("featured_only", "true");
+      if (haulOnly) p.set("haul_only", "true");
       p.set("skip", String(skip));
       return api.get(`/api/finds/feed?${p}`);
     },
@@ -79,7 +81,7 @@ export default function FindsFeedPage() {
           {PROVINCES.filter(Boolean).map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
         <button
-          onClick={() => setFeaturedOnly(!featuredOnly)}
+          onClick={() => { setFeaturedOnly(!featuredOnly); setSkip(0); }}
           className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition ${
             featuredOnly
               ? "border-amber-300 bg-amber-50 text-amber-700"
@@ -88,6 +90,17 @@ export default function FindsFeedPage() {
         >
           <Star className="h-4 w-4" />
           Featured
+        </button>
+        <button
+          onClick={() => { setHaulOnly(!haulOnly); setSkip(0); }}
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            haulOnly
+              ? "border-brand-300 bg-brand-50 text-brand-700"
+              : "border-stone-200 text-stone-500 hover:bg-stone-50"
+          }`}
+        >
+          <Zap className="h-4 w-4" />
+          Hauls
         </button>
         {user && (
           <Link href="/finds/my" className="btn-secondary text-sm">

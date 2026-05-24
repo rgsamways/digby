@@ -44,11 +44,15 @@ class Find(Document):
     citizen_science_opted_in: bool = False
     citizen_science_eligible: bool = False  # computed on save
 
+    # UV fluorescence
+    uv_fluorescence: str | None = None  # green, blue, red, orange, white, multi
+
     # Social
     visibility: FindVisibility = FindVisibility.PUBLIC
     save_count: int = 0
     is_featured: bool = False
     is_junior_submission: bool = False
+    is_haul: bool = False
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -60,8 +64,10 @@ class Find(Document):
             "verification_status",
             "geological_province",
             "mineral_name",
+            "uv_fluorescence",
             [("visibility", 1), ("created_at", -1)],
             [("is_featured", 1), ("created_at", -1)],
+            [("is_haul", 1), ("created_at", -1)],
         ]
 
 

@@ -44,6 +44,8 @@ class FindCreate(BaseModel):
     citizen_science_opted_in: bool = False
     visibility: FindVisibility = FindVisibility.PUBLIC
     is_junior_submission: bool = False
+    uv_fluorescence: str | None = None
+    is_haul: bool = False
 
 
 class FindUpdate(BaseModel):
@@ -60,6 +62,8 @@ class FindUpdate(BaseModel):
     verification_status: VerificationStatus | None = None
     citizen_science_opted_in: bool | None = None
     visibility: FindVisibility | None = None
+    uv_fluorescence: str | None = None
+    is_haul: bool | None = None
 
 
 def _find_dict(find: Find, author_name: str, saved: bool = False) -> dict:
@@ -86,6 +90,8 @@ def _find_dict(find: Find, author_name: str, saved: bool = False) -> dict:
         "save_count": find.save_count,
         "is_featured": find.is_featured,
         "is_junior_submission": find.is_junior_submission,
+        "uv_fluorescence": find.uv_fluorescence,
+        "is_haul": find.is_haul,
         "saved": saved,
         "created_at": find.created_at.isoformat(),
     }
@@ -119,6 +125,8 @@ async def create_find(body: FindCreate, user: User = Depends(get_current_user)) 
         citizen_science_opted_in=body.citizen_science_opted_in,
         visibility=body.visibility,
         is_junior_submission=body.is_junior_submission,
+        uv_fluorescence=body.uv_fluorescence,
+        is_haul=body.is_haul,
     )
     find.citizen_science_eligible = _cs_eligible(find)
     await find.insert()
@@ -137,6 +145,9 @@ async def public_feed(
     province: str = Query(""),
     verification: str = Query(""),
     featured_only: bool = Query(False),
+    uv_only: bool = Query(False),
+    uv_colour: str = Query(""),
+    haul_only: bool = Query(False),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ) -> dict:
@@ -149,6 +160,12 @@ async def public_feed(
         q["verification_status"] = verification
     if featured_only:
         q["is_featured"] = True
+    if uv_only or uv_colour:
+        q["uv_fluorescence"] = {"$ne": None}
+    if uv_colour:
+        q["uv_fluorescence"] = uv_colour
+    if haul_only:
+        q["is_haul"] = True
 
     total = await Find.find(q).count()
     finds = await Find.find(q).sort(-Find.created_at).skip(skip).limit(limit).to_list()

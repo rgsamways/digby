@@ -75,6 +75,8 @@ function NewFindForm() {
   const [gpsLng, setGpsLng] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [csOptIn, setCsOptIn] = useState(false);
+  const [uvFluorescence, setUvFluorescence] = useState("");
+  const [isHaul, setIsHaul] = useState(false);
   const [imageError, setImageError] = useState("");
 
   if (!user) {
@@ -130,6 +132,8 @@ function NewFindForm() {
         verification_status: verification,
         citizen_science_opted_in: csOptIn,
         visibility,
+        uv_fluorescence: uvFluorescence || null,
+        is_haul: isHaul,
         gps_lat: gpsLat ? parseFloat(gpsLat) : null,
         gps_lng: gpsLng ? parseFloat(gpsLng) : null,
         site_name: siteName || null,
@@ -278,6 +282,33 @@ function NewFindForm() {
               <option value="public">Public — visible in feed</option>
               <option value="private">Private — only me</option>
             </select>
+          </div>
+        </div>
+
+        {/* UV + haul */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="form-label">UV fluorescence</label>
+            <select className="input" value={uvFluorescence} onChange={(e) => setUvFluorescence(e.target.value)}>
+              <option value="">None / not tested</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red / orange-red</option>
+              <option value="orange">Orange / yellow</option>
+              <option value="white">White / cream</option>
+              <option value="multi">Multi-colour</option>
+            </select>
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isHaul}
+                onChange={(e) => setIsHaul(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300 text-brand-600"
+              />
+              <span className="text-sm font-medium text-stone-900">This is a haul</span>
+            </label>
           </div>
         </div>
 
