@@ -35,7 +35,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen">
+    <div>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-stone-900 px-6 py-28 text-white">

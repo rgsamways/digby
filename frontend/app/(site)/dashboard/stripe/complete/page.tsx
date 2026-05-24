@@ -3,7 +3,7 @@ import { CheckCircle } from "lucide-react";
 
 export default function StripeCompletePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex flex-1 items-center justify-center px-4">
       <div className="card max-w-md w-full p-10 text-center">
         <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
         <h1 className="mb-2 text-2xl font-bold text-stone-900">Payouts enabled!</h1>

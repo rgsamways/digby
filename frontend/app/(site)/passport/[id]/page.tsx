@@ -46,7 +46,7 @@ export default function PublicPassportPage() {
 
   if (isError || !data) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center px-4">
         <Gem className="h-12 w-12 text-stone-300" />
         <h1 className="text-2xl font-bold text-stone-900">Passport not found</h1>
         <p className="text-stone-500">This rockhound passport doesn&apos;t exist or has been removed.</p>

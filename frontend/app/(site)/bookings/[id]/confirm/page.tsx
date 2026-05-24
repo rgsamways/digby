@@ -25,7 +25,7 @@ export default function BookingConfirmPage() {
   }, [params]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex flex-1 items-center justify-center px-4">
       <div className="card max-w-md w-full p-10 text-center">
         {status === "loading" && (
           <>

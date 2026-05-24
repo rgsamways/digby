@@ -91,7 +91,7 @@ export default function QuizPage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center px-4">
         <Gem className="h-12 w-12 text-brand-600" />
         <h1 className="text-2xl font-bold text-stone-900">Mineral Quiz</h1>
         <p className="text-stone-500">Sign in to play and earn points.</p>
@@ -103,7 +103,7 @@ export default function QuizPage() {
   // Ready screen
   if (phase === "ready") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-600">
           <Gem className="h-10 w-10 text-white" />
         </div>

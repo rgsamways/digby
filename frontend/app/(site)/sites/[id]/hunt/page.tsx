@@ -56,7 +56,7 @@ export default function HuntPage() {
 
   if (huntLoading) return <div className="flex h-64 items-center justify-center text-stone-500">Loading…</div>;
   if (!hunt) return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
       <MapPin className="h-12 w-12 text-stone-300" />
       <p className="text-stone-500">No active scavenger hunt for this site.</p>
       <Link href={`/sites/${siteId}`} className="btn-secondary text-sm">Back to site</Link>
@@ -70,7 +70,7 @@ export default function HuntPage() {
   const pct = totalItems > 0 ? Math.round((foundCount / totalItems) * 100) : 0;
 
   if (!bookingId) return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
       <p className="text-stone-500">No booking specified. Book this site first.</p>
       <Link href={`/sites/${siteId}`} className="btn-primary text-sm">Book now</Link>
     </div>

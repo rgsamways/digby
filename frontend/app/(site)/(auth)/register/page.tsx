@@ -39,7 +39,7 @@ function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex flex-1 items-center justify-center px-4">
       <div className="card w-full max-w-sm p-8">
         <h1 className="mb-6 text-2xl font-bold text-stone-900">Create account</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
