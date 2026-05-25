@@ -98,7 +98,7 @@ def _find_dict(find: Find, author_name: str, saved: bool = False) -> dict:
     }
 
 
-@router.post("/")
+@router.post("/", status_code=201)
 async def create_find(body: FindCreate, user: User = Depends(get_current_user)) -> dict:
     site_name: str | None = None
     site_oid: PydanticObjectId | None = None

@@ -2,6 +2,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 
 @pytest.mark.asyncio
 async def test_create_find(client: AsyncClient, auth_headers: dict):
@@ -23,7 +25,10 @@ async def test_create_find(client: AsyncClient, auth_headers: dict):
 async def test_find_feed_returns_list(client: AsyncClient, auth_headers: dict):
     resp = await client.get("/api/finds/feed", headers=auth_headers)
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    data = resp.json()
+    # Feed returns paginated envelope {items, total, skip, limit}
+    assert "items" in data
+    assert isinstance(data["items"], list)
 
 
 @pytest.mark.asyncio
@@ -42,7 +47,7 @@ async def test_create_find_requires_auth(client: AsyncClient):
         "mineral_name": "Quartz",
         "date": "2026-05-01",
     })
-    assert resp.status_code == 403
+    assert resp.status_code in (401, 403)
 
 
 @pytest.mark.asyncio

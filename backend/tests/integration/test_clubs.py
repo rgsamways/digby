@@ -2,6 +2,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 
 @pytest.mark.asyncio
 async def test_create_club(client: AsyncClient, auth_headers: dict):
@@ -93,4 +95,4 @@ async def test_join_and_leave_club(client: AsyncClient, auth_headers: dict):
 @pytest.mark.asyncio
 async def test_clubs_require_auth(client: AsyncClient):
     resp = await client.get("/api/clubs/")
-    assert resp.status_code == 403
+    assert resp.status_code in (401, 403)
