@@ -42,7 +42,7 @@ class DetectiveDifficulty(StrEnum):
 
 
 class JuniorProfile(Document):
-    parent_id: Indexed[str]  # type: ignore[valid-type]
+    parent_id: Indexed(str)  # type: ignore[valid-type]
     first_name: str
     age_range: AgeRange = AgeRange.MIDDLE
     avatar: str = "🪨"
@@ -81,8 +81,8 @@ class JuniorMineral(Document):
 
 
 class JuniorCollection(Document):
-    user_id: Indexed[str]  # type: ignore[valid-type]
-    junior_id: Indexed[str]  # type: ignore[valid-type]
+    user_id: Indexed(str)  # type: ignore[valid-type]
+    junior_id: Indexed(str)  # type: ignore[valid-type]
     mineral_id: str
     unlocked_at: datetime = Field(default_factory=datetime.utcnow)
     source: UnlockSource
@@ -110,8 +110,8 @@ class Badge(Document):
 
 
 class BadgeState(Document):
-    user_id: Indexed[str]  # type: ignore[valid-type]
-    junior_id: Indexed[str]  # type: ignore[valid-type]
+    user_id: Indexed(str)  # type: ignore[valid-type]
+    junior_id: Indexed(str)  # type: ignore[valid-type]
     badge_id: str
     earned_at: datetime = Field(default_factory=datetime.utcnow)
     trigger_event: str
@@ -145,8 +145,8 @@ class DetectiveCase(Document):
 
 
 class DetectiveCaseHistory(Document):
-    user_id: Indexed[str]  # type: ignore[valid-type]
-    junior_id: Indexed[str]  # type: ignore[valid-type]
+    user_id: Indexed(str)  # type: ignore[valid-type]
+    junior_id: Indexed(str)  # type: ignore[valid-type]
     case_id: str
     attempts: int = 0
     solved: bool = False

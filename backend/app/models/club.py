@@ -8,8 +8,8 @@ from pymongo import IndexModel
 class Club(Document):
     name: str
     description: str = ""
-    owner_id: Indexed[str]  # type: ignore[valid-type]
-    slug: Indexed[str]  # type: ignore[valid-type]
+    owner_id: Indexed(str)  # type: ignore[valid-type]
+    slug: Indexed(str)  # type: ignore[valid-type]
     is_public: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -22,8 +22,8 @@ class Club(Document):
 
 
 class ClubMembership(Document):
-    club_id: Indexed[str]  # type: ignore[valid-type]
-    user_id: Indexed[str]  # type: ignore[valid-type]
+    club_id: Indexed(str)  # type: ignore[valid-type]
+    user_id: Indexed(str)  # type: ignore[valid-type]
     role: str = "member"  # "owner" | "member"
     joined_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
