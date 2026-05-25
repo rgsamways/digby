@@ -460,7 +460,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Left Panel — desktop ───────────────────────────────────────── */}
       {showPanel && (
-        <aside className="hidden md:flex flex-col w-60 shrink-0 bg-[#1A1F2E] overflow-y-auto z-30">
+        <aside className="hidden md:flex flex-col w-60 shrink-0 bg-[#3D4F5C] overflow-y-auto z-30">
           <div className="px-4 py-4 border-b border-white/10">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
               {panelLabel}
@@ -576,7 +576,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile account sheet */}
       {showAccount && user && (
-        <div className="fixed inset-x-0 bottom-16 bg-[#1A1F2E] border-t border-white/10 md:hidden z-30 px-4 py-4 space-y-1">
+        <div className="fixed inset-x-0 bottom-16 bg-[#3D4F5C] border-t border-white/10 md:hidden z-30 px-4 py-4 space-y-1">
           {(user.role === "operator"
             ? [{ href: "/dashboard", label: "Dashboard" }]
             : user.role === "guide"
