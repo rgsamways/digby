@@ -303,21 +303,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setActiveId(guessActivity(pathname, user?.role, activities));
   }, [pathname, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Guest shell — copper strip with gem only, no panel, no tab bar
-  if (mounted && !user) {
-    return (
-      <div className="flex h-screen overflow-hidden">
-        <aside className="hidden md:flex flex-col w-14 shrink-0 bg-[#C97B3A] z-40">
-          <Link href="/" className="flex h-14 items-center justify-center text-white hover:bg-white/15 transition-colors" title="Digby">
-            <Gem className="h-6 w-6" />
-          </Link>
-        </aside>
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
-      </div>
-    );
-  }
+  // Only show activities/panel/tabs once Zustand has rehydrated and we know who the user is
+  const knownUser = mounted && !!user;
 
   function handleLogout() {
     clearAuth();
@@ -391,9 +378,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Gem className="h-6 w-6" />
         </Link>
 
-        {/* Activities */}
+        {/* Activities — hidden until user identity is confirmed */}
         <div className="flex flex-1 flex-col gap-0.5 pt-1 px-1">
-          {activities.map((activity) => {
+          {knownUser && activities.map((activity) => {
             const Icon = activity.icon;
             const isActive = !showAccount && activeId === activity.id;
             return (
@@ -415,9 +402,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        {/* Bottom: cart + account */}
+        {/* Bottom: cart + account — hidden until user identity is confirmed */}
         <div className="flex flex-col gap-0.5 px-1 pb-2">
-          {cartCount > 0 && (
+          {knownUser && cartCount > 0 && (
             <Link
               href="/shop/cart"
               title={`Cart (${cartCount})`}
@@ -429,7 +416,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             </Link>
           )}
-          {user ? (
+          {knownUser && user ? (
             <button
               onClick={handleAccountClick}
               title={user.name}
@@ -459,7 +446,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Left Panel — desktop ───────────────────────────────────────── */}
-      {showPanel && (
+      {knownUser && showPanel && (
         <aside className="hidden md:flex flex-col w-60 shrink-0 bg-[#3D4F5C] overflow-y-auto z-30">
           <div className="px-4 py-4 border-b border-white/10">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
@@ -517,12 +504,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── Content Pane ──────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-auto md:pb-0 pb-16">
+      <main className={cn("flex-1 overflow-auto", knownUser && "pb-16 md:pb-0")}>
         {children}
       </main>
 
       {/* ── Mobile Bottom Tab Bar ─────────────────────────────────────── */}
-      <nav className="fixed bottom-0 inset-x-0 bg-[#C97B3A] md:hidden z-40 flex border-t border-black/10">
+      {knownUser && <nav className="fixed bottom-0 inset-x-0 bg-[#C97B3A] md:hidden z-40 flex border-t border-black/10">
         {mobileTabs.map((activity) => {
           const Icon = activity.icon;
           const isActive = !showAccount && activeId === activity.id;
@@ -572,10 +559,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           )}
         </button>
-      </nav>
+      </nav>}
 
       {/* Mobile account sheet */}
-      {showAccount && user && (
+      {knownUser && showAccount && user && (
         <div className="fixed inset-x-0 bottom-16 bg-[#3D4F5C] border-t border-white/10 md:hidden z-30 px-4 py-4 space-y-1">
           {(user.role === "operator"
             ? [{ href: "/dashboard", label: "Dashboard" }]
