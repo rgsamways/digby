@@ -56,7 +56,5 @@ async def login(body: LoginRequest) -> AuthResponse:
 
 @router.get("/me")
 async def me(user: User = None) -> dict:
-    from app.api.deps import get_current_user
-    from fastapi import Depends
     # Handled inline in main — see /api/auth/me route in main.py
     return {}

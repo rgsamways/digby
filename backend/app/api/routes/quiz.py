@@ -7078,7 +7078,6 @@ async def submit_quiz(
     body: SubmitBody,
     visitor: User = Depends(get_current_user),
 ) -> dict:
-    from datetime import date
 
     bank_map = {q["id"]: q for q in _BANK}
     results = []

@@ -124,7 +124,10 @@ async def update_profile(
 # ── Verification queue ────────────────────────────────────────────────────────
 
 REVIEWER_TIERS = {"community_reviewer", "verified_expert", "ogs_endorsed"}
-VALID_ACTIONS = {"confirm", "correct", "confirm_with_note", "request_photos", "unidentifiable", "escalate"}
+VALID_ACTIONS = {
+    "confirm", "correct", "confirm_with_note",
+    "request_photos", "unidentifiable", "escalate",
+}
 
 
 def _requires_reviewer(user: User) -> User:
@@ -162,7 +165,9 @@ async def verification_queue(
 
     if status_filter == "all":
         query = {
-            "verification_status": {"$in": [VerificationStatus.AI_LIKELY, VerificationStatus.DISPUTED]},
+            "verification_status": {
+                "$in": [VerificationStatus.AI_LIKELY, VerificationStatus.DISPUTED],
+            },
             "photo_urls.0": {"$exists": True},
         }
     elif status_filter == "disputed":

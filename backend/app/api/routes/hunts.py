@@ -96,7 +96,9 @@ async def update_hunt(
     if body.is_active is not None:
         updates["is_active"] = body.is_active
     if body.items is not None:
-        updates["items"] = [HuntItem(label=i.label, hint=i.hint, points=i.points) for i in body.items]
+        updates["items"] = [
+            HuntItem(label=i.label, hint=i.hint, points=i.points) for i in body.items
+        ]
 
     if updates:
         await hunt.set(updates)
@@ -242,7 +244,9 @@ def _hunt_dict(h: ScavengerHunt) -> dict:
         "title": h.title,
         "description": h.description,
         "is_active": h.is_active,
-        "items": [{"id": i.id, "label": i.label, "hint": i.hint, "points": i.points} for i in h.items],
+        "items": [
+            {"id": i.id, "label": i.label, "hint": i.hint, "points": i.points} for i in h.items
+        ],
         "created_at": h.created_at.isoformat(),
     }
 

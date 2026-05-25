@@ -1,8 +1,8 @@
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.api.deps import get_current_user, require_guide
+from app.api.deps import require_guide
 from app.models.user import User, UserRole
 
 router = APIRouter()
@@ -23,7 +23,7 @@ class GuideProfileUpdate(BaseModel):
 async def list_guides() -> list[dict]:
     guides = await User.find(
         User.role == UserRole.GUIDE,
-        User.is_active == True,
+        User.is_active == True,  # noqa: E712 — Beanie ODM query syntax requires ==
     ).to_list()
     return [_guide_dict(g) for g in guides]
 

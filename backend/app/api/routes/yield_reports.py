@@ -4,7 +4,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.api.deps import get_current_user, require_operator
+from app.api.deps import require_operator
 from app.models.user import User
 from app.models.yield_report import YieldReport
 

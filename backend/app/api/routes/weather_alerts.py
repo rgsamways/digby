@@ -36,7 +36,7 @@ async def create_weather_alert(
 async def get_site_alerts(site_id: str) -> list[dict]:
     alerts = await WeatherAlert.find(
         WeatherAlert.site_id == PydanticObjectId(site_id),
-        WeatherAlert.is_active == True,
+        WeatherAlert.is_active == True,  # noqa: E712 — Beanie ODM query syntax requires ==
     ).sort(-WeatherAlert.created_at).to_list()
     return [_alert_dict(a) for a in alerts]
 

@@ -1,6 +1,6 @@
-import bcrypt
 from datetime import UTC, datetime, timedelta
 
+import bcrypt
 from jose import JWTError, jwt
 
 from app.core.config import settings

@@ -149,7 +149,7 @@ async def seed():
             items=[ShopOrderItem(product_id=str(p0.id), product_name=p0.name, qty=2, price=p0.price)],
             total=p0.price * 2,
             status=ShopOrderStatus.SHIPPED,
-            stripe_payment_intent_id=f"seed_pi_shipped_001",
+            stripe_payment_intent_id="seed_pi_shipped_001",
             shipping_address=addr_alice,
             tracking_number="1Z999AA10123456784",
         ),
@@ -161,7 +161,7 @@ async def seed():
             ],
             total=p1.price + p2.price,
             status=ShopOrderStatus.CONFIRMED,
-            stripe_payment_intent_id=f"seed_pi_confirmed_002",
+            stripe_payment_intent_id="seed_pi_confirmed_002",
             shipping_address=addr_bob,
         ),
         ShopOrder(
@@ -169,7 +169,7 @@ async def seed():
             items=[ShopOrderItem(product_id=str(p0.id), product_name=p0.name, qty=1, price=p0.price)],
             total=p0.price,
             status=ShopOrderStatus.PENDING,
-            stripe_payment_intent_id=f"seed_pi_pending_003",
+            stripe_payment_intent_id="seed_pi_pending_003",
             shipping_address=addr_carol,
         ),
     ]
@@ -199,7 +199,7 @@ async def seed():
             tier="discoverer",
             billing_frequency="monthly",
             status=StrataStatus.ACTIVE,
-            stripe_subscription_id=f"seed_sub_alice",
+            stripe_subscription_id="seed_sub_alice",
             shipping_address=addr_alice,
             current_period_end=datetime(2026, 6, 23, tzinfo=UTC),
         ),
@@ -208,7 +208,7 @@ async def seed():
             tier="collector",
             billing_frequency="annual",
             status=StrataStatus.ACTIVE,
-            stripe_subscription_id=f"seed_sub_bob",
+            stripe_subscription_id="seed_sub_bob",
             shipping_address=addr_bob,
             current_period_end=datetime(2027, 5, 23, tzinfo=UTC),
         ),
@@ -217,7 +217,7 @@ async def seed():
             tier="geologist",
             billing_frequency="monthly",
             status=StrataStatus.PAUSED,
-            stripe_subscription_id=f"seed_sub_carol",
+            stripe_subscription_id="seed_sub_carol",
             shipping_address=addr_carol,
             current_period_end=datetime(2026, 6, 1, tzinfo=UTC),
         ),
@@ -266,7 +266,7 @@ async def remove():
         existing = await StrataFulfilment.find_one({"subscription_id": sub_id})
         if existing:
             await existing.delete()
-    print(f"Cleaned up fulfilment records")
+    print("Cleaned up fulfilment records")
 
     # Seed users
     for email in [SEED_EMAIL_1, SEED_EMAIL_2, SEED_EMAIL_3]:

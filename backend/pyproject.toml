@@ -30,5 +30,10 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"app/api/routes/junior_seed.py" = ["E501"]
+"app/api/routes/quiz.py" = ["E501"]
+"seed_admin.py" = ["E501"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
