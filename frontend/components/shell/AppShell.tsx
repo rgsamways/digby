@@ -291,8 +291,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, clearAuth } = useAuthStore();
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
   const { enabled: largeText, toggle: toggleLargeText } = useLargeText();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const activities = buildActivities(user?.role, cartCount);
+
+  // Guest shell — copper strip with gem only, no panel, no tab bar
+  if (mounted && !user) {
+    return (
+      <div className="flex h-screen overflow-hidden">
+        <aside className="hidden md:flex flex-col w-14 shrink-0 bg-[#C97B3A] z-40">
+          <Link href="/" className="flex h-14 items-center justify-center text-white hover:bg-white/15 transition-colors" title="Digby">
+            <Gem className="h-6 w-6" />
+          </Link>
+        </aside>
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   const [activeId, setActiveId] = useState(() => guessActivity(pathname, user?.role, activities));
   const [panelOpen, setPanelOpen] = useState(true);
