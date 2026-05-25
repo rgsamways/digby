@@ -56,9 +56,9 @@ export function Navbar() {
 
   function handleLogout() {
     clearAuth();
-    router.push("/");
     setMobileOpen(false);
     setOpenMenu(null);
+    window.location.href = "/";
   }
 
   function toggle(name: string) {

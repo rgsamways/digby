@@ -125,8 +125,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   function handleLogout() {
     clearAuth();
-    router.push("/");
     setShowAccount(false);
+    window.location.href = "/";
   }
 
   function handleActivity(a: Activity) {
@@ -145,8 +145,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", backgroundColor: "#F5F0E8" }}>
 
-      {/* Activity bar — desktop only */}
-      {!isMobile && (
+      {/* Activity bar — desktop: full icon bar; mobile: thin copper strip only */}
+      {!isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", width: ready ? 56 : 8, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: ready ? "4px 6px" : 0 }}>
             {ready && activities.map(a => {
@@ -177,6 +177,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </div>
+      ) : (
+        <div style={{ width: 8, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }} />
       )}
 
       {/* Left panel — desktop only */}
