@@ -104,12 +104,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
   const { enabled: largeText, toggle: toggleLargeText } = useLargeText();
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const activities = buildActivities(user?.role, cartCount);
   const [activeId, setActiveId] = useState(() => guessActivity(pathname, user?.role, activities));
   const [panelOpen, setPanelOpen] = useState(true);
   const [showAccount, setShowAccount] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   useEffect(() => {
     setActiveId(guessActivity(pathname, user?.role, activities));
   }, [pathname, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -207,13 +214,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Content pane */}
-      <main style={{ flex: 1, overflowY: "auto", paddingBottom: ready ? 64 : 0 }} className="md:[padding-bottom:0px]">
+      <main style={{ flex: 1, overflowY: "auto", paddingBottom: ready && isMobile ? 64 : 0 }}>
         {children}
       </main>
 
       {/* Mobile tab bar */}
-      {ready && (
-        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: COPPER, display: "flex", zIndex: 40, borderTop: "1px solid rgba(0,0,0,0.1)" }} className="md:hidden">
+      {ready && isMobile && (
+        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: COPPER, display: "flex", zIndex: 40, borderTop: "1px solid rgba(0,0,0,0.1)" }}>
           {activities.slice(0, 5).map(a => {
             const Icon = a.icon;
             const active = !showAccount && activeId === a.id;
