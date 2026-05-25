@@ -53,6 +53,12 @@ export interface User {
   role: "visitor" | "operator" | "guide" | "admin";
   stripe_account_id?: string | null;
   stripe_account_enabled?: boolean;
+  bio?: string;
+  rate_per_day?: number | null;
+  guide_location?: string | null;
+  specialties?: string[];
+  is_verified?: boolean;
+  is_active?: boolean;
 }
 
 export interface Guide {

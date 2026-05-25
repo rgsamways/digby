@@ -472,10 +472,18 @@ async def dig_complete(
     all_minerals = await JuniorMineral.find().to_list()
     name_map = {m.name.lower(): m for m in all_minerals}
 
+    # Legendary cards require at least one real confirmed/completed booking
+    from app.models.booking import Booking, BookingStatus
+    has_booking = await Booking.find_one(
+        {"visitor_id": user.id, "status": {"$in": [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]}}
+    ) is not None
+
     new_cards: list[str] = []
     for name in body.mineral_names:
         mineral = name_map.get(name.lower())
         if mineral:
+            if mineral.rarity == RarityTier.LEGENDARY and not has_booking:
+                continue
             entry = await _unlock_card(
                 str(user.id), junior_id, mineral.mineral_id, UnlockSource.GAME
             )

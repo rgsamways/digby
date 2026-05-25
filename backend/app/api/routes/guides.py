@@ -28,6 +28,11 @@ async def list_guides() -> list[dict]:
     return [_guide_dict(g) for g in guides]
 
 
+@router.get("/me")
+async def get_my_guide_profile(guide: User = Depends(require_guide)) -> dict:
+    return _guide_dict(guide)
+
+
 @router.get("/{guide_id}")
 async def get_guide(guide_id: str) -> dict:
     guide = await User.get(PydanticObjectId(guide_id))
@@ -58,4 +63,6 @@ def _guide_dict(g: User) -> dict:
         "certifications": g.certifications,
         "rate_per_day": g.rate_per_day,
         "guide_location": g.guide_location,
+        "is_verified": g.is_verified,
+        "is_active": g.is_active,
     }

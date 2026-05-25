@@ -132,10 +132,10 @@ async def create_find(body: FindCreate, user: User = Depends(get_current_user)) 
     find.citizen_science_eligible = _cs_eligible(find)
     await find.insert()
 
-    # Award junior badges if this is a junior submission
+    # Award junior badges and unlock card if this is a junior submission
     if body.is_junior_submission:
-        from app.api.routes.junior import _evaluate_badges
-        from app.models.junior import JuniorProfile
+        from app.api.routes.junior import _evaluate_badges, _unlock_card
+        from app.models.junior import JuniorMineral, JuniorProfile, UnlockSource
         profiles = await JuniorProfile.find(
             JuniorProfile.parent_id == str(user.id)
         ).to_list()
@@ -148,7 +148,16 @@ async def create_find(body: FindCreate, user: User = Depends(get_current_user)) 
                 "citizen_science_eligible": find.citizen_science_eligible,
                 "province_count": len(provinces),
             }
+            # Match mineral name to a junior card
+            all_minerals = await JuniorMineral.find().to_list()
+            name_map = {m.name.lower(): m for m in all_minerals}
+            matched_mineral = name_map.get(find.mineral_name.lower()) if find.mineral_name else None
             for profile in profiles:
+                if matched_mineral:
+                    await _unlock_card(
+                        str(user.id), str(profile.id),
+                        matched_mineral.mineral_id, UnlockSource.FIND_LOG,
+                    )
                 await _evaluate_badges(str(user.id), str(profile.id), "find_logged", ctx)
 
     return _find_dict(find, user.name)

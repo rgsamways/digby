@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Map } from "lucide-react";
+import { BookOpen, Map, Pickaxe } from "lucide-react";
 import { TRACKS } from "@/lib/learn-content";
 
 export const metadata = { title: "Learn — Digby" };
@@ -10,13 +10,13 @@ export default function LearnPage() {
       <div className="mb-10">
         <h1 className="font-display text-4xl text-stone-900">GIS Education</h1>
         <p className="mt-2 text-stone-400">
-          Two tracks. One goal: understand Ontario&apos;s geology well enough to find your own minerals.
+          Three tracks. One goal: understand Ontario&apos;s geology well enough to find your own minerals.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {TRACKS.map((track) => {
-          const Icon = track.id === "field" ? Map : BookOpen;
+          const Icon = track.id === "field" ? Map : track.id === "prospector" ? Pickaxe : BookOpen;
           const colourMap = {
             brand: {
               bg: "bg-brand-50",
@@ -31,6 +31,13 @@ export default function LearnPage() {
               icon: "bg-violet-100 text-violet-700",
               badge: "bg-violet-100 text-violet-700",
               btn: "bg-violet-600 text-white hover:bg-violet-700",
+            },
+            amber: {
+              bg: "bg-amber-50",
+              border: "border-amber-100",
+              icon: "bg-amber-100 text-amber-700",
+              badge: "bg-amber-100 text-amber-700",
+              btn: "bg-amber-600 text-white hover:bg-amber-700",
             },
           };
           const c = colourMap[track.colour as keyof typeof colourMap];

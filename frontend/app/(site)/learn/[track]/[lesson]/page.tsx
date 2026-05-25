@@ -17,7 +17,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { track, lesson: lessonSlug } = await params;
-  const lesson = getLesson(track as "field" | "gis", lessonSlug);
+  const lesson = getLesson(track as "field" | "gis" | "prospector", lessonSlug);
   if (!lesson) return {};
   return { title: `${lesson.title} — Digby Learn` };
 }
@@ -28,24 +28,32 @@ export default async function LessonPage({ params }: Props) {
   const trackData = TRACKS.find((t) => t.id === track);
   if (!trackData) notFound();
 
-  const lesson = getLesson(track as "field" | "gis", lessonSlug);
+  const lesson = getLesson(track as "field" | "gis" | "prospector", lessonSlug);
   if (!lesson) notFound();
 
   const lessonIndex = trackData.lessons.findIndex((l) => l.slug === lessonSlug);
-  const trackColour = trackData.colour === "brand" ? "brand" : "violet";
+  const trackColour = trackData.colour === "brand" ? "brand" : trackData.colour === "amber" ? "amber" : "violet";
 
   const headerBg =
     trackColour === "brand"
       ? "bg-gradient-to-br from-brand-50 to-stone-50 border-brand-100"
+      : trackColour === "amber"
+      ? "bg-gradient-to-br from-amber-50 to-stone-50 border-amber-100"
       : "bg-gradient-to-br from-violet-50 to-stone-50 border-violet-100";
   const badgeCls =
     trackColour === "brand"
       ? "bg-brand-100 text-brand-700"
+      : trackColour === "amber"
+      ? "bg-amber-100 text-amber-700"
       : "bg-violet-100 text-violet-700";
   const tryItBg =
-    trackColour === "brand" ? "bg-brand-50 border-brand-200" : "bg-violet-50 border-violet-200";
+    trackColour === "brand"
+      ? "bg-brand-50 border-brand-200"
+      : trackColour === "amber"
+      ? "bg-amber-50 border-amber-200"
+      : "bg-violet-50 border-violet-200";
   const tryItIcon =
-    trackColour === "brand" ? "text-brand-600" : "text-violet-600";
+    trackColour === "brand" ? "text-brand-600" : trackColour === "amber" ? "text-amber-600" : "text-violet-600";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -55,7 +63,7 @@ export default async function LessonPage({ params }: Props) {
           Learn
         </Link>
         <span>/</span>
-        <Link href="/learn" className={`hover:text-stone-600 ${trackColour === "brand" ? "text-brand-600" : "text-violet-600"}`}>
+        <Link href="/learn" className={`hover:text-stone-600 ${trackColour === "brand" ? "text-brand-600" : trackColour === "amber" ? "text-amber-600" : "text-violet-600"}`}>
           {trackData.title}
         </Link>
         <span>/</span>
@@ -115,7 +123,7 @@ export default async function LessonPage({ params }: Props) {
               {lesson.linkHref && lesson.linkLabel && (
                 <Link
                   href={lesson.linkHref}
-                  className={`mt-3 inline-block text-sm font-semibold ${trackColour === "brand" ? "text-brand-600 hover:text-brand-700" : "text-violet-600 hover:text-violet-700"}`}
+                  className={`mt-3 inline-block text-sm font-semibold ${trackColour === "brand" ? "text-brand-600 hover:text-brand-700" : trackColour === "amber" ? "text-amber-600 hover:text-amber-700" : "text-violet-600 hover:text-violet-700"}`}
                 >
                   {lesson.linkLabel} →
                 </Link>
@@ -154,6 +162,8 @@ export default async function LessonPage({ params }: Props) {
             colourClass={
               trackColour === "brand"
                 ? "bg-brand-600 text-white hover:bg-brand-700"
+                : trackColour === "amber"
+                ? "bg-amber-600 text-white hover:bg-amber-700"
                 : "bg-violet-600 text-white hover:bg-violet-700"
             }
           />
@@ -166,6 +176,8 @@ export default async function LessonPage({ params }: Props) {
             colourClass={
               trackColour === "brand"
                 ? "bg-brand-600 text-white hover:bg-brand-700"
+                : trackColour === "amber"
+                ? "bg-amber-600 text-white hover:bg-amber-700"
                 : "bg-violet-600 text-white hover:bg-violet-700"
             }
           />
@@ -186,6 +198,8 @@ export default async function LessonPage({ params }: Props) {
                   l.slug === lessonSlug
                     ? trackColour === "brand"
                       ? "bg-brand-50 text-brand-800 font-semibold"
+                      : trackColour === "amber"
+                      ? "bg-amber-50 text-amber-800 font-semibold"
                       : "bg-violet-50 text-violet-800 font-semibold"
                     : "text-stone-600 hover:text-stone-900 hover:bg-white"
                 }`}

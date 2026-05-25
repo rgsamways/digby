@@ -10,13 +10,24 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#fefce8",
-          100: "#fef9c3",
-          400: "#facc15",
-          500: "#eab308",
-          600: "#ca8a04",
-          700: "#a16207",
-          900: "#713f12",
+          50:  "#fdf6ee",
+          100: "#faecd8",
+          400: "#e8a84a",
+          500: "#d48d42",
+          600: "#c97b3a",
+          700: "#a8622e",
+          900: "#6b3c1a",
+        },
+        digby: {
+          navy:   "#1A1F2E",
+          slate:  "#2C3A4A",
+          stone:  "#3D4F5C",
+          copper: "#C97B3A",
+          amber:  "#E8A84A",
+          cream:  "#F5F0E8",
+          warm:   "#EEE8DC",
+          blue:   "#8A9BAE",
+          teal:   "#2E7D8C",
         },
         stone: {
           750: "#44403c",
