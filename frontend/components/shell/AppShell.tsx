@@ -292,9 +292,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
   const { enabled: largeText, toggle: toggleLargeText } = useLargeText();
   const [mounted, setMounted] = useState(false);
+  const activities = buildActivities(user?.role, cartCount);
+  const [activeId, setActiveId] = useState(() => guessActivity(pathname, user?.role, activities));
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [showAccount, setShowAccount] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
 
-  const activities = buildActivities(user?.role, cartCount);
+  useEffect(() => {
+    setActiveId(guessActivity(pathname, user?.role, activities));
+  }, [pathname, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Guest shell — copper strip with gem only, no panel, no tab bar
   if (mounted && !user) {
@@ -311,14 +318,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const [activeId, setActiveId] = useState(() => guessActivity(pathname, user?.role, activities));
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [showAccount, setShowAccount] = useState(false);
-
-  useEffect(() => {
-    setActiveId(guessActivity(pathname, user?.role, activities));
-  }, [pathname, user?.role]);
 
   function handleLogout() {
     clearAuth();
