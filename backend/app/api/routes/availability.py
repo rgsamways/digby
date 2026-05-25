@@ -18,6 +18,25 @@ class AvailabilitySet(BaseModel):
     is_blocked: bool = False
 
 
+@router.get("/operator")
+async def operator_availability(operator: User = Depends(require_operator)) -> list[dict]:
+    sites = await Site.find(Site.operator_id == operator.id).to_list()
+    site_ids = [s.id for s in sites]
+    if not site_ids:
+        return []
+    slots = await Availability.find({"site_id": {"$in": site_ids}}).to_list()
+    return [
+        {
+            "site_id": str(s.site_id),
+            "date": str(s.date),
+            "slots_remaining": s.slots_remaining,
+            "slots_total": s.slots_total,
+            "is_blocked": s.is_blocked,
+        }
+        for s in slots
+    ]
+
+
 @router.get("/{site_id}")
 async def get_availability(
     site_id: PydanticObjectId,

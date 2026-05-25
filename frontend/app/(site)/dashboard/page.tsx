@@ -708,13 +708,10 @@ export default function DashboardPage() {
     onSuccess: (data) => { window.location.href = data.url; },
   });
 
-  // No has_availability on Site model — fetch per-site availability to derive it
-  const siteIds = mySites.map((s) => s.id);
-  const { data: siteAvailabilities = [] } = useQuery<AvailSlot[][]>({
-    queryKey: ["site-availabilities", siteIds],
-    queryFn: () =>
-      Promise.all(mySites.map((s) => api.get<AvailSlot[]>(`/api/availability/${s.id}`, { auth: true }))),
-    enabled: isOperatorRole && mySites.length > 0,
+  const { data: operatorAvailability = [] } = useQuery<(AvailSlot & { site_id: string })[]>({
+    queryKey: ["operator-availability"],
+    queryFn: () => api.get("/api/availability/operator", { auth: true }),
+    enabled: isOperatorRole,
   });
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -732,7 +729,7 @@ export default function DashboardPage() {
   // ── Operator state derivation ──────────────────────────────────────────
   const stripeConnected = me?.stripe_account_enabled === true;
   const hasSites = mySites.length > 0;
-  const hasAvailability = siteAvailabilities.some((slots) => slots.length > 0);
+  const hasAvailability = operatorAvailability.length > 0;
   const isSetupDone = stripeConnected && hasSites && hasAvailability;
   const firstName = user.name.split(" ")[0];
 
@@ -780,11 +777,10 @@ export default function DashboardPage() {
   const allTimeRevenue = completedBookings.reduce((sum, b) => sum + b.total_amount, 0);
 
   // Next available date per site (earliest future non-blocked slot)
-  const nextAvailableDate = (siteIdx: number): string | null => {
-    const slots = siteAvailabilities[siteIdx] ?? [];
+  const nextAvailableDate = (siteId: string): string | null => {
     const today = now.toISOString().slice(0, 10);
-    const future = slots
-      .filter((s) => !s.is_blocked && s.slots_remaining > 0 && s.date >= today)
+    const future = operatorAvailability
+      .filter((s) => s.site_id === siteId && !s.is_blocked && s.slots_remaining > 0 && s.date >= today)
       .map((s) => s.date)
       .sort();
     return future[0] ?? null;
@@ -900,8 +896,8 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mySites.slice(0, 3).map((s, idx) => {
-            const nextDate = nextAvailableDate(idx);
+          {mySites.slice(0, 3).map((s) => {
+            const nextDate = nextAvailableDate(s.id);
             return (
               <div key={s.id} className="card p-4">
                 <div className="mb-2 flex items-start justify-between gap-2">
