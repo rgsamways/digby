@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import type { Booking, WeatherAlert, YieldReport, ScavengerHunt, Specimen, Site, SiteQuestion } from "@/lib/types";
 import {
   Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map, ShoppingBag, Bell,
-  CheckCircle2, HelpCircle, Gem, Users, Award, ChevronRight, BookOpen, Zap,
+  CheckCircle2, HelpCircle, Gem, Users, Award, ChevronRight, BookOpen, Zap, TrendingUp,
 } from "lucide-react";
 
 // ─── Visitor dashboard types ──────────────────────────────────────────────────
@@ -393,7 +394,160 @@ function VisitorDashboard({ passport, bookings }: { passport: PassportData; book
   );
 }
 
+// ─── Operator Setup Checklist (States 1 & 2) ──────────────────────────────────
+
+function OperatorSetup({
+  stripeConnected,
+  hasSites,
+  hasAvailability,
+  firstName,
+  firstSiteId,
+  onConnectStripe,
+  connectStripeIsPending,
+}: {
+  stripeConnected: boolean;
+  hasSites: boolean;
+  hasAvailability: boolean;
+  firstName: string;
+  firstSiteId?: string;
+  onConnectStripe: () => void;
+  connectStripeIsPending: boolean;
+}) {
+  const stepsRemaining = [!stripeConnected, !hasSites, !hasAvailability].filter(Boolean).length;
+  const isFirstVisit = !stripeConnected && !hasSites;
+
+  const heading = isFirstVisit
+    ? `Let's get you live, ${firstName}.`
+    : stepsRemaining === 1
+    ? `Almost there, ${firstName} — one more step to go live.`
+    : `Almost there, ${firstName} — ${stepsRemaining} more steps to go live.`;
+
+  const availabilityHref = firstSiteId ? `/dashboard/sites` : "/dashboard/sites";
+
+  const steps = [
+    {
+      num: 1,
+      title: "Connect Stripe",
+      description: "Set up payouts so Digby can send you 88% of every booking.",
+      done: stripeConnected,
+      active: !stripeConnected,
+      cta: (
+        <button
+          onClick={onConnectStripe}
+          disabled={connectStripeIsPending}
+          className="btn-primary text-sm"
+        >
+          {connectStripeIsPending ? "Redirecting…" : "Connect Stripe →"}
+        </button>
+      ),
+    },
+    {
+      num: 2,
+      title: "List your first site",
+      description: "Add your dig site — location, minerals, pricing, photos.",
+      done: hasSites,
+      active: stripeConnected && !hasSites,
+      cta: (
+        <Link
+          href="/dashboard/sites/new"
+          className={cn("btn-primary text-sm", !stripeConnected && "pointer-events-none opacity-40")}
+          aria-disabled={!stripeConnected}
+        >
+          Create a Site →
+        </Link>
+      ),
+    },
+    {
+      num: 3,
+      title: "Set availability",
+      description: "Open up dates so visitors can book.",
+      done: hasAvailability,
+      active: hasSites && !hasAvailability,
+      cta: (
+        <Link
+          href={availabilityHref}
+          className={cn("btn-primary text-sm", !hasSites && "pointer-events-none opacity-40")}
+          aria-disabled={!hasSites}
+        >
+          Set Availability →
+        </Link>
+      ),
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="mb-8">
+        <h1 className="font-display text-3xl text-stone-900">{heading}</h1>
+        {isFirstVisit && (
+          <p className="mt-2 text-lg text-stone-500">
+            Three steps to start accepting bookings and getting paid.
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {steps.map((step) => (
+          <div
+            key={step.num}
+            className={cn(
+              "card p-5 transition-all",
+              step.done && "bg-stone-50 opacity-70",
+              step.active && "border-brand-300 ring-1 ring-brand-200"
+            )}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                  step.done
+                    ? "bg-green-100 text-green-700"
+                    : step.active
+                    ? "bg-brand-600 text-white"
+                    : "bg-stone-100 text-stone-400"
+                )}
+              >
+                {step.done ? <CheckCircle className="h-5 w-5" /> : step.num}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2
+                      className={cn(
+                        "font-semibold",
+                        step.done ? "text-stone-400 line-through" : "text-stone-900"
+                      )}
+                    >
+                      {step.title}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-stone-500">{step.description}</p>
+                  </div>
+                  {!step.done && <div className="shrink-0">{step.cta}</div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard Page ──────────────────────────────────────────────────────
+
+type AvailSlot = { date: string; slots_remaining: number; slots_total: number; is_blocked: boolean };
+
+function statusBadge(status: string) {
+  const cls =
+    status === "confirmed"
+      ? "bg-green-100 text-green-700"
+      : status === "pending"
+      ? "bg-yellow-100 text-yellow-700"
+      : status === "completed"
+      ? "bg-blue-100 text-blue-700"
+      : "bg-stone-100 text-stone-500";
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{status}</span>;
+}
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -554,6 +708,15 @@ export default function DashboardPage() {
     onSuccess: (data) => { window.location.href = data.url; },
   });
 
+  // No has_availability on Site model — fetch per-site availability to derive it
+  const siteIds = mySites.map((s) => s.id);
+  const { data: siteAvailabilities = [] } = useQuery<AvailSlot[][]>({
+    queryKey: ["site-availabilities", siteIds],
+    queryFn: () =>
+      Promise.all(mySites.map((s) => api.get<AvailSlot[]>(`/api/availability/${s.id}`, { auth: true }))),
+    enabled: isOperatorRole && mySites.length > 0,
+  });
+
   // ── Render ─────────────────────────────────────────────────────────────
 
   if (!user) return null;
@@ -563,38 +726,248 @@ export default function DashboardPage() {
     return <VisitorDashboard passport={passport} bookings={visitorBookings} />;
   }
 
-  // Operator / admin dashboard
+  // Operator — wait for me to load before deriving setup state
+  if (!me) return <div className="mx-auto max-w-3xl px-4 py-20 text-center text-stone-400">Loading…</div>;
+
+  // ── Operator state derivation ──────────────────────────────────────────
+  const stripeConnected = me?.stripe_account_enabled === true;
+  const hasSites = mySites.length > 0;
+  const hasAvailability = siteAvailabilities.some((slots) => slots.length > 0);
+  const isSetupDone = stripeConnected && hasSites && hasAvailability;
+  const firstName = user.name.split(" ")[0];
+
+  // States 1 & 2 — setup checklist
+  if (!isSetupDone) {
+    return (
+      <OperatorSetup
+        stripeConnected={stripeConnected}
+        hasSites={hasSites}
+        hasAvailability={hasAvailability}
+        firstName={firstName}
+        firstSiteId={mySites[0]?.id}
+        onConnectStripe={() => connectStripe.mutate()}
+        connectStripeIsPending={connectStripe.isPending}
+      />
+    );
+  }
+
+  // State 3 — Live operator dashboard
+  const now = new Date();
+  const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+  const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const needsAttention = bookings.filter(
+    (b) =>
+      b.status === "pending" ||
+      (b.status === "confirmed" && new Date(b.date) >= now && new Date(b.date) <= in48h)
+  );
+
+  const upcoming7 = bookings
+    .filter((b) => b.status === "confirmed" && new Date(b.date) >= now && new Date(b.date) <= in7days)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const siteNameOf = (b: Booking) =>
+    mySites.find((s) => s.id === b.site_id)?.name ?? b.site_name ?? "—";
+
+  // Revenue summary
+  const completedBookings = bookings.filter((b) => b.status === "completed");
+  const thisMonthRevenue = completedBookings
+    .filter((b) => {
+      const d = new Date(b.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, b) => sum + b.total_amount, 0);
+  const allTimeRevenue = completedBookings.reduce((sum, b) => sum + b.total_amount, 0);
+
+  // Next available date per site (earliest future non-blocked slot)
+  const nextAvailableDate = (siteIdx: number): string | null => {
+    const slots = siteAvailabilities[siteIdx] ?? [];
+    const today = now.toISOString().slice(0, 10);
+    const future = slots
+      .filter((s) => !s.is_blocked && s.slots_remaining > 0 && s.date >= today)
+      .map((s) => s.date)
+      .sort();
+    return future[0] ?? null;
+  };
+
+  // Keep legacy vars for existing sections below
   const confirmed = bookings.filter((b) => b.status === "confirmed");
   const pending = bookings.filter((b) => b.status === "pending");
   const revenue = confirmed.reduce((sum, b) => sum + b.total_amount, 0);
 
+  const todayStr = now.toLocaleDateString("en-CA", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+  });
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
-      <div className="flex items-start justify-between">
+
+      {/* ── Page header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-display text-4xl text-stone-900">Welcome back, {user?.name}</h1>
-          <p className="mt-2 text-stone-400">Operator dashboard</p>
+          <h1 className="font-display text-4xl text-stone-900">{firstName}&apos;s Dashboard</h1>
+          <p className="mt-1 text-sm text-stone-400">{todayStr}</p>
         </div>
-        <Link href="/dashboard/sites/new" className="btn-primary gap-2">
-          <Plus className="h-4 w-4" /> Add site
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/sites/new" className="btn-primary gap-1.5 text-sm">
+            <Plus className="h-4 w-4" /> New Site
+          </Link>
+          <a href="#yield-reports" className="btn-secondary gap-1.5 text-sm">
+            <Pickaxe className="h-4 w-4" /> Yield Report
+          </a>
+          <a href="#alerts" className="btn-secondary gap-1.5 text-sm">
+            <AlertTriangle className="h-4 w-4" /> Weather Alert
+          </a>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Confirmed bookings", value: confirmed.length },
-          { label: "Pending bookings", value: pending.length },
-          { label: "Total revenue (CAD)", value: `$${revenue.toFixed(2)}` },
-        ].map(({ label, value }) => (
-          <div key={label} className="card p-5">
-            <p className="text-sm text-stone-500">{label}</p>
-            <p className="mt-1 text-2xl font-bold text-stone-900">{value}</p>
+      {/* ── Bookings needing attention ── */}
+      <section className="card divide-y divide-stone-100">
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-semibold text-stone-800">Needs attention</h2>
+          {needsAttention.length > 0 && (
+            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
+              {needsAttention.length}
+            </span>
+          )}
+        </div>
+        {needsAttention.length === 0 ? (
+          <p className="px-5 py-5 text-sm text-stone-400">No pending bookings — you&apos;re all caught up.</p>
+        ) : (
+          needsAttention.map((b) => (
+            <div key={b.id} className="flex items-center gap-4 px-5 py-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-stone-800">
+                  {siteNameOf(b)} · Party of {b.party_size}
+                </p>
+                <p className="text-xs text-stone-500">
+                  {new Date(b.date).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {statusBadge(b.status)}
+                <Link href={`/bookings/${b.id}`} className="text-xs font-medium text-brand-600 hover:underline">
+                  View →
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
+      </section>
+
+      {/* ── Upcoming bookings (next 7 days) ── */}
+      <section className="card divide-y divide-stone-100">
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="font-semibold text-stone-800">Upcoming this week</h2>
+          <Link href="/dashboard/bookings" className="text-xs font-medium text-brand-600 hover:underline">
+            All Bookings →
+          </Link>
+        </div>
+        {upcoming7.length === 0 ? (
+          <div className="px-5 py-5">
+            <p className="text-sm text-stone-400">No upcoming bookings this week.</p>
+            <Link href="/sites" className="mt-1 block text-xs font-medium text-brand-600 hover:underline">
+              Browse how your sites look to visitors →
+            </Link>
           </div>
+        ) : (
+          upcoming7.map((b) => (
+            <div key={b.id} className="flex items-center gap-4 px-5 py-3">
+              <Calendar className="h-4 w-4 shrink-0 text-stone-300" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-stone-800">{siteNameOf(b)}</p>
+                <p className="text-xs text-stone-500">
+                  {new Date(b.date).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}
+                  {b.is_group_booking ? ` · Group of ${b.party_size}` : ` · Party of ${b.party_size}`}
+                </p>
+              </div>
+              <Link href={`/bookings/${b.id}`} className="text-xs font-medium text-brand-600 hover:underline shrink-0">
+                View →
+              </Link>
+            </div>
+          ))
+        )}
+      </section>
+
+      {/* ── Your sites ── */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-semibold text-stone-800">Your sites</h2>
+          {mySites.length > 3 && (
+            <Link href="/dashboard/sites" className="text-xs font-medium text-brand-600 hover:underline">
+              View all {mySites.length} sites →
+            </Link>
+          )}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {mySites.slice(0, 3).map((s, idx) => {
+            const nextDate = nextAvailableDate(idx);
+            return (
+              <div key={s.id} className="card p-4">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <h3 className="font-medium text-stone-900 leading-snug">{s.name}</h3>
+                  <span className={cn(
+                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                    s.is_active ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
+                  )}>
+                    {s.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400">
+                  {nextDate
+                    ? `Next available: ${new Date(nextDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`
+                    : "No availability set"}
+                </p>
+                <Link href={`/dashboard/sites`} className="mt-3 block text-xs font-medium text-brand-600 hover:underline">
+                  Manage →
+                </Link>
+              </div>
+            );
+          })}
+          <Link href="/dashboard/sites/new" className="card flex items-center justify-center gap-2 p-4 text-sm font-medium text-stone-500 hover:text-brand-600 hover:border-brand-200 transition-colors">
+            <Plus className="h-4 w-4" /> Add another site
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Revenue summary ── */}
+      <section className="card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-brand-600" />
+          <h2 className="font-semibold text-stone-800">Revenue</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-stone-500">This month</p>
+            <p className="text-2xl font-bold text-stone-900">${thisMonthRevenue.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-stone-500">All time</p>
+            <p className="text-2xl font-bold text-stone-900">${allTimeRevenue.toFixed(2)}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Quick links ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { href: "/dashboard/sites", label: "Set Availability", icon: <Calendar className="h-5 w-5" /> },
+          { href: "#yield-reports", label: "Yield Report", icon: <Pickaxe className="h-5 w-5" /> },
+          { href: "/dashboard/hunts", label: "Manage Hunts", icon: <Map className="h-5 w-5" /> },
+          { href: "#alerts", label: "Weather Alerts", icon: <AlertTriangle className="h-5 w-5" /> },
+        ].map(({ href, label, icon }) => (
+          <a
+            key={label}
+            href={href}
+            className="card group flex flex-col items-center gap-2 p-4 text-center transition-shadow hover:shadow-md"
+          >
+            <span className="text-brand-600 transition-colors group-hover:text-brand-700">{icon}</span>
+            <span className="text-sm font-medium text-stone-700">{label}</span>
+          </a>
         ))}
       </div>
 
-      {/* Stripe Connect */}
+      {/* ── Stripe status ── */}
       <section className="card p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -622,7 +995,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Scavenger Hunts */}
+      {/* ── Scavenger Hunts ── */}
       <section className="card p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -658,8 +1031,8 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Weather Alerts */}
-      <section className="card p-6">
+      {/* ── Weather Alerts ── */}
+      <section id="alerts" className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-amber-500" />
           <h2 className="text-lg font-semibold text-stone-800">Weather Alerts</h2>
@@ -697,8 +1070,8 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Yield Reports */}
-      <section className="card p-6">
+      {/* ── Yield Reports ── */}
+      <section id="yield-reports" className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <Pickaxe className="h-5 w-5 text-brand-600" />
           <h2 className="text-lg font-semibold text-stone-800">Yield Reports</h2>
@@ -743,9 +1116,12 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Recent bookings */}
+      {/* ── Recent bookings (full list) ── */}
       <section className="card divide-y divide-stone-100">
-        <div className="px-5 py-4 font-semibold text-stone-800">Recent bookings</div>
+        <div className="flex items-center justify-between px-5 py-4">
+          <span className="font-semibold text-stone-800">Recent bookings</span>
+          <Link href="/dashboard/bookings" className="text-xs font-medium text-brand-600 hover:underline">All Bookings →</Link>
+        </div>
         {bookings.length === 0 ? (
           <p className="px-5 py-8 text-center text-stone-500">No bookings yet.</p>
         ) : (
@@ -763,12 +1139,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3 text-right">
                 <div>
                   <p className="text-sm font-semibold">${b.total_amount.toFixed(2)}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    b.status === "confirmed" ? "bg-green-100 text-green-700" :
-                    b.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                    b.status === "completed" ? "bg-blue-100 text-blue-700" :
-                    "bg-stone-100 text-stone-500"
-                  }`}>{b.status}</span>
+                  {statusBadge(b.status)}
                 </div>
                 {b.status === "confirmed" && (
                   <button
@@ -785,7 +1156,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Open Today toggles */}
+      {/* ── Open Today toggles ── */}
       {mySites.length > 0 && (
         <section className="card p-6">
           <div className="mb-4 flex items-center gap-2">
@@ -814,7 +1185,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Unanswered Q&A */}
+      {/* ── Unanswered Q&A ── */}
       {unansweredQuestions.length > 0 && (
         <section className="card p-6">
           <div className="mb-4 flex items-center gap-2">
@@ -851,7 +1222,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Seasonal Windows */}
+      {/* ── Seasonal Windows ── */}
       <section className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <Bell className="h-5 w-5 text-brand-600" />
@@ -914,7 +1285,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Specimen Marketplace */}
+      {/* ── Specimen Marketplace ── */}
       <section className="card p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
