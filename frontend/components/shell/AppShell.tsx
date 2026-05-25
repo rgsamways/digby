@@ -40,8 +40,18 @@ function buildActivities(role: string | undefined, cartCount: number): Activity[
 
   if (isOperator) return [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", rootHref: "/dashboard", panel: [
-      { title: "My Business", links: [{ href: "/dashboard", label: "Overview", exact: true }, { href: "/dashboard/sites", label: "My Sites" }, { href: "/dashboard/guide", label: "Guide Profile" }] },
-      { title: "Manage", links: [{ href: "/bookings", label: "Bookings" }, { href: "/specimens", label: "Marketplace" }] },
+      { title: "Operator Portal", links: [
+        { href: "/dashboard", label: "Overview", exact: true },
+        { href: "/dashboard/bookings", label: "Bookings" },
+        { href: "/dashboard/community", label: "Community" },
+        { href: "/dashboard/marketplace", label: "Marketplace" },
+        { href: "/dashboard/resources", label: "Resources" },
+        { href: "/dashboard/settings", label: "Settings" },
+      ]},
+      { title: "Sites", links: [
+        { href: "/dashboard/sites", label: "My Sites" },
+        { href: "/dashboard/sites/new", label: "+ Add Site" },
+      ]},
     ]},
     { id: "sites", icon: MapPin, label: "Sites", rootHref: "/sites", panel: [{ links: [{ href: "/sites", label: "Browse Sites" }, { href: "/map", label: "Map" }] }] },
     { id: "shop", icon: ShoppingBag, label: "Shop", rootHref: "/shop", panel: [
@@ -83,7 +93,7 @@ function guessActivity(pathname: string, role: string | undefined, activities: A
   if (pathname.startsWith("/shop")) return "shop";
   if (pathname.startsWith("/passport") || pathname.startsWith("/finds") || pathname.startsWith("/diary") || pathname.startsWith("/gallery") || pathname.startsWith("/drops") || pathname.startsWith("/community") || pathname.startsWith("/clubs") || pathname.startsWith("/creators")) return "passport";
   if (pathname.startsWith("/learn") || pathname.startsWith("/strata") || pathname.startsWith("/mineral") || pathname.startsWith("/quiz") || pathname.startsWith("/mystery") || pathname.startsWith("/junior") || pathname.startsWith("/alerts")) return "learn";
-  if (pathname.startsWith("/dashboard")) return (role === "operator" || role === "admin" || role === "guide") ? "dashboard" : "sites";
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/bookings")) return (role === "operator" || role === "admin" || role === "guide") ? "dashboard" : "sites";
   return activities[0]?.id ?? "sites";
 }
 

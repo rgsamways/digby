@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
+from app.api.deps import get_current_user
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User, UserRole
 
@@ -52,5 +53,23 @@ async def login(body: LoginRequest) -> AuthResponse:
 
     token = create_access_token(str(user.id), user.role)
     return AuthResponse(access_token=token, user_id=str(user.id), role=user.role, name=user.name)
+
+
+class ProfileUpdate(BaseModel):
+    name: str | None = None
+    bio: str | None = None
+    phone: str | None = None
+
+
+@router.patch("/me", status_code=200)
+async def update_me(body: ProfileUpdate, user: User = Depends(get_current_user)) -> dict:
+    if body.name is not None:
+        user.name = body.name
+    if body.bio is not None:
+        user.bio = body.bio
+    if body.phone is not None:
+        user.phone = body.phone
+    await user.save()
+    return {"id": str(user.id), "name": user.name, "bio": user.bio, "phone": user.phone}
 
 

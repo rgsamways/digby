@@ -7,6 +7,7 @@ from app.api.deps import get_current_user
 from app.api.routes import (
     admin,
     alert_subscriptions,
+    operator_updates,
     auth,
     availability,
     bookings,
@@ -115,6 +116,7 @@ app.include_router(drops.router, prefix="/api/drops", tags=["drops"])
 app.include_router(creators.router, prefix="/api/creators", tags=["creators"])
 app.include_router(experts.router, prefix="/api/experts", tags=["experts"])
 app.include_router(clubs.router, prefix="/api/clubs", tags=["clubs"])
+app.include_router(operator_updates.router, prefix="/api/operator-updates", tags=["operator-updates"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

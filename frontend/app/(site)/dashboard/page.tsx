@@ -11,6 +11,7 @@ import type { Booking, WeatherAlert, YieldReport, ScavengerHunt, Specimen, Site,
 import {
   Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map, ShoppingBag, Bell,
   CheckCircle2, HelpCircle, Gem, Users, Award, ChevronRight, BookOpen, Zap, TrendingUp,
+  MessageSquare,
 } from "lucide-react";
 
 // ─── Visitor dashboard types ──────────────────────────────────────────────────
@@ -697,6 +698,13 @@ export default function DashboardPage() {
     enabled: isOperatorRole,
   });
 
+  type OperatorUpdateItem = { id: string; title: string; body: string; category: string; action_label: string; action_url: string; created_at: string };
+  const { data: digbyUpdates = [] } = useQuery<OperatorUpdateItem[]>({
+    queryKey: ["operator-updates"],
+    queryFn: () => api.get("/api/operator-updates/", { auth: true }),
+    enabled: isOperatorRole,
+  });
+
   const toggleHunt = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       api.patch(`/api/hunts/${id}`, { is_active }, { auth: true }),
@@ -748,603 +756,269 @@ export default function DashboardPage() {
     );
   }
 
-  // State 3 — Live operator dashboard
+  // State 3 — Operator Portal Overview
   const now = new Date();
-  const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-  const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const in14days = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const needsAttention = bookings.filter(
-    (b) =>
-      b.status === "pending" ||
-      (b.status === "confirmed" && new Date(b.date) >= now && new Date(b.date) <= in48h)
-  );
+  const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
+  const completedBookings = bookings.filter((b) => b.status === "completed");
+  const thisMonthBookings = bookings.filter((b) => {
+    const d = new Date(b.date);
+    return d >= thisMonthStart && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const thisMonthRevenue = completedBookings
+    .filter((b) => new Date(b.created_at) >= thisMonthStart)
+    .reduce((sum, b) => sum + b.total_amount, 0);
+  const avgPartySize = confirmedBookings.length > 0
+    ? confirmedBookings.reduce((sum, b) => sum + b.party_size, 0) / confirmedBookings.length
+    : 0;
+  const openSpots = operatorAvailability.filter(
+    (s) => !s.is_blocked && s.slots_remaining > 0 && s.date >= now.toISOString().slice(0, 10) && s.date <= in14days.toISOString().slice(0, 10)
+  ).reduce((sum, s) => sum + s.slots_remaining, 0);
 
-  const upcoming7 = bookings
-    .filter((b) => b.status === "confirmed" && new Date(b.date) >= now && new Date(b.date) <= in7days)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const upcomingSessions = bookings
+    .filter((b) => b.status === "confirmed" && new Date(b.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 5);
 
   const siteNameOf = (b: Booking) =>
     mySites.find((s) => s.id === b.site_id)?.name ?? b.site_name ?? "—";
 
-  // Revenue summary
-  const completedBookings = bookings.filter((b) => b.status === "completed");
-  const thisMonthRevenue = completedBookings
-    .filter((b) => {
-      const d = new Date(b.created_at);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    })
-    .reduce((sum, b) => sum + b.total_amount, 0);
-  const allTimeRevenue = completedBookings.reduce((sum, b) => sum + b.total_amount, 0);
+  const pendingCount = bookings.filter((b) => b.status === "pending").length;
+  const questionCount = unansweredQuestions.length;
 
-  // Next available date per site (earliest future non-blocked slot)
-  const nextAvailableDate = (siteId: string): string | null => {
-    const today = now.toISOString().slice(0, 10);
-    const future = operatorAvailability
-      .filter((s) => s.site_id === siteId && !s.is_blocked && s.slots_remaining > 0 && s.date >= today)
-      .map((s) => s.date)
-      .sort();
-    return future[0] ?? null;
+  const CATEGORY_COLOR: Record<string, string> = {
+    urgent: "#DC2626",
+    payout: "#D97706",
+    product: "#2563EB",
+    opportunity: "#059669",
+    general: "#6B7280",
   };
 
-  // Keep legacy vars for existing sections below
-  const confirmed = bookings.filter((b) => b.status === "confirmed");
-  const pending = bookings.filter((b) => b.status === "pending");
-  const revenue = confirmed.reduce((sum, b) => sum + b.total_amount, 0);
-
-  const todayStr = now.toLocaleDateString("en-CA", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
-  });
+  const operatorTools = [
+    { href: "/dashboard/sites", icon: "📍", label: "Site Listing", sub: "Photos, pricing, profile" },
+    { href: "/dashboard/bookings", icon: "📋", label: "Waivers & Safety", sub: "Forms, field safety" },
+    { href: "/dashboard/settings", icon: "💳", label: "Pricing & Payouts", sub: "Payment history, guidance" },
+    { href: "/dashboard/marketplace", icon: "💎", label: "Specimen Drop", sub: "Limited releases with provenance" },
+    { href: "/dashboard/bookings", icon: "🔬", label: "Citizen Science", sub: "Log finds, OGS dataset" },
+    { href: "/dashboard/community", icon: "🗣️", label: "Community Board", sub: "Talk to other operators" },
+  ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 pb-24 md:pb-8">
 
-      {/* ── Page header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-4xl text-stone-900">{firstName}&apos;s Dashboard</h1>
-          <p className="mt-1 text-sm text-stone-400">{todayStr}</p>
+          <h1 className="font-display text-2xl text-stone-900 sm:text-3xl">
+            {firstName}&rsquo;s Portal
+          </h1>
+          <p className="mt-0.5 text-sm text-stone-400">
+            {now.toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric" })}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/sites/new" className="btn-primary gap-1.5 text-sm">
+          {pendingCount > 0 && (
+            <Link href="/dashboard/bookings" className="flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+              <AlertTriangle className="h-3.5 w-3.5" /> {pendingCount} pending
+            </Link>
+          )}
+          {questionCount > 0 && (
+            <Link href="/dashboard/bookings" className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+              <HelpCircle className="h-3.5 w-3.5" /> {questionCount} questions
+            </Link>
+          )}
+          <Link href="/dashboard/sites/new" className="btn-primary gap-1.5 text-sm py-1.5">
             <Plus className="h-4 w-4" /> New Site
           </Link>
-          <a href="#yield-reports" className="btn-secondary gap-1.5 text-sm">
-            <Pickaxe className="h-4 w-4" /> Yield Report
-          </a>
-          <a href="#alerts" className="btn-secondary gap-1.5 text-sm">
-            <AlertTriangle className="h-4 w-4" /> Weather Alert
-          </a>
         </div>
       </div>
 
-      {/* ── Bookings needing attention ── */}
-      <section className="card divide-y divide-stone-100">
-        <div className="flex items-center justify-between px-5 py-4">
-          <h2 className="font-semibold text-stone-800">Needs attention</h2>
-          {needsAttention.length > 0 && (
-            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
-              {needsAttention.length}
-            </span>
-          )}
-        </div>
-        {needsAttention.length === 0 ? (
-          <p className="px-5 py-5 text-sm text-stone-400">No pending bookings — you&apos;re all caught up.</p>
-        ) : (
-          needsAttention.map((b) => (
-            <div key={b.id} className="flex items-center gap-4 px-5 py-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-stone-800">
-                  {siteNameOf(b)} · Party of {b.party_size}
-                </p>
-                <p className="text-xs text-stone-500">
-                  {new Date(b.date).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                {statusBadge(b.status)}
-                <Link href={`/bookings/${b.id}`} className="text-xs font-medium text-brand-600 hover:underline">
-                  View →
-                </Link>
-              </div>
-            </div>
-          ))
-        )}
-      </section>
-
-      {/* ── Upcoming bookings (next 7 days) ── */}
-      <section className="card divide-y divide-stone-100">
-        <div className="flex items-center justify-between px-5 py-4">
-          <h2 className="font-semibold text-stone-800">Upcoming this week</h2>
-          <Link href="/dashboard/bookings" className="text-xs font-medium text-brand-600 hover:underline">
-            All Bookings →
-          </Link>
-        </div>
-        {upcoming7.length === 0 ? (
-          <div className="px-5 py-5">
-            <p className="text-sm text-stone-400">No upcoming bookings this week.</p>
-            <Link href="/sites" className="mt-1 block text-xs font-medium text-brand-600 hover:underline">
-              Browse how your sites look to visitors →
-            </Link>
-          </div>
-        ) : (
-          upcoming7.map((b) => (
-            <div key={b.id} className="flex items-center gap-4 px-5 py-3">
-              <Calendar className="h-4 w-4 shrink-0 text-stone-300" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-stone-800">{siteNameOf(b)}</p>
-                <p className="text-xs text-stone-500">
-                  {new Date(b.date).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}
-                  {b.is_group_booking ? ` · Group of ${b.party_size}` : ` · Party of ${b.party_size}`}
-                </p>
-              </div>
-              <Link href={`/bookings/${b.id}`} className="text-xs font-medium text-brand-600 hover:underline shrink-0">
-                View →
-              </Link>
-            </div>
-          ))
-        )}
-      </section>
-
-      {/* ── Your sites ── */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-stone-800">Your sites</h2>
-          {mySites.length > 3 && (
-            <Link href="/dashboard/sites" className="text-xs font-medium text-brand-600 hover:underline">
-              View all {mySites.length} sites →
-            </Link>
-          )}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mySites.slice(0, 3).map((s) => {
-            const nextDate = nextAvailableDate(s.id);
-            return (
-              <div key={s.id} className="card p-4">
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <h3 className="font-medium text-stone-900 leading-snug">{s.name}</h3>
-                  <span className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                    s.is_active ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
-                  )}>
-                    {s.is_active ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-400">
-                  {nextDate
-                    ? `Next available: ${new Date(nextDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`
-                    : "No availability set"}
-                </p>
-                <Link href={`/dashboard/sites`} className="mt-3 block text-xs font-medium text-brand-600 hover:underline">
-                  Manage →
-                </Link>
-              </div>
-            );
-          })}
-          <Link href="/dashboard/sites/new" className="card flex items-center justify-center gap-2 p-4 text-sm font-medium text-stone-500 hover:text-brand-600 hover:border-brand-200 transition-colors">
-            <Plus className="h-4 w-4" /> Add another site
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Revenue summary ── */}
-      <section className="card p-5">
-        <div className="mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-brand-600" />
-          <h2 className="font-semibold text-stone-800">Revenue</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-stone-500">This month</p>
-            <p className="text-2xl font-bold text-stone-900">${thisMonthRevenue.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-stone-500">All time</p>
-            <p className="text-2xl font-bold text-stone-900">${allTimeRevenue.toFixed(2)}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Quick links ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* ── Season at a glance ── */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { href: "/dashboard/sites", label: "Set Availability", icon: <Calendar className="h-5 w-5" /> },
-          { href: "#yield-reports", label: "Yield Report", icon: <Pickaxe className="h-5 w-5" /> },
-          { href: "/dashboard/hunts", label: "Manage Hunts", icon: <Map className="h-5 w-5" /> },
-          { href: "#alerts", label: "Weather Alerts", icon: <AlertTriangle className="h-5 w-5" /> },
-        ].map(({ href, label, icon }) => (
-          <a
-            key={label}
-            href={href}
-            className="card group flex flex-col items-center gap-2 p-4 text-center transition-shadow hover:shadow-md"
-          >
-            <span className="text-brand-600 transition-colors group-hover:text-brand-700">{icon}</span>
-            <span className="text-sm font-medium text-stone-700">{label}</span>
-          </a>
+          { label: "Bookings this month", value: thisMonthBookings.length.toString(), sub: "confirmed + pending" },
+          { label: "Revenue (CAD)", value: `$${thisMonthRevenue.toLocaleString("en-CA", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, sub: "this month" },
+          { label: "Avg party size", value: avgPartySize > 0 ? avgPartySize.toFixed(1) : "—", sub: "confirmed bookings" },
+          { label: "Open spots (next 14d)", value: openSpots.toString(), sub: openSpots > 0 ? "available slots" : "check availability" },
+        ].map(({ label, value, sub }) => (
+          <div key={label} className="card p-4">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-400">{label}</p>
+            <p className="text-2xl font-bold text-stone-900">{value}</p>
+            <p className="mt-0.5 text-xs text-stone-400">{sub}</p>
+          </div>
         ))}
+      </section>
+
+      {/* ── Messages + Updates row ── */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+
+        {/* Messages — stub (no backend yet) */}
+        <section className="card">
+          <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-stone-400" />
+              <span className="text-sm font-semibold text-stone-800">Messages</span>
+            </div>
+            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-400">Coming soon</span>
+          </div>
+          <div className="divide-y divide-stone-50">
+            {[
+              { from: "Digby Team", preview: "New payout schedule update — action required before June…", badge: "NEW", time: "Yesterday" },
+              { from: "Ontario Mineral Exchange", preview: "Interested in stocking your sodalite — let's talk pricing", badge: null, time: "2d ago" },
+              { from: "Bancroft Heritage Digs", preview: "Can we coordinate the Aug long weekend schedule?", badge: null, time: "3d ago" },
+            ].map((msg) => (
+              <div key={msg.from} className="flex items-start gap-3 px-5 py-3.5 opacity-60">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-200 text-xs font-bold text-stone-600">
+                  {msg.from[0]}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-stone-800">{msg.from}</p>
+                    {msg.badge && <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-brand-700">{msg.badge}</span>}
+                    <span className="ml-auto shrink-0 text-xs text-stone-400">{msg.time}</span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-stone-500">{msg.preview}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-stone-100 px-5 py-3">
+            <p className="text-xs text-stone-400">Operator messaging launches with the Community update.</p>
+          </div>
+        </section>
+
+        {/* Updates from Digby */}
+        <section className="card">
+          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-stone-400" />
+              <span className="text-sm font-semibold text-stone-800">Updates from Digby</span>
+            </div>
+            {digbyUpdates.length > 0 && (
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">{digbyUpdates.length}</span>
+            )}
+          </div>
+          {digbyUpdates.length === 0 ? (
+            <div className="px-4 py-6 text-center">
+              <p className="text-xs text-stone-400">No updates right now. Check back soon.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-stone-50">
+              {digbyUpdates.slice(0, 5).map((u) => (
+                <div key={u.id} className="px-4 py-3">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: CATEGORY_COLOR[u.category] ?? "#6B7280", flexShrink: 0, display: "inline-block" }} />
+                    <p className="text-sm font-medium text-stone-900">{u.title}</p>
+                  </div>
+                  <p className="text-xs text-stone-500 leading-relaxed">{u.body}</p>
+                  {u.action_label && u.action_url && (
+                    <Link href={u.action_url} className="mt-1.5 inline-block text-xs font-medium text-brand-600 hover:underline">
+                      {u.action_label} →
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* ── Stripe status ── */}
-      <section className="card p-6">
-        <div className="flex items-center justify-between">
+      {/* ── Upcoming sessions ── */}
+      <section className="card">
+        <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-stone-500" />
-            <h2 className="text-lg font-semibold text-stone-800">Stripe Payments</h2>
+            <Calendar className="h-4 w-4 text-stone-400" />
+            <span className="text-sm font-semibold text-stone-800">Upcoming sessions</span>
           </div>
-          {me?.stripe_account_enabled ? (
-            <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
-              <CheckCircle className="h-4 w-4" /> Connected
-            </span>
-          ) : (
-            <button
-              onClick={() => connectStripe.mutate()}
-              disabled={connectStripe.isPending}
-              className="btn-primary text-sm"
-            >
-              {connectStripe.isPending ? "Redirecting…" : me?.stripe_account_id ? "Complete Stripe setup" : "Connect Stripe"}
-            </button>
-          )}
+          <Link href="/dashboard/bookings" className="text-xs font-medium text-brand-600 hover:underline">Manage all →</Link>
         </div>
-        {!me?.stripe_account_enabled && (
-          <p className="mt-2 text-sm text-stone-500">
-            Connect a Stripe account to receive payments from visitors.
-          </p>
-        )}
-      </section>
-
-      {/* ── Scavenger Hunts ── */}
-      <section className="card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Map className="h-5 w-5 text-brand-600" />
-            <h2 className="text-lg font-semibold text-stone-800">Scavenger Hunts</h2>
+        {upcomingSessions.length === 0 ? (
+          <div className="px-5 py-6 text-center">
+            <p className="text-sm text-stone-400">No upcoming sessions.</p>
+            <Link href="/dashboard/sites" className="mt-1 block text-xs font-medium text-brand-600 hover:underline">Set availability →</Link>
           </div>
-          <Link href="/dashboard/hunts/new" className="btn-primary gap-1 text-sm">
-            <Plus className="h-4 w-4" /> New hunt
-          </Link>
-        </div>
-        {hunts.length === 0 ? (
-          <p className="text-sm text-stone-500">No hunts yet. Create one to give visitors a challenge at your site.</p>
         ) : (
-          <div className="space-y-2">
-            {hunts.map((h) => (
-              <div key={h.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3">
-                <div>
-                  <p className="text-sm font-medium text-stone-800">{h.title}</p>
-                  <p className="text-xs text-stone-500">{h.items.length} items · {h.is_active ? "Active" : "Inactive"}</p>
+          <div className="divide-y divide-stone-50">
+            {upcomingSessions.map((b) => {
+              const spotsLeft = (() => {
+                const slot = operatorAvailability.find(
+                  (s) => s.site_id === b.site_id && s.date.startsWith(b.date.slice(0, 10))
+                );
+                return slot ? slot.slots_remaining : null;
+              })();
+              const isWaitlist = spotsLeft === 0;
+              const isOpen = !isWaitlist && spotsLeft !== null && spotsLeft > 0;
+              return (
+                <div key={b.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                    <span className="text-[10px] font-bold uppercase">{new Date(b.date).toLocaleDateString("en-CA", { month: "short" })}</span>
+                    <span className="text-sm font-bold leading-none">{new Date(b.date).getDate()}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-stone-900">{siteNameOf(b)}</p>
+                    <p className="text-xs text-stone-500">
+                      {new Date(b.date).toLocaleDateString("en-CA", { weekday: "short", hour: "numeric", minute: "2-digit" })}
+                      {b.is_group_booking ? ` · Group of ${b.party_size}` : ` · Party of ${b.party_size}`}
+                    </p>
+                  </div>
+                  {isWaitlist ? (
+                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">Waitlist</span>
+                  ) : isOpen ? (
+                    <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">{spotsLeft} left</span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">Confirmed</span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/dashboard/hunts/${h.id}/edit`} className="text-xs font-medium text-brand-600 hover:underline">Edit</Link>
-                  <button
-                    onClick={() => toggleHunt.mutate({ id: h.id, is_active: !h.is_active })}
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${h.is_active ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"}`}
-                  >
-                    {h.is_active ? "Active" : "Inactive"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Weather Alerts ── */}
-      <section id="alerts" className="card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-stone-800">Weather Alerts</h2>
-        </div>
-        <div className="mb-4 space-y-3 rounded-lg bg-stone-50 p-4">
-          <p className="text-sm font-medium text-stone-700">Post a new alert</p>
-          <select value={alertForm.site_id}
-            onChange={(e) => setAlertForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
-            <option value="">Select site…</option>
-            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          <input type="text" placeholder="Message (e.g. Site closed due to flooding)"
-            value={alertForm.message}
-            onChange={(e) => setAlertForm((f) => ({ ...f, message: e.target.value }))} className="input" />
-          <button
-            onClick={() => createAlert.mutate({ site_id: alertForm.site_id, message: alertForm.message, affected_dates: [] })}
-            disabled={!alertForm.site_id || !alertForm.message}
-            className="btn-primary text-sm"
-          >
-            Post Alert
-          </button>
-        </div>
-        {alerts.filter((a) => a.is_active).length === 0 ? (
-          <p className="text-sm text-stone-500">No active alerts.</p>
-        ) : (
-          <div className="space-y-2">
-            {alerts.filter((a) => a.is_active).map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3">
-                <p className="text-sm text-amber-800">{a.message}</p>
-                <button onClick={() => resolveAlert.mutate(a.id)}
-                  className="text-xs font-medium text-amber-700 hover:underline">Resolve</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Yield Reports ── */}
-      <section id="yield-reports" className="card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Pickaxe className="h-5 w-5 text-brand-600" />
-          <h2 className="text-lg font-semibold text-stone-800">Yield Reports</h2>
-        </div>
-        <div className="mb-4 space-y-3 rounded-lg bg-stone-50 p-4">
-          <p className="text-sm font-medium text-stone-700">Log a new session</p>
-          <select value={reportForm.site_id}
-            onChange={(e) => setReportForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
-            <option value="">Select site…</option>
-            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          <input type="date" value={reportForm.session_date}
-            onChange={(e) => setReportForm((f) => ({ ...f, session_date: e.target.value }))} className="input" />
-          <input type="text" placeholder="Minerals found (comma-separated)" value={reportForm.minerals_found}
-            onChange={(e) => setReportForm((f) => ({ ...f, minerals_found: e.target.value }))} className="input" />
-          <input type="text" placeholder="Quantity notes (optional)" value={reportForm.quantity_notes}
-            onChange={(e) => setReportForm((f) => ({ ...f, quantity_notes: e.target.value }))} className="input" />
-          <button
-            onClick={() => createReport.mutate({
-              site_id: reportForm.site_id,
-              session_date: reportForm.session_date,
-              minerals_found: reportForm.minerals_found.split(",").map((s) => s.trim()).filter(Boolean),
-              quantity_notes: reportForm.quantity_notes,
+              );
             })}
-            disabled={!reportForm.site_id || !reportForm.session_date}
-            className="btn-primary text-sm"
-          >
-            Log Report
-          </button>
-        </div>
-        {reports.length === 0 ? (
-          <p className="text-sm text-stone-500">No yield reports yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {reports.slice(0, 5).map((r) => (
-              <div key={r.id} className="rounded-lg border border-stone-200 p-3 text-sm">
-                <p className="font-medium text-stone-800">{r.session_date} — {r.minerals_found.join(", ") || "No minerals logged"}</p>
-                {r.quantity_notes && <p className="text-stone-500">{r.quantity_notes}</p>}
-              </div>
-            ))}
           </div>
-        )}
-      </section>
-
-      {/* ── Recent bookings (full list) ── */}
-      <section className="card divide-y divide-stone-100">
-        <div className="flex items-center justify-between px-5 py-4">
-          <span className="font-semibold text-stone-800">Recent bookings</span>
-          <Link href="/dashboard/bookings" className="text-xs font-medium text-brand-600 hover:underline">All Bookings →</Link>
-        </div>
-        {bookings.length === 0 ? (
-          <p className="px-5 py-8 text-center text-stone-500">No bookings yet.</p>
-        ) : (
-          bookings.slice(0, 10).map((b) => (
-            <div key={b.id} className="flex items-center gap-4 px-5 py-4">
-              <Calendar className="h-5 w-5 shrink-0 text-stone-400" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-stone-800">
-                  {new Date(b.date).toLocaleDateString("en-CA")}
-                </p>
-                <p className="text-xs text-stone-500">
-                  Party of {b.party_size}{b.is_group_booking ? " (group)" : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-right">
-                <div>
-                  <p className="text-sm font-semibold">${b.total_amount.toFixed(2)}</p>
-                  {statusBadge(b.status)}
-                </div>
-                {b.status === "confirmed" && (
-                  <button
-                    onClick={() => completeBooking.mutate(b.id)}
-                    disabled={completeBooking.isPending}
-                    className="rounded-md border border-brand-600 px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
-                  >
-                    Mark complete
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
         )}
       </section>
 
       {/* ── Open Today toggles ── */}
       {mySites.length > 0 && (
-        <section className="card p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <h2 className="text-lg font-semibold text-stone-800">Open Today</h2>
+        <section className="card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-semibold text-stone-800">Open today</span>
           </div>
-          <p className="mb-4 text-sm text-stone-500">
-            Toggle your sites open — visitors nearby will see a green badge.
-          </p>
-          <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
             {mySites.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3">
-                <p className="text-sm font-medium text-stone-800">{s.name}</p>
-                <button
-                  onClick={() => toggleOpenToday.mutate({ siteId: s.id, value: !s.is_open_today })}
-                  disabled={toggleOpenToday.isPending}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    s.is_open_today ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"
-                  }`}
-                >
-                  {s.is_open_today ? "Open" : "Closed"}
-                </button>
-              </div>
+              <button
+                key={s.id}
+                onClick={() => toggleOpenToday.mutate({ siteId: s.id, value: !s.is_open_today })}
+                disabled={toggleOpenToday.isPending}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  s.is_open_today
+                    ? "border-green-300 bg-green-100 text-green-700"
+                    : "border-stone-200 bg-white text-stone-500 hover:border-stone-300"
+                }`}
+              >
+                {s.is_open_today ? "✓ " : ""}{s.name}
+              </button>
             ))}
           </div>
         </section>
       )}
 
-      {/* ── Unanswered Q&A ── */}
-      {unansweredQuestions.length > 0 && (
-        <section className="card p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-amber-500" />
-            <h2 className="text-lg font-semibold text-stone-800">
-              Visitor Questions{" "}
-              <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-sm text-amber-700">{unansweredQuestions.length}</span>
-            </h2>
-          </div>
-          <div className="space-y-4">
-            {unansweredQuestions.map((q) => (
-              <div key={q.id} className="rounded-lg border border-stone-200 p-3">
-                <p className="text-sm font-medium text-stone-800">{q.question}</p>
-                <p className="mt-0.5 text-xs text-stone-400">{q.visitor_name}</p>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Your answer…"
-                    value={answerForms[q.id] ?? ""}
-                    onChange={(e) => setAnswerForms((f) => ({ ...f, [q.id]: e.target.value }))}
-                    className="input flex-1 text-sm"
-                  />
-                  <button
-                    onClick={() => answerQuestion.mutate({ id: q.id, answer: answerForms[q.id] ?? "" })}
-                    disabled={!answerForms[q.id] || answerQuestion.isPending}
-                    className="btn-primary text-sm"
-                  >
-                    Answer
-                  </button>
-                </div>
+      {/* ── Operator tools grid ── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-stone-400">Operator tools</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {operatorTools.map(({ href, icon, label, sub }) => (
+            <Link key={label} href={href}
+              className="card group flex items-start gap-3 p-4 transition-shadow hover:shadow-md">
+              <span className="text-xl leading-none">{icon}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-800 group-hover:text-brand-600 transition-colors">{label}</p>
+                <p className="mt-0.5 text-xs text-stone-400 leading-snug">{sub}</p>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── Seasonal Windows ── */}
-      <section className="card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Bell className="h-5 w-5 text-brand-600" />
-          <h2 className="text-lg font-semibold text-stone-800">Seasonal Windows</h2>
+            </Link>
+          ))}
         </div>
-        <p className="mb-4 text-sm text-stone-500">
-          Tag your sites with optimal collecting windows. Visitors subscribed to those minerals get notified.
-        </p>
-        <div className="mb-4 space-y-3 rounded-lg bg-stone-50 p-4">
-          <select value={seasonalForm.site_id}
-            onChange={(e) => setSeasonalForm((f) => ({ ...f, site_id: e.target.value }))} className="input">
-            <option value="">Select site…</option>
-            {mySites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          <input type="text" placeholder="Mineral (e.g. Agates)" value={seasonalForm.mineral}
-            onChange={(e) => setSeasonalForm((f) => ({ ...f, mineral: e.target.value }))} className="input" />
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-stone-500">Start month</label>
-              <select value={seasonalForm.start_month}
-                onChange={(e) => setSeasonalForm((f) => ({ ...f, start_month: e.target.value }))} className="input">
-                {MONTHS.slice(1).map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-stone-500">End month</label>
-              <select value={seasonalForm.end_month}
-                onChange={(e) => setSeasonalForm((f) => ({ ...f, end_month: e.target.value }))} className="input">
-                {MONTHS.slice(1).map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-              </select>
-            </div>
-          </div>
-          <input type="text" placeholder="Notes (e.g. best after spring thaw)" value={seasonalForm.notes}
-            onChange={(e) => setSeasonalForm((f) => ({ ...f, notes: e.target.value }))} className="input" />
-          <button
-            onClick={() => addSeasonalWindow.mutate({
-              site_id: seasonalForm.site_id,
-              mineral: seasonalForm.mineral,
-              start_month: Number(seasonalForm.start_month),
-              end_month: Number(seasonalForm.end_month),
-              notes: seasonalForm.notes,
-            })}
-            disabled={!seasonalForm.site_id || !seasonalForm.mineral}
-            className="btn-primary text-sm"
-          >
-            Add Window
-          </button>
-        </div>
-        {mySites.some((s) => s.seasonal_windows?.length > 0) && (
-          <div className="space-y-2">
-            {mySites.filter((s) => s.seasonal_windows?.length > 0).map((s) =>
-              s.seasonal_windows.map((w, i) => (
-                <div key={`${s.id}-${i}`} className="flex items-center justify-between rounded-lg border border-stone-200 p-3 text-sm">
-                  <span className="font-medium text-stone-800">{s.name}</span>
-                  <span className="text-stone-500">{w.mineral} · {MONTHS[w.start_month]}–{MONTHS[w.end_month]}</span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
       </section>
-
-      {/* ── Specimen Marketplace ── */}
-      <section className="card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-brand-600" />
-            <h2 className="text-lg font-semibold text-stone-800">Specimen Listings</h2>
-          </div>
-          <Link href="/specimens" className="text-sm font-medium text-brand-600 hover:underline">
-            View marketplace →
-          </Link>
-        </div>
-        <div className="mb-4 space-y-3 rounded-lg bg-stone-50 p-4">
-          <p className="text-sm font-medium text-stone-700">List a new specimen</p>
-          <input type="text" placeholder="Title (e.g. Thunder Bay Amethyst Cluster)" value={specimenForm.title}
-            onChange={(e) => setSpecimenForm((f) => ({ ...f, title: e.target.value }))} className="input" />
-          <textarea placeholder="Description" value={specimenForm.description} rows={2}
-            onChange={(e) => setSpecimenForm((f) => ({ ...f, description: e.target.value }))} className="input resize-none" />
-          <input type="text" placeholder="Minerals (comma-separated)" value={specimenForm.minerals}
-            onChange={(e) => setSpecimenForm((f) => ({ ...f, minerals: e.target.value }))} className="input" />
-          <div className="grid grid-cols-2 gap-3">
-            <input type="number" placeholder="Price (CAD)" value={specimenForm.price}
-              onChange={(e) => setSpecimenForm((f) => ({ ...f, price: e.target.value }))} className="input" min="0" step="0.01" />
-            <input type="text" placeholder="Image URL (optional)" value={specimenForm.images}
-              onChange={(e) => setSpecimenForm((f) => ({ ...f, images: e.target.value }))} className="input" />
-          </div>
-          <button
-            onClick={() => createSpecimen.mutate({
-              title: specimenForm.title,
-              description: specimenForm.description,
-              minerals: specimenForm.minerals.split(",").map((s) => s.trim()).filter(Boolean),
-              province: specimenForm.province,
-              price: Number(specimenForm.price),
-              images: specimenForm.images ? [specimenForm.images] : [],
-              quantity: 1,
-            })}
-            disabled={!specimenForm.title || !specimenForm.price}
-            className="btn-primary text-sm"
-          >
-            List Specimen
-          </button>
-        </div>
-        {mySpecimens.length === 0 ? (
-          <p className="text-sm text-stone-500">No specimens listed yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {mySpecimens.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-lg border border-stone-200 p-3 text-sm">
-                <div>
-                  <p className="font-medium text-stone-800">{s.title}</p>
-                  <p className="text-xs text-stone-500">{s.minerals.join(", ") || "No minerals"}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">${s.price.toFixed(2)}</p>
-                  <p className="text-xs text-stone-400">{s.available} available</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <Link href="/dashboard/sites" className="text-sm font-medium text-brand-600 hover:underline">
-        Manage my sites →
-      </Link>
     </div>
   );
 }

@@ -37,6 +37,7 @@ from app.models.specimen_order import SpecimenOrder
 from app.models.strata import CollectorCardCode, StrataBox, StrataFulfilment, StrataSubscription
 from app.models.user import User
 from app.models.waitlist_entry import WaitlistEntry
+from app.models.operator_update import OperatorUpdate
 from app.models.weather_alert import WeatherAlert
 from app.models.yield_report import YieldReport
 
@@ -55,7 +56,7 @@ async def init_db() -> None:
             GuideReview, AlertSubscription, Specimen, SpecimenOrder,
             SiteQuestion, FieldGuide, WaitlistEntry, Product, ShopOrder,
             StrataSubscription, StrataBox, CollectorCardCode, StrataFulfilment,
-            SpecimenDrop,
+            SpecimenDrop, OperatorUpdate,
             Find, FindSave, FindVerification,
             JuniorProfile, JuniorMineral, JuniorCollection,
             Badge, BadgeState, DetectiveCase, DetectiveCaseHistory,
