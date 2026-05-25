@@ -8,7 +8,7 @@ export default function StripeCompletePage() {
         <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
         <h1 className="mb-2 text-2xl font-bold text-stone-900">Payouts enabled!</h1>
         <p className="mb-6 text-stone-600">
-          Your Stripe account is connected. You'll receive payouts automatically
+          Your Stripe account is connected. You&apos;ll receive payouts automatically
           after each completed booking, minus the 12% platform fee.
         </p>
         <Link href="/dashboard" className="btn-primary">

@@ -36,7 +36,7 @@ export default function BookingConfirmPage() {
         {status === "success" && (
           <>
             <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
-            <h1 className="mb-2 text-2xl font-bold text-stone-900">You're booked!</h1>
+            <h1 className="mb-2 text-2xl font-bold text-stone-900">You&apos;re booked!</h1>
             <p className="mb-6 text-stone-600">
               Your booking is confirmed. Check your email for details. Have a great dig!
             </p>

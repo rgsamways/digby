@@ -73,7 +73,7 @@ async def create_booking(
         amount=int(total * 100),  # cents
         currency="cad",
         application_fee_amount=int(platform_fee * 100),
-        transfer_data={"destination": operator.stripe_account_id},
+        transfer_data={"destination": operator.stripe_account_id},  # type: ignore[typeddict-item]
         metadata={
             "site_id": body.site_id,
             "visitor_id": str(visitor.id),
@@ -96,7 +96,7 @@ async def create_booking(
     )
     await booking.insert()
 
-    return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)
+    return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)  # type: ignore[arg-type]
 
 
 @router.post("/mystery", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
@@ -141,7 +141,7 @@ async def create_mystery_booking(
         amount=int(total * 100),
         currency="cad",
         application_fee_amount=int(platform_fee * 100),
-        transfer_data={"destination": operator.stripe_account_id},
+        transfer_data={"destination": operator.stripe_account_id},  # type: ignore[typeddict-item]
         metadata={"site_id": str(site.id), "visitor_id": str(visitor.id)},
     )
 
@@ -160,7 +160,7 @@ async def create_mystery_booking(
         notes=f"Mystery booking — {body.mineral} in {body.province}",
     )
     await booking.insert()
-    return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)
+    return BookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)  # type: ignore[arg-type]
 
 
 @router.get("/my")
@@ -228,8 +228,8 @@ async def update_members(
     if booking.visitor_id != visitor.id:
         raise HTTPException(status_code=403, detail="Only the booking leader can edit members")
     await booking.set({
-        Booking.group_members: body.group_members,
-        Booking.is_group_booking: len(body.group_members) > 0,
+        Booking.group_members: body.group_members,  # type: ignore[dict-item]
+        Booking.is_group_booking: len(body.group_members) > 0,  # type: ignore[dict-item]
     })
     return _booking_dict(booking)
 

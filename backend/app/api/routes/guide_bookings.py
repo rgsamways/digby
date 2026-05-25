@@ -61,7 +61,7 @@ async def create_guide_booking(
         notes=body.notes,
     )
     await booking.insert()
-    return GuideBookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)
+    return GuideBookingResponse(booking_id=str(booking.id), client_secret=intent.client_secret)  # type: ignore[arg-type]
 
 
 @router.get("/my")

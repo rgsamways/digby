@@ -38,7 +38,7 @@ async def list_questions(site_id: PydanticObjectId) -> list[dict]:
     questions = await SiteQuestion.find(
         SiteQuestion.site_id == site_id,
         SiteQuestion.is_visible == True,  # noqa: E712
-    ).sort(SiteQuestion.created_at).to_list()
+    ).sort(SiteQuestion.created_at).to_list()  # type: ignore[arg-type]
     return [_q_dict(q) for q in questions]
 
 

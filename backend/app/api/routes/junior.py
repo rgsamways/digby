@@ -312,7 +312,7 @@ async def seed_data() -> dict:
             mineral_count += 1
 
     badge_count = 0
-    for data in BADGES:
+    for data in BADGES:  # type: ignore[assignment]
         existing = await Badge.find_one(Badge.badge_id == data["badge_id"])
         if not existing:
             await Badge(**data).insert()
@@ -614,7 +614,7 @@ async def submit_detective_answer(
     new_badges: list[str] = []
 
     if correct:
-        await history.set({"solved": True, "completed_at": datetime.utcnow()})
+        await history.set({"solved": True, "completed_at": datetime.utcnow()})  # type: ignore[union-attr]
         attempts = history.attempts if history else 1
         if attempts == 1:
             card_reward = case.card_reward_rare

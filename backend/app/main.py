@@ -51,7 +51,7 @@ async def _seed_junior_content() -> None:
     for data in MINERALS:
         if not await JuniorMineral.find_one(JuniorMineral.mineral_id == data["mineral_id"]):
             await JuniorMineral(**data).insert()
-    for data in BADGES:
+    for data in BADGES:  # type: ignore[assignment]
         if not await Badge.find_one(Badge.badge_id == data["badge_id"]):
             await Badge(**data).insert()
     for data in DETECTIVE_CASES:

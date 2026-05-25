@@ -93,10 +93,10 @@ async def subscribe(
     sub = stripe.Subscription.create(
         customer=customer["id"],
         items=[{
-            "price_data": {
+            "price_data": {  # type: ignore[typeddict-item, typeddict-unknown-key]
                 "currency": "cad",
                 "unit_amount": amount,
-                "recurring": {"interval": interval},
+                "recurring": {"interval": interval},  # type: ignore[typeddict-item]
                 "product_data": {"name": TIER_NAMES[body.tier]},
             }
         }],

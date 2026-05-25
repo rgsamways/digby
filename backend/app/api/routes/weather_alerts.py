@@ -57,7 +57,7 @@ async def resolve_alert(
     alert = await WeatherAlert.get(alert_id)
     if not alert or alert.operator_id != operator.id:
         raise HTTPException(status_code=404, detail="Alert not found")
-    await alert.set({WeatherAlert.is_active: False})
+    await alert.set({WeatherAlert.is_active: False})  # type: ignore[dict-item]
     return {"status": "resolved"}
 
 

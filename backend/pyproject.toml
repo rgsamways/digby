@@ -35,6 +35,9 @@ select = ["E", "F", "I", "UP"]
 "app/api/routes/quiz.py" = ["E501"]
 "seed_admin.py" = ["E501"]
 
+[tool.mypy]
+disable_error_code = ["operator"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"

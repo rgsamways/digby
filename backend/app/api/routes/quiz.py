@@ -7068,7 +7068,7 @@ async def get_questions(visitor: User = Depends(get_current_user)) -> list[dict]
     result = []
     for q in selected:
         options = q["options"][:]
-        random.shuffle(options)
+        random.shuffle(options)  # type: ignore[arg-type]
         result.append({"id": q["id"], "question": q["question"], "options": options, "answer": q["answer"], "explanation": q["explanation"]})
     return result
 

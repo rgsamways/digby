@@ -151,7 +151,7 @@ async def get_club(slug: str, user: User = Depends(get_current_user)) -> dict:
         except Exception:
             pass
 
-    finds.sort(key=lambda x: x["date"], reverse=True)
+    finds.sort(key=lambda x: x.get("date") or "", reverse=True)
 
     d = await _club_dict(club, len(memberships))
     d["members"] = members

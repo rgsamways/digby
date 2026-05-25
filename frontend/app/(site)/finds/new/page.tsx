@@ -78,11 +78,10 @@ function NewFindForm() {
   const [uvFluorescence, setUvFluorescence] = useState("");
   const [isHaul, setIsHaul] = useState(false);
   const [imageError, setImageError] = useState("");
-
-  if (!user) {
-    router.push("/login?redirect=/finds/new");
-    return null;
-  }
+  const [uploading, setUploading] = useState(false);
+  const [pendingFindId, setPendingFindId] = useState<string | null>(null);
+  const [pendingUv, setPendingUv] = useState("");
+  const [savingUv, setSavingUv] = useState(false);
 
   const addFiles = useCallback(async (rawFiles: FileList | null) => {
     if (!rawFiles) return;
@@ -98,8 +97,6 @@ function NewFindForm() {
       setImageError("Could not process image");
     }
   }, [images.length]);
-
-  const [uploading, setUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -149,9 +146,10 @@ function NewFindForm() {
     },
   });
 
-  const [pendingFindId, setPendingFindId] = useState<string | null>(null);
-  const [pendingUv, setPendingUv] = useState("");
-  const [savingUv, setSavingUv] = useState(false);
+  if (!user) {
+    router.push("/login?redirect=/finds/new");
+    return null;
+  }
 
   async function saveUvAndNavigate() {
     if (!pendingFindId) return;

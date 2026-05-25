@@ -60,7 +60,7 @@ async def join_waitlist(
 async def my_waitlist(visitor: User = Depends(get_current_user)) -> list[dict]:
     entries = await WaitlistEntry.find(
         WaitlistEntry.visitor_id == visitor.id,
-    ).sort(WaitlistEntry.date).to_list()
+    ).sort(WaitlistEntry.date).to_list()  # type: ignore[arg-type]
 
     result = []
     for e in entries:

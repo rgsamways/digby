@@ -25,7 +25,7 @@ export default function OperatorSitesPage() {
         <p className="text-stone-500">Loading…</p>
       ) : sites.length === 0 ? (
         <div className="card p-10 text-center">
-          <p className="mb-4 text-stone-500">You haven't listed any sites yet.</p>
+          <p className="mb-4 text-stone-500">You haven&apos;t listed any sites yet.</p>
           <Link href="/dashboard/sites/new" className="btn-primary">
             List your first site
           </Link>
