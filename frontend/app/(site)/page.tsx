@@ -7,7 +7,7 @@ export default function HomePage() {
     <div className="flex min-h-screen bg-[#1A1F2E]">
 
       {/* Left — field guide label */}
-      <div className="hidden sm:flex w-[30%] flex-col justify-start px-10 pt-14">
+      <div className="hidden sm:flex w-[30%] flex-col justify-start px-10 pt-14" style={{ backgroundColor: "#3D4F5C" }}>
         <div className="space-y-0.5">
           {FIELD_GUIDE.map((word) => (
             <p key={word} className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/20">
