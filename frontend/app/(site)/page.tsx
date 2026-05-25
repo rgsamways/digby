@@ -10,7 +10,7 @@ export default function HomePage() {
       <div className="hidden sm:flex w-[30%] flex-col justify-start px-10 pt-14" style={{ backgroundColor: "#3D4F5C" }}>
         <div className="space-y-0.5">
           {FIELD_GUIDE.map((word) => (
-            <p key={word} className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/20">
+            <p key={word} className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{ color: "#8A9BAE" }}>
               {word}
             </p>
           ))}
@@ -27,10 +27,10 @@ export default function HomePage() {
               digby
             </div>
             <div className="relative inline-block">
-              <div className="font-display text-[5rem] sm:text-[7.5rem] font-bold leading-none tracking-tight italic text-[#C97B3A] select-none">
+              <div className="font-display text-[5rem] sm:text-[7.5rem] font-bold leading-none tracking-tight italic select-none" style={{ color: "#E8A84A" }}>
                 .rocks
               </div>
-              <div className="absolute bottom-1 left-0 right-0 h-[3px] bg-[#C97B3A]" />
+              <div className="absolute bottom-1 left-0 right-0 h-[3px]" style={{ backgroundColor: "#C97B3A" }} />
             </div>
           </div>
 
