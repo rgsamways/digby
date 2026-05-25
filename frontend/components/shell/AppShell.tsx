@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
-  MapPin, Map, ShoppingBag, Award, BookOpen, User, Gem,
+  MapPin, Map, ShoppingBag, Award, BookOpen, User,
   ShoppingCart, LogOut, Type, LayoutDashboard,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
@@ -139,11 +139,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", backgroundColor: "#F5F0E8" }}>
 
       {/* Activity bar */}
-      <div style={{ display: "flex", flexDirection: "column", width: 56, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }}>
-        <Link href="/" style={{ display: "flex", height: 56, alignItems: "center", justifyContent: "center", color: "white" }}>
-          <Gem size={24} />
-        </Link>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "4px 6px" }}>
+      <div style={{ display: "flex", flexDirection: "column", width: ready ? 56 : 8, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: ready ? "4px 6px" : 0 }}>
           {ready && activities.map(a => {
             const Icon = a.icon;
             const active = !showAccount && activeId === a.id;
