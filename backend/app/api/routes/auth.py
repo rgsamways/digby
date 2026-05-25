@@ -54,7 +54,3 @@ async def login(body: LoginRequest) -> AuthResponse:
     return AuthResponse(access_token=token, user_id=str(user.id), role=user.role, name=user.name)
 
 
-@router.get("/me")
-async def me(user: User = None) -> dict:
-    # Handled inline in main — see /api/auth/me route in main.py
-    return {}

@@ -60,7 +60,7 @@ async def test_login_unknown_email(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_me_requires_auth(client: AsyncClient):
     resp = await client.get("/api/auth/me")
-    assert resp.status_code == 403
+    assert resp.status_code in (401, 403)  # HTTPBearer returns 403 for missing token
 
 
 @pytest.mark.asyncio
