@@ -145,40 +145,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", backgroundColor: "#F5F0E8" }}>
 
-      {/* Activity bar */}
-      <div style={{ display: "flex", flexDirection: "column", width: ready ? 56 : 8, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: ready ? "4px 6px" : 0 }}>
-          {ready && activities.map(a => {
-            const Icon = a.icon;
-            const active = !showAccount && activeId === a.id;
-            return (
-              <button key={a.id} onClick={() => handleActivity(a)} title={a.label}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", width: "100%", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
-                <Icon size={20} />
-                <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>{a.label}</span>
+      {/* Activity bar — desktop only */}
+      {!isMobile && (
+        <div style={{ display: "flex", flexDirection: "column", width: ready ? 56 : 8, flexShrink: 0, backgroundColor: COPPER, zIndex: 40 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: ready ? "4px 6px" : 0 }}>
+            {ready && activities.map(a => {
+              const Icon = a.icon;
+              const active = !showAccount && activeId === a.id;
+              return (
+                <button key={a.id} onClick={() => handleActivity(a)} title={a.label}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", width: "100%", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
+                  <Icon size={20} />
+                  <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>{a.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 6px 8px" }}>
+            {ready && cartCount > 0 && (
+              <Link href="/shop/cart" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", color: "white" }}>
+                <ShoppingCart size={20} />
+                <span style={{ position: "absolute", top: 6, right: 4, background: "white", color: COPPER, borderRadius: "50%", width: 16, height: 16, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount > 9 ? "9+" : cartCount}</span>
+              </Link>
+            )}
+            {ready && user && (
+              <button onClick={() => { setShowAccount(s => !s); setPanelOpen(true); }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", width: "100%" }}>
+                <User size={20} />
+                <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>Account</span>
               </button>
-            );
-          })}
+            )}
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 6px 8px" }}>
-          {ready && cartCount > 0 && (
-            <Link href="/shop/cart" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", color: "white" }}>
-              <ShoppingCart size={20} />
-              <span style={{ position: "absolute", top: 6, right: 4, background: "white", color: COPPER, borderRadius: "50%", width: 16, height: 16, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount > 9 ? "9+" : cartCount}</span>
-            </Link>
-          )}
-          {ready && user && (
-            <button onClick={() => { setShowAccount(s => !s); setPanelOpen(true); }}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", width: "100%" }}>
-              <User size={20} />
-              <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>Account</span>
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Left panel */}
-      {showPanel && (
+      {/* Left panel — desktop only */}
+      {showPanel && !isMobile && (
         <div style={{ display: "flex", flexDirection: "column", width: 240, flexShrink: 0, backgroundColor: STONE, overflowY: "auto", zIndex: 30 }}>
           <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
             <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.5)" }}>{panelLabel}</span>
@@ -217,6 +219,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main style={{ flex: 1, overflowY: "auto", paddingBottom: ready && isMobile ? 64 : 0 }}>
         {children}
       </main>
+
+      {/* Mobile account overlay — fullscreen, sits above content, below tab bar */}
+      {ready && isMobile && showAccount && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 64, backgroundColor: STONE, zIndex: 35, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.5)" }}>Account</span>
+          </div>
+          <nav style={{ flex: 1, padding: "12px 8px" }}>
+            {panelSections.map((section, i) => (
+              <div key={i} style={{ marginTop: i > 0 ? 24 : 0 }}>
+                {section.title && (
+                  <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.35)", padding: "0 8px", marginBottom: 4 }}>{section.title}</p>
+                )}
+                {section.links.map(({ href, label, exact }) => (
+                  <Link key={href} href={href} onClick={() => setShowAccount(false)}
+                    style={{ display: "block", padding: "10px 8px", fontSize: 15, color: isActive(href, pathname, exact) ? "white" : "rgba(255,255,255,0.65)", background: isActive(href, pathname, exact) ? "rgba(255,255,255,0.1)" : "transparent", fontWeight: isActive(href, pathname, exact) ? 600 : 400, textDecoration: "none", borderRadius: 6 }}>
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", padding: "12px 8px" }}>
+            <button onClick={toggleLargeText}
+              style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 8px", fontSize: 14, color: "rgba(255,255,255,0.65)", background: "transparent", border: "none", cursor: "pointer" }}>
+              <Type size={16} />{largeText ? "Normal text" : "Large text"}
+            </button>
+            <button onClick={handleLogout}
+              style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 8px", fontSize: 14, color: "rgba(255,255,255,0.65)", background: "transparent", border: "none", cursor: "pointer" }}>
+              <LogOut size={16} />Log out
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile tab bar */}
       {ready && isMobile && (
