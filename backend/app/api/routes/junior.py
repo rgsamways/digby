@@ -474,8 +474,9 @@ async def dig_complete(
 
     # Legendary cards require at least one real confirmed/completed booking
     from app.models.booking import Booking, BookingStatus
+    confirmed_statuses = [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]
     has_booking = await Booking.find_one(
-        {"visitor_id": user.id, "status": {"$in": [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]}}
+        {"visitor_id": user.id, "status": {"$in": confirmed_statuses}}
     ) is not None
 
     new_cards: list[str] = []
