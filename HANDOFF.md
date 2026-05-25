@@ -1,5 +1,5 @@
 # Digby.rocks — Complete Project Handoff
-_Last updated May 25, 2026 by Claude Code from direct code inspection. This document reflects the actual state of the codebase, not the todo list (which is outdated in several places)._
+_Last updated May 25, 2026 (session 2) by Claude Code from direct code inspection. This document reflects the actual state of the codebase, not the todo list (which is outdated in several places)._
 
 ---
 
@@ -45,6 +45,20 @@ digby/
       accessibility.ts   useLargeText() hook (localStorage + html class toggle)
   openspec/
     specs/digby-todo.md  Master task list (NOTE: several items marked [ ] are actually done)
+  backend/tests/
+    conftest.py          Session-scoped AsyncClient + registered_user fixtures
+    unit/                Pure function tests — no DB, always pass (<1s)
+      test_security.py   JWT roundtrip, bcrypt, tampered token rejection
+      test_passport_logic.py  _compute_points() exhaustive cases
+      test_slugify.py    _slugify() special chars, edge cases
+    integration/         API endpoint tests — require MongoDB (docker compose up)
+      test_auth.py       register, login, wrong password, /me auth
+      test_finds.py      find CRUD, feed pagination, GeoJSON export, CSV import
+      test_clubs.py      create, list, detail, join/leave, auth guard
+  frontend/tests/
+    e2e/                 Playwright browser tests — require full stack running
+      auth.spec.ts       register, login, wrong password, logout
+      find-journal.spec.ts  log a find, my finds, public feed
 ```
 
 ---
@@ -545,6 +559,55 @@ Frontend: `/mystery` — form picks province + mineral preference, creates a mys
 
 ---
 
+## Testing ✅
+
+### Running tests
+
+```bash
+# Unit tests — no dependencies, always runnable
+python -m pytest backend/tests/unit/ -v
+
+# Integration tests — requires MongoDB (docker compose up, or Docker Desktop running)
+python -m pytest backend/tests/integration/ -v
+
+# All backend tests
+python -m pytest backend/tests/ -v
+
+# E2E (Playwright) — requires full stack running locally
+cd frontend && npm run test:e2e        # headless
+cd frontend && npm run test:e2e:ui     # with browser UI
+```
+
+### Stack
+
+| Layer | Tool | Scope |
+|---|---|---|
+| Unit | pytest + pytest-asyncio 1.3.0 | Pure functions, no DB |
+| Integration | pytest + httpx ASGI transport + real MongoDB | Full API + DB |
+| E2E | Playwright (Chromium) | Full browser, full stack |
+
+### Configuration notes
+
+- `backend/pyproject.toml` sets `asyncio_mode = "auto"`, `asyncio_default_fixture_loop_scope = "session"`, and `asyncio_default_test_loop_scope = "session"`. **All three are required.** Motor (MongoDB async driver) binds to an event loop at init time; both fixture and test scopes must be `"session"` or Motor's futures end up on the wrong loop.
+- Integration test files include `pytestmark = pytest.mark.asyncio(loop_scope="session")` as an extra guard.
+- E2E tests are gated in CI (`if: false` in `.github/workflows/ci.yml`) until a full docker-compose stack is wired in the runner. Remove that flag to enable.
+- `per-file-ignores` in `pyproject.toml` silences E501 in `junior_seed.py`, `quiz.py`, and `seed_admin.py` — these are data files with unavoidably long string literals.
+
+### CI jobs (`.github/workflows/ci.yml`)
+
+| Job | What it runs | When |
+|---|---|---|
+| `backend` | ruff lint → mypy → unit tests → integration tests (with MongoDB service) | Every push to main |
+| `frontend` | tsc type-check → ESLint → next build | Every push to main |
+| `e2e` | Playwright (gated off) | Never, until enabled |
+
+### Bugs caught by tests (do not re-introduce)
+
+1. **Dead `/me` stub in `auth.py`** — a `@router.get("/me")` stub existed in `auth.py` that returned `{}` with no auth check, shadowing the real `/api/auth/me` route in `main.py`. Removed in commit `59bfb18`.
+2. **`POST /api/finds/` returned 200 instead of 201** — missing `status_code=201` on the create route. Fixed in commit `5db1ce7`.
+
+---
+
 ## What Is NOT Started
 
 ### Remaining Section 11 Items
@@ -641,6 +704,16 @@ The first version of this document said "Awaiting Robin's Mapbox Studio tileset 
 After the tileset approach was confirmed correct, the geology layers were subsequently migrated away from Mapbox tilesets entirely. The OGS shapefiles were converted to GeoJSON with a Python script and placed in `frontend/public/geodata/`. The map page was updated to use `type="geojson"` sources instead of `type="vector"`. The two tileset env vars (`NEXT_PUBLIC_MAPBOX_TILESET_BEDROCK`, `NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES`) are no longer used and should not be set.
 
 **Note for future sessions:** If you see any reference to Mapbox tilesets for the bedrock or OMI layers, it is stale.
+
+### 4. Dead `/me` stub in `auth.py` was silently intercepting auth requests
+
+A `@router.get("/me")` stub in `auth.py` returned `{}` with no auth enforcement. Since the auth router is registered at `/api/auth`, this route intercepted every call to `GET /api/auth/me` before it reached the real implementation in `main.py`. Existed from project start until caught by integration tests. Removed in commit `59bfb18`.
+
+**Root cause:** Stub was added as a placeholder and forgotten. Integration tests caught it immediately.
+
+### 5. `POST /api/finds/` returned 200 instead of 201
+
+Missing `status_code=201` on the route decorator. Caught by integration tests. Fixed in commit `5db1ce7`.
 
 ### 3. Failed to find the `.env` file using shell commands
 When asked to verify whether env vars were set, Claude ran `type .env` via the Bash tool (a Unix shell builtin), then ran PowerShell `Get-ChildItem` which also returned nothing, and concluded the file didn't exist. The file was at `c:\dev\digby\.env` the entire time. The Read tool found it immediately when finally used.
