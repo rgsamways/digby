@@ -33,12 +33,25 @@ jobs:
       - name: Type check
         run: uv run mypy app --ignore-missing-imports
 
-      - name: Test
-        run: uv run pytest tests/ -v
+      - name: Unit tests
+        run: uv run pytest tests/unit/ -v
         env:
           MONGODB_URL: mongodb://localhost:27017/digby_test
-          JWT_SECRET: test-secret-ci
+          JWT_SECRET: test-secret-not-for-production-use-64chars-padded-xx
           STRIPE_SECRET_KEY: sk_test_ci
+
+      - name: Integration tests
+        run: uv run pytest tests/integration/ -v
+        env:
+          MONGODB_URL: mongodb://localhost:27017/digby_test
+          JWT_SECRET: test-secret-not-for-production-use-64chars-padded-xx
+          STRIPE_SECRET_KEY: sk_test_ci
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_S3_BUCKET: test-bucket
+          AWS_S3_REGION: ca-central-1
+          ANTHROPIC_API_KEY: test
+          ADMIN_PASSWORD: test-admin-password
 
     services:
       mongo:
@@ -81,3 +94,37 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:8000
           NEXT_PUBLIC_MAPBOX_TOKEN: pk.test
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # Only run E2E when both backend and frontend pass
+    needs: [backend, frontend]
+    # E2E requires a running stack — skip in CI for now until we wire up
+    # the full docker-compose stack in the runner. Remove this line to enable.
+    if: false
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: true
