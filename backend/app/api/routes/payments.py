@@ -182,3 +182,14 @@ async def _handle_shop_order_succeeded(pi: dict) -> None:
         shipping_address=shipping_address,
     )
     await order.insert()
+
+    # Award gear-up badge to any junior profiles under the purchasing account
+    if user_id:
+        try:
+            from app.api.routes.junior import _evaluate_badges
+            from app.models.junior import JuniorProfile
+            profiles = await JuniorProfile.find(JuniorProfile.parent_id == user_id).to_list()
+            for jp in profiles:
+                await _evaluate_badges(user_id, str(jp.id), "shop_order", {"shop_order": True})
+        except Exception:
+            pass

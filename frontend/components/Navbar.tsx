@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Gem, ChevronDown, ShoppingCart } from "lucide-react";
+import { Menu, X, Gem, ChevronDown, ShoppingCart, Type } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { useCartStore } from "@/lib/cart";
 import { cn } from "@/lib/utils";
+import { useLargeText } from "@/lib/accessibility";
 
 const exploreLinks = [
   { href: "/finds", label: "Find Feed" },
@@ -29,7 +30,9 @@ const myDigbyLinks = [
   { href: "/passport", label: "My Passport" },
   { href: "/diary", label: "Trip Journal" },
   { href: "/finds/my", label: "Find Journal" },
+  { href: "/clubs", label: "Clubs" },
   { href: "/junior", label: "Junior Club 🪨" },
+  { href: "/expert/verify", label: "Verify Finds" },
 ];
 
 export function Navbar() {
@@ -61,6 +64,7 @@ export function Navbar() {
     setOpenMenu(openMenu === name ? null : name);
   }
 
+  const { enabled: largeText, toggle: toggleLargeText } = useLargeText();
   const isOperator = user?.role === "operator" || user?.role === "admin";
   const isGuide = user?.role === "guide";
   const isVisitor = !isOperator && !isGuide;
@@ -216,6 +220,13 @@ export function Navbar() {
                     </>
                   )}
                   <button
+                    onClick={toggleLargeText}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50"
+                  >
+                    <Type className="h-3.5 w-3.5 text-stone-400" />
+                    {largeText ? "Normal text" : "Large text"}
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="block w-full px-4 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50 hover:text-red-500"
                   >
@@ -273,7 +284,15 @@ export function Navbar() {
                     Log out
                   </button>
                 </>
-              ) : (
+              ) : null}
+              <button
+                onClick={toggleLargeText}
+                className="btn-secondary text-sm flex items-center gap-2 justify-center"
+              >
+                <Type className="h-4 w-4" />
+                {largeText ? "Normal text" : "Large text"}
+              </button>
+              {!user && (
                 <>
                   <Link
                     href="/login"

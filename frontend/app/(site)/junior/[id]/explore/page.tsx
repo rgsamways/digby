@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Map, { Layer, Popup, Source, type MapRef, type MapLayerMouseEvent } from "react-map-gl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, X } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { api } from "@/lib/api";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 const TILESET_MDI = process.env.NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES ?? "";
@@ -44,6 +45,22 @@ export default function FormationExplorerPage() {
   const mapRef = useRef<MapRef>(null);
   const [popup, setPopup] = useState<OmiSpot | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [exploredProvinces, setExploredProvinces] = useState<string[]>([]);
+  const [newBadges, setNewBadges] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    api
+      .get<{ explored_provinces: string[]; new_badges: string[] }>(
+        `/api/junior/${id}/provinces`,
+        { auth: true }
+      )
+      .then((r) => {
+        setExploredProvinces(r.explored_provinces);
+        if (r.new_badges?.length) setNewBadges(r.new_badges);
+      })
+      .catch(() => {});
+  }, [id]);
 
   const handleClick = useCallback((e: MapLayerMouseEvent) => {
     const map = mapRef.current?.getMap();
@@ -160,13 +177,31 @@ export default function FormationExplorerPage() {
         {/* Province legend */}
         <div className="absolute top-4 right-4 rounded-xl bg-white/90 backdrop-blur-sm p-3 shadow text-xs max-w-[160px]">
           <p className="font-bold text-stone-700 mb-2">Ontario Provinces</p>
-          {Object.entries(PROVINCE_INFO).map(([name, info]) => (
-            <div key={name} className="flex items-start gap-1.5 mb-1">
-              <span>{info.emoji}</span>
-              <span className="text-stone-500">{name.replace(" and ", " / ")}</span>
-            </div>
-          ))}
+          {Object.entries(PROVINCE_INFO).map(([name, info]) => {
+            const explored = exploredProvinces.some((p) =>
+              p.toUpperCase().includes(name.split(" ")[0])
+            );
+            return (
+              <div key={name} className="flex items-start gap-1.5 mb-1">
+                <span>{info.emoji}</span>
+                <span className={explored ? "font-semibold text-brand-700" : "text-stone-500"}>
+                  {name.replace(" and ", " / ")}
+                  {explored && " ✓"}
+                </span>
+              </div>
+            );
+          })}
+          {exploredProvinces.length === 0 && (
+            <p className="text-stone-400 mt-1">Log a find to unlock!</p>
+          )}
         </div>
+
+        {/* Badge toast */}
+        {newBadges.length > 0 && (
+          <div className="absolute bottom-16 left-4 right-4 rounded-xl bg-amber-50 border border-amber-200 p-3 shadow text-sm">
+            <p className="font-bold text-amber-800">🏅 Badge earned: {newBadges.join(", ")}</p>
+          </div>
+        )}
       </div>
     </div>
   );

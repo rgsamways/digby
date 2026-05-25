@@ -47,6 +47,15 @@ class DetectiveSubmit(BaseModel):
     answer_id: str  # mineral_id chosen by child
 
 
+class DigCompleteBody(BaseModel):
+    mineral_names: list[str]  # names of minerals found (from dig game)
+
+
+class LessonCompleteBody(BaseModel):
+    track: str   # e.g. "field", "gis"
+    lesson: str  # lesson slug
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _ensure_mine(junior: JuniorProfile, user: User) -> None:
@@ -72,8 +81,11 @@ async def _unlock_card(
     return entry
 
 
-async def _evaluate_badges(user_id: str, junior_id: str, trigger: str) -> list[str]:
+async def _evaluate_badges(
+    user_id: str, junior_id: str, trigger: str, context: dict | None = None
+) -> list[str]:
     """Grant any newly-earned badges and return their IDs."""
+    ctx = context or {}
     all_badges = await Badge.find().to_list()
     earned = await BadgeState.find(
         BadgeState.user_id == user_id,
@@ -87,7 +99,6 @@ async def _evaluate_badges(user_id: str, junior_id: str, trigger: str) -> list[s
     ).to_list()
 
     all_minerals = await JuniorMineral.find().to_list()
-    mineral_map = {m.mineral_id: m for m in all_minerals}
     collected_ids = {c.mineral_id for c in collection}
 
     detective_solved = await DetectiveCaseHistory.find(
@@ -106,36 +117,62 @@ async def _evaluate_badges(user_id: str, junior_id: str, trigger: str) -> list[s
         earned_flag = False
         bid = badge.badge_id
 
-        if bid == "first_find":
+        # ── Collection size badges ──────────────────────────────────────────
+        if bid == "first-find":
             earned_flag = len(collection) >= 1
-        elif bid == "field_5":
-            earned_flag = len(collection) >= 5
-        elif bid == "field_20":
-            earned_flag = len(collection) >= 20
-        elif bid == "rarity_rare":
-            earned_flag = any(
-                mineral_map.get(c.mineral_id) and
-                mineral_map[c.mineral_id].rarity in (RarityTier.RARE, RarityTier.LEGENDARY)
-                for c in collection
-            )
-        elif bid == "rarity_legendary":
-            earned_flag = any(
-                mineral_map.get(c.mineral_id) and
-                mineral_map[c.mineral_id].rarity == RarityTier.LEGENDARY
-                for c in collection
-            )
-        elif bid == "streak_7":
-            earned_flag = junior is not None and junior.login_streak >= 7
-        elif bid == "full_set":
+        elif bid == "hat-trick":
+            earned_flag = len(collection) >= 3
+        elif bid == "master-collector":
+            earned_flag = len(collection) >= 10
+        elif bid == "complete-collection":
             all_ids = {m.mineral_id for m in all_minerals}
             earned_flag = bool(all_minerals) and all_ids == collected_ids
-        elif bid == "detective_1":
+
+        # ── Province / field badges (from context) ─────────────────────────
+        elif bid == "province-pioneer":
+            earned_flag = ctx.get("province_count", 0) >= 2
+        elif bid == "full-shield":
+            earned_flag = ctx.get("province_count", 0) >= 4
+        elif bid == "photo-geologist":
+            earned_flag = ctx.get("has_photo", False)
+        elif bid == "citizen-scientist":
+            earned_flag = ctx.get("citizen_science_eligible", False)
+
+        # ── Streak badge ────────────────────────────────────────────────────
+        elif bid == "seven-day-streak":
+            earned_flag = junior is not None and junior.login_streak >= 7
+
+        # ── Detective badges ────────────────────────────────────────────────
+        elif bid == "rock-detective-rookie":
             earned_flag = len(detective_solved) >= 1
-        elif bid == "detective_5":
+        elif bid == "rock-detective-case-closed":
             earned_flag = len(detective_solved) >= 5
-        elif bid == "detective_all":
-            total_cases = len(await DetectiveCase.find().to_list())
+        elif bid == "rock-detective-master":
+            total_cases = await DetectiveCase.find().count()
             earned_flag = total_cases > 0 and len(detective_solved) >= total_cases
+
+        # ── Shop / engagement badges ────────────────────────────────────────
+        elif bid == "gear-up":
+            earned_flag = ctx.get("shop_order", False)
+        elif bid == "season-regular":
+            if junior:
+                days = (datetime.utcnow() - junior.created_at).days
+                earned_flag = days >= 90
+
+        # ── Learn track badges ─────────────────────────────────────────────
+        elif bid == "mineral-scholar":
+            earned_flag = ctx.get("track_lessons_completed", 0) >= 5
+
+        # ── Province / exploration badges ──────────────────────────────────
+        elif bid == "province-explorer":
+            earned_flag = ctx.get("province_count", 0) >= 1
+
+        # ── Dig badge ──────────────────────────────────────────────────────
+        elif bid == "deep-digger":
+            earned_flag = trigger == "dig_complete"
+
+        # ── Booking badges handled by award_booking_badge() directly ───────
+        # site-visitor, return-explorer handled there
 
         if earned_flag:
             state = BadgeState(
@@ -150,26 +187,61 @@ async def _evaluate_badges(user_id: str, junior_id: str, trigger: str) -> list[s
     return new_badges
 
 
-async def award_booking_badge(user_id: str, junior_id: str) -> list[str]:
+async def award_booking_badge(
+    user_id: str, junior_id: str, site_id: str | None = None
+) -> list[str]:
     """Called from bookings route when a booking completes."""
-    earned = await BadgeState.find(
+    new_badges: list[str] = []
+
+    # site-visitor: first booking ever
+    first_booking = await BadgeState.find_one(
         BadgeState.user_id == user_id,
         BadgeState.junior_id == junior_id,
-        BadgeState.badge_id == "booking_first",
-    ).to_list()
-    if earned:
-        return []
-    badge = await Badge.find_one(Badge.badge_id == "booking_first")
-    if not badge:
-        return []
-    state = BadgeState(
-        user_id=user_id, junior_id=junior_id,
-        badge_id="booking_first", trigger_event="booking_complete",
+        BadgeState.badge_id == "site-visitor",
     )
-    await state.insert()
-    if badge.card_reward:
-        await _unlock_card(user_id, junior_id, badge.card_reward, UnlockSource.BOOKING)
-    return ["booking_first"]
+    if not first_booking:
+        badge = await Badge.find_one(Badge.badge_id == "site-visitor")
+        if badge:
+            await BadgeState(
+                user_id=user_id, junior_id=junior_id,
+                badge_id="site-visitor", trigger_event="booking_complete",
+            ).insert()
+            new_badges.append("site-visitor")
+            if badge.card_reward:
+                await _unlock_card(user_id, junior_id, badge.card_reward, UnlockSource.BOOKING)
+
+    # return-explorer: bookings at 2+ different sites
+    if site_id:
+        from beanie import PydanticObjectId
+
+        from app.models.booking import Booking
+        try:
+            all_bookings = await Booking.find(
+                {"visitor_id": PydanticObjectId(user_id), "status": "completed"}
+            ).to_list()
+            distinct_sites = {str(b.site_id) for b in all_bookings if b.site_id}
+            if len(distinct_sites) >= 2:
+                return_badge = await BadgeState.find_one(
+                    BadgeState.user_id == user_id,
+                    BadgeState.junior_id == junior_id,
+                    BadgeState.badge_id == "return-explorer",
+                )
+                if not return_badge:
+                    badge2 = await Badge.find_one(Badge.badge_id == "return-explorer")
+                    if badge2:
+                        await BadgeState(
+                            user_id=user_id, junior_id=junior_id,
+                            badge_id="return-explorer", trigger_event="booking_complete",
+                        ).insert()
+                        new_badges.append("return-explorer")
+                        if badge2.card_reward:
+                            await _unlock_card(
+                                user_id, junior_id, badge2.card_reward, UnlockSource.BOOKING
+                            )
+        except Exception:
+            pass
+
+    return new_badges
 
 
 # ── Profiles ─────────────────────────────────────────────────────────────────
@@ -384,6 +456,87 @@ async def get_badges(junior_id: str, user: User = Depends(get_current_user)) -> 
         }
         for badge in all_badges
     ]
+
+
+# ── Dig complete ─────────────────────────────────────────────────────────────
+
+@router.post("/{junior_id}/dig-complete")
+async def dig_complete(
+    junior_id: str, body: DigCompleteBody, user: User = Depends(get_current_user)
+) -> dict:
+    junior = await JuniorProfile.get(junior_id)
+    if not junior:
+        raise HTTPException(status_code=404)
+    _ensure_mine(junior, user)
+
+    all_minerals = await JuniorMineral.find().to_list()
+    name_map = {m.name.lower(): m for m in all_minerals}
+
+    new_cards: list[str] = []
+    for name in body.mineral_names:
+        mineral = name_map.get(name.lower())
+        if mineral:
+            entry = await _unlock_card(
+                str(user.id), junior_id, mineral.mineral_id, UnlockSource.GAME
+            )
+            if entry:
+                new_cards.append(mineral.mineral_id)
+
+    new_badges = await _evaluate_badges(str(user.id), junior_id, "dig_complete")
+    return {"new_cards": new_cards, "new_badges": new_badges}
+
+
+# ── Lesson complete ───────────────────────────────────────────────────────────
+
+@router.post("/{junior_id}/lesson-complete")
+async def lesson_complete(
+    junior_id: str, body: LessonCompleteBody, user: User = Depends(get_current_user)
+) -> dict:
+    junior = await JuniorProfile.get(junior_id)
+    if not junior:
+        raise HTTPException(status_code=404)
+    _ensure_mine(junior, user)
+
+    # Track lesson completions on the profile
+    completed_key = f"{body.track}:{body.lesson}"
+    lessons_done: list[str] = list(junior.lessons_completed)
+    if completed_key not in lessons_done:
+        lessons_done.append(completed_key)
+        await junior.set({"lessons_completed": lessons_done})
+
+    # Count completed lessons for this track to evaluate mineral-scholar
+    track_done = sum(1 for k in lessons_done if k.startswith(f"{body.track}:"))
+
+    new_badges = await _evaluate_badges(
+        str(user.id), junior_id, "lesson_complete",
+        {
+            "lessons_completed": len(lessons_done),
+            "track_lessons_completed": track_done,
+            "track": body.track,
+        },
+    )
+    return {"new_badges": new_badges, "lessons_completed": lessons_done}
+
+
+# ── Province unlock ───────────────────────────────────────────────────────────
+
+@router.get("/{junior_id}/provinces")
+async def get_provinces(junior_id: str, user: User = Depends(get_current_user)) -> dict:
+    """Return explored geological provinces for this junior, derived from parent's find logs."""
+    junior = await JuniorProfile.get(junior_id)
+    if not junior:
+        raise HTTPException(status_code=404)
+    _ensure_mine(junior, user)
+
+    from app.models.find import Find
+    finds = await Find.find(Find.user_id == user.id).to_list()
+    explored = sorted({f.geological_province for f in finds if f.geological_province})
+
+    new_badges = await _evaluate_badges(
+        str(user.id), junior_id, "province_view",
+        {"province_count": len(explored)},
+    )
+    return {"explored_provinces": explored, "new_badges": new_badges}
 
 
 # ── Detective ─────────────────────────────────────────────────────────────────

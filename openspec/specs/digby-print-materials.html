@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digby.rocks — Print Materials</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --earth:   #1C1A14;
+    --stone:   #2E2B22;
+    --feldspar:#5C5440;
+    --calcite: #D4C9A8;
+    --quartz:  #F2EDE0;
+    --gold:    #C8A23A;
+    --copper:  #B5622A;
+    --amethyst:#6B4E8A;
+    --malachite:#3A6B4E;
+  }
+
+  body {
+    background: #E8E2D4;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--earth);
+    padding: 40px;
+  }
+
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    margin-bottom: 8px;
+  }
+  .page-note {
+    font-size: 13px;
+    color: var(--feldspar);
+    font-style: italic;
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  /* ─── SECTION LABELS ─────────────────────────────── */
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    margin: 56px 0 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--calcite);
+  }
+
+  /* ─── BUSINESS CARD ──────────────────────────────── */
+  .card-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .biz-card {
+    width: 3.5in;
+    height: 2in;
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12);
+    flex-shrink: 0;
+  }
+
+  /* FRONT */
+  .card-front {
+    background: var(--earth);
+    width: 100%;
+    height: 100%;
+    padding: 22px 26px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .card-front::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle at top right, rgba(200,162,58,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .card-front::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 180px; height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .card-wordmark {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--quartz);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .card-wordmark span {
+    color: var(--gold);
+  }
+  .card-tagline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--calcite);
+    margin-top: 5px;
+    opacity: 0.7;
+  }
+
+  .card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .card-url {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+  }
+  .card-sub {
+    font-size: 10px;
+    color: var(--calcite);
+    opacity: 0.6;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+
+  /* GEOLOGICAL TEXTURE LINES */
+  .geo-lines {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    opacity: 0.15;
+  }
+  .geo-line {
+    height: 1px;
+    background: var(--calcite);
+  }
+
+  /* BACK */
+  .card-back {
+    background: var(--quartz);
+    width: 100%;
+    height: 100%;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    border-left: 4px solid var(--gold);
+  }
+  .card-back::before {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 80px; height: 80px;
+    border-right: 2px solid rgba(92,84,64,0.15);
+    border-bottom: 2px solid rgba(92,84,64,0.15);
+  }
+
+  .card-back-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--earth);
+    line-height: 1.3;
+  }
+  .card-back-headline em {
+    font-style: italic;
+    color: var(--copper);
+  }
+
+  .card-back-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card-back-list li {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--feldspar);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-back-list li::before {
+    content: '';
+    display: block;
+    width: 14px;
+    height: 1px;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .card-back-cta {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--earth);
+    opacity: 0.5;
+  }
+
+  /* ─── PAMPHLET ───────────────────────────────────── */
+  .pamphlet {
+    width: 8.5in;
+    min-height: 11in;
+    background: var(--quartz);
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 2.8in 1fr;
+    position: relative;
+  }
+
+  /* LEFT PANEL — dark, bold */
+  .pam-left {
+    background: var(--earth);
+    padding: 52px 36px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .pam-left::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,162,58,0.08) 0%, transparent 70%);
+  }
+  .pam-left::after {
+    content: '';
+    position: absolute;
+    bottom: 80px; right: -20px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(58,107,78,0.12) 0%, transparent 70%);
+  }
+
+  .pam-wordmark {
+    position: relative;
+    z-index: 1;
+  }
+  .pam-wordmark-text {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: var(--quartz);
+    line-height: 0.9;
+    letter-spacing: -1px;
+  }
+  .pam-wordmark-text span { color: var(--gold); }
+  .pam-wordmark-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-left: 2px;
+    vertical-align: super;
+    font-size: 0;
+  }
+  .pam-tagline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--calcite);
+    opacity: 0.6;
+    margin-top: 10px;
+  }
+
+  .pam-headline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--quartz);
+    line-height: 1.35;
+    position: relative;
+    z-index: 1;
+    margin-top: 40px;
+  }
+  .pam-headline strong {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--gold);
+    display: block;
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+
+  .pam-geo-facts {
+    position: relative;
+    z-index: 1;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pam-geo-fact {
+    border-left: 2px solid var(--gold);
+    padding-left: 14px;
+  }
+  .pam-geo-fact-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .pam-geo-fact-label {
+    font-size: 11px;
+    color: var(--calcite);
+    opacity: 0.7;
+    margin-top: 2px;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .pam-url {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--gold);
+    position: relative;
+    z-index: 1;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(212,201,168,0.2);
+  }
+  .pam-url-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--calcite);
+    opacity: 0.45;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* RIGHT PANEL — light, editorial */
+  .pam-right {
+    padding: 52px 44px 48px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .pam-right::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--gold), transparent 60%);
+  }
+
+  .pam-section {
+    margin-bottom: 32px;
+  }
+  .pam-section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 10px;
+  }
+  .pam-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--earth);
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+  .pam-section-body {
+    font-size: 13px;
+    color: var(--stone);
+    line-height: 1.7;
+  }
+  .pam-section-body em {
+    color: var(--copper);
+    font-style: italic;
+  }
+
+  .pam-features {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .pam-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .pam-feature-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--earth);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+  .pam-feature-text {
+    flex: 1;
+  }
+  .pam-feature-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--earth);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .pam-feature-desc {
+    font-size: 12px;
+    color: var(--feldspar);
+    line-height: 1.5;
+  }
+
+  .pam-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    margin: 28px 0;
+    opacity: 0.4;
+  }
+
+  .pam-audience {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .pam-audience-item {
+    background: var(--earth);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .pam-audience-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .pam-audience-desc {
+    font-size: 11px;
+    color: var(--calcite);
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+
+  .pam-cta-box {
+    background: var(--gold);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .pam-cta-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--earth);
+    line-height: 1.3;
+  }
+  .pam-cta-text em {
+    font-style: italic;
+    font-weight: 400;
+    display: block;
+    font-size: 12px;
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+  .pam-cta-url {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--earth);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .print-note {
+    margin-top: 40px;
+    padding: 16px 20px;
+    background: white;
+    border-left: 3px solid var(--gold);
+    border-radius: 2px;
+    font-size: 12px;
+    color: var(--feldspar);
+    line-height: 1.7;
+  }
+  .print-note strong {
+    font-weight: 600;
+    color: var(--earth);
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .section-label, .page-title, .page-note, .print-note { display: none; }
+    .biz-card, .pamphlet { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">digby.rocks — Gemboree Print Materials</div>
+<div class="page-note">
+  Two pieces: business cards (front &amp; back) + single-page pamphlet (8.5×11, double-sided or single).<br>
+  Take screenshots or print directly from browser. For professional printing, export as PDF (File → Print → Save as PDF) at 300 DPI.<br>
+  Fill in your name/email on the business card back before printing.
+</div>
+
+<!-- ─── BUSINESS CARDS ─────────────────────────── -->
+<div class="section-label">Business Card — Front &amp; Back (3.5 × 2 inches each)</div>
+
+<div class="card-grid">
+
+  <!-- FRONT -->
+  <div class="biz-card">
+    <div class="card-front">
+      <div class="geo-lines">
+        <div class="geo-line" style="width:60px"></div>
+        <div class="geo-line" style="width:45px"></div>
+        <div class="geo-line" style="width:70px"></div>
+        <div class="geo-line" style="width:30px"></div>
+        <div class="geo-line" style="width:55px"></div>
+        <div class="geo-line" style="width:40px"></div>
+        <div class="geo-line" style="width:65px"></div>
+        <div class="geo-line" style="width:35px"></div>
+      </div>
+      <div>
+        <div class="card-wordmark">digby<span>.rocks</span></div>
+        <div class="card-tagline">Ontario's rockhounding platform</div>
+      </div>
+      <div class="card-details">
+        <div class="card-url">www.digby.rocks</div>
+        <div class="card-sub">Book a dig · Identify your finds · Explore Ontario geology</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK -->
+  <div class="biz-card">
+    <div class="card-back">
+      <div class="card-back-headline">
+        Ontario has <em>world-class</em><br>mineral localities.
+      </div>
+      <ul class="card-back-list">
+        <li>Book curated dig sites across Ontario</li>
+        <li>AI mineral identifier from photos</li>
+        <li>Interactive OGS geology map</li>
+        <li>Beginner to expert — all welcome</li>
+      </ul>
+      <div class="card-back-cta">www.digby.rocks</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="print-note">
+  <strong>Printing tip:</strong> Business cards are standard 3.5 × 2". Most print shops (Staples, Vistaprint, local printers) accept PDF. Print both front and back as separate files, or use a double-sided card template. Suggested paper: 16pt coated matte or uncoated natural stock for the earthy feel.
+</div>
+
+<!-- ─── PAMPHLET ────────────────────────────────── -->
+<div class="section-label" style="margin-top:64px">Single-Page Pamphlet — 8.5 × 11 inches (print single or double-sided)</div>
+
+<div class="pamphlet">
+
+  <!-- LEFT: dark brand panel -->
+  <div class="pam-left">
+    <div class="pam-wordmark">
+      <div class="pam-wordmark-text">dig<br>by<span>.rocks</span></div>
+      <div class="pam-tagline">Ontario's rockhounding platform</div>
+    </div>
+
+    <div>
+      <div class="pam-headline">
+        <strong>Feel the bedrock.</strong>
+        Ontario has some of the world's finest mineral localities. Most people drive past them every weekend.
+      </div>
+
+      <div class="pam-geo-facts">
+        <div class="pam-geo-fact">
+          <div class="pam-geo-fact-num">1B+</div>
+          <div class="pam-geo-fact-label">years of geology beneath your feet in the Grenville Province</div>
+        </div>
+        <div class="pam-geo-fact">
+          <div class="pam-geo-fact-num">Bancroft</div>
+          <div class="pam-geo-fact-label">Mineral Capital of Canada — and that's just the start</div>
+        </div>
+        <div class="pam-geo-fact">
+          <div class="pam-geo-fact-num">100%</div>
+          <div class="pam-geo-fact-label">Ontario — built for this province, by someone who dug here</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pam-url">
+      <span class="pam-url-label">Find it all at</span>
+      www.digby.rocks
+    </div>
+  </div>
+
+  <!-- RIGHT: editorial content panel -->
+  <div class="pam-right">
+
+    <div class="pam-section">
+      <div class="pam-section-label">What is digby?</div>
+      <div class="pam-section-title">A platform built for every rockhound in Ontario.</div>
+      <div class="pam-section-body">
+        digby.rocks brings together site booking, an AI mineral identifier, and an interactive geology map built on OGS data — so you can find great sites, understand what you find, and connect with Ontario's geology community. <em>Whether you're on your first dig or your five-hundredth.</em>
+      </div>
+    </div>
+
+    <div class="pam-features">
+      <div class="pam-feature">
+        <div class="pam-feature-icon">🪨</div>
+        <div class="pam-feature-text">
+          <div class="pam-feature-name">Book a Dig Site</div>
+          <div class="pam-feature-desc">Curated sites across Ontario with geological context — know what you're looking for and why it's there before you arrive.</div>
+        </div>
+      </div>
+      <div class="pam-feature">
+        <div class="pam-feature-icon">🔍</div>
+        <div class="pam-feature-text">
+          <div class="pam-feature-name">Identify Your Finds</div>
+          <div class="pam-feature-desc">Photograph a specimen and get a detailed identification — mineral properties, Ontario localities, UV behaviour, and what else to look for nearby.</div>
+        </div>
+      </div>
+      <div class="pam-feature">
+        <div class="pam-feature-icon">🗺️</div>
+        <div class="pam-feature-text">
+          <div class="pam-feature-name">Explore Ontario Geology</div>
+          <div class="pam-feature-desc">An interactive map layering OGS bedrock geology, mineral occurrences, and digby sites — so you understand the ground you're standing on.</div>
+        </div>
+      </div>
+      <div class="pam-feature">
+        <div class="pam-feature-icon">🛒</div>
+        <div class="pam-feature-text">
+          <div class="pam-feature-name">Gear Shop</div>
+          <div class="pam-feature-desc">Hammers, chisels, UV lamps, loupes, field guides, and specimen boxes — everything you need, curated for Ontario rockhounding.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pam-divider"></div>
+
+    <div class="pam-section">
+      <div class="pam-section-label">Who it's for</div>
+      <div class="pam-audience">
+        <div class="pam-audience-item">
+          <div class="pam-audience-title">Beginners</div>
+          <div class="pam-audience-desc">New to rockhounding? Guided sites, AI identification, and learning resources get you started right.</div>
+        </div>
+        <div class="pam-audience-item">
+          <div class="pam-audience-title">Collectors</div>
+          <div class="pam-audience-desc">Experienced collectors get GIS-grade geology data, export tools, and a find journal that grows with your collection.</div>
+        </div>
+        <div class="pam-audience-item">
+          <div class="pam-audience-title">Families</div>
+          <div class="pam-audience-desc">Junior Geologist games and guided sites make this a genuine outdoor learning experience for kids.</div>
+        </div>
+        <div class="pam-audience-item">
+          <div class="pam-audience-title">Professionals</div>
+          <div class="pam-audience-desc">P.Geo and GIS professionals: data export, API access, and a citizen science dataset worth contributing to.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pam-cta-box">
+      <div class="pam-cta-text">
+        Ontario's geology is world-class.
+        <em>Come find out for yourself.</em>
+      </div>
+      <div class="pam-cta-url">www.digby.rocks</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="print-note">
+  <strong>Printing tip:</strong> Pamphlet is designed for 8.5×11" full-bleed printing. For a tri-fold, divide the right panel into three equal columns. For a single-sheet handout, print as-is. Suggested paper: 100lb gloss text for a polished feel, or 80lb uncoated for an earthy, natural look that suits the brand. Most print shops will accept PDF exported from this page.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>digby.rocks — Business Cards for Hannah Lithographers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Barlow+Condensed:wght@300;400;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --earth:    #181510;
+    --stone:    #2A2520;
+    --feldspar: #5C5440;
+    --calcite:  #D4C9A8;
+    --quartz:   #F4EFE2;
+    --gold:     #C8A23A;
+    --copper:   #A85530;
+    --slate:    #3A3D44;
+  }
+
+  body {
+    background: #D8D2C4;
+    font-family: 'Source Serif 4', Georgia, serif;
+    padding: 60px 40px;
+    color: var(--earth);
+  }
+
+  .instructions {
+    max-width: 680px;
+    margin: 0 auto 56px;
+    background: white;
+    border-left: 4px solid var(--gold);
+    padding: 20px 24px;
+    border-radius: 2px;
+  }
+  .instructions h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    margin-bottom: 10px;
+  }
+  .instructions p {
+    font-size: 13px;
+    color: var(--stone);
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+  .instructions p:last-child { margin-bottom: 0; }
+  .instructions strong { color: var(--earth); }
+
+  .cards-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 64px;
+  }
+
+  .card-set {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    align-self: flex-start;
+    margin-left: 4px;
+  }
+
+  /* THE CARD */
+  .card {
+    width: 3.5in;
+    height: 2in;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.15),
+      0 8px 32px rgba(0,0,0,0.18),
+      0 1px 0 rgba(255,255,255,0.1) inset;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ── FRONT ─────────────────────────────────── */
+  .front {
+    background: var(--earth);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 28px 32px 26px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Single thin gold rule — the only decoration */
+  .front::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold) 60%, transparent 100%);
+  }
+
+  .front-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .wordmark {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--quartz);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .wordmark .dot-rocks {
+    color: var(--gold);
+  }
+
+  .tagline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--calcite);
+    opacity: 0.55;
+    margin-top: 7px;
+  }
+
+  .front-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .front-name {
+    font-family: 'Source Serif 4', serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--quartz);
+    opacity: 0.9;
+    /* FILL IN: your name */
+  }
+  .front-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--calcite);
+    opacity: 0.45;
+  }
+  .front-url {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+    margin-top: 6px;
+  }
+
+  /* ── BACK ──────────────────────────────────── */
+  .back {
+    background: var(--quartz);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  /* Geological cross-section SVG fills the back */
+  .geo-section {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Text overlay on back */
+  .back-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 22px 26px 20px;
+    pointer-events: none;
+  }
+
+  .back-top {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .back-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    opacity: 0.6;
+  }
+  .back-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--earth);
+    line-height: 1.2;
+  }
+
+  .back-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .back-minerals {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .back-mineral {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    opacity: 0.65;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .back-mineral::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .back-mineral.sodalite::before   { background: #7B6FA0; }
+  .back-mineral.amethyst::before   { background: #8B6B9E; }
+  .back-mineral.calcite::before    { background: #E8DFC0; border: 1px solid #C0B888; }
+  .back-mineral.amazonite::before  { background: #5A9A82; }
+  .back-mineral.feldspar::before   { background: #C4AE88; }
+
+  .back-url {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--earth);
+    opacity: 0.45;
+  }
+
+  /* ── PRINT SPEC ────────────────────────────── */
+  .spec-box {
+    max-width: 680px;
+    margin: 56px auto 0;
+    background: white;
+    border-left: 4px solid var(--earth);
+    padding: 20px 24px;
+    border-radius: 2px;
+  }
+  .spec-box h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    margin-bottom: 12px;
+  }
+  .spec-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .spec-key {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--feldspar);
+    min-width: 120px;
+    padding-top: 1px;
+  }
+  .spec-val {
+    color: var(--stone);
+    flex: 1;
+  }
+
+  @media print {
+    body { background: white; padding: 20px; }
+    .instructions, .spec-box, .card-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="instructions">
+  <h2>For Hannah Lithographers — Bancroft</h2>
+  <p><strong>File:</strong> Export this page as PDF (Chrome → File → Print → Save as PDF, margins: None, background graphics: on). Two card designs shown: front and back.</p>
+  <p><strong>Before printing:</strong> Fill in your name, title, and email/phone in the front card's "Robin / Founder" placeholder below. They can be edited directly in the HTML or you can give Hannah the text separately.</p>
+  <p><strong>Stock:</strong> Request 16pt or 18pt coated matte card stock, or an uncoated natural/cream stock for an earthy feel that suits the brand. Both work beautifully with rounded corners.</p>
+  <p><strong>Corners:</strong> Standard rounded corner die (3/16" radius) — ask Hannah specifically for this as an add-on finish.</p>
+</div>
+
+<div class="cards-wrapper">
+
+  <!-- FRONT -->
+  <div class="card-set">
+    <div class="card-label">Front</div>
+    <div class="card">
+      <div class="front">
+        <div class="front-top">
+          <div class="wordmark">digby<span class="dot-rocks">.rocks</span></div>
+          <div class="tagline">Ontario's rockhounding platform</div>
+        </div>
+        <div class="front-bottom">
+          <div class="front-name">Robin &nbsp;·&nbsp; Founder</div>
+          <div class="front-title">digby.rocks</div>
+          <div class="front-url">www.digby.rocks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK -->
+  <div class="card-set">
+    <div class="card-label">Back — Geological Cross-Section of the Grenville Province</div>
+    <div class="card">
+      <div class="back">
+
+        <!-- SVG geological cross-section illustration -->
+        <svg class="geo-section" viewBox="0 0 336 192" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Soil/overburden -->
+            <pattern id="soil" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="#C8B890"/>
+              <circle cx="2" cy="3" r="0.8" fill="#A89870" opacity="0.6"/>
+              <circle cx="6" cy="6" r="0.6" fill="#A89870" opacity="0.4"/>
+            </pattern>
+            <!-- Marble formation -->
+            <pattern id="marble" x="0" y="0" width="20" height="12" patternUnits="userSpaceOnUse">
+              <rect width="20" height="12" fill="#E8E0CC"/>
+              <path d="M0,4 Q5,3 10,5 Q15,7 20,4" stroke="#C8C0A8" stroke-width="0.5" fill="none"/>
+              <path d="M0,8 Q5,7 10,9 Q15,11 20,8" stroke="#C8C0A8" stroke-width="0.4" fill="none"/>
+              <path d="M3,0 Q4,6 3,12" stroke="#D4CDB5" stroke-width="0.3" fill="none"/>
+              <path d="M14,0 Q15,6 14,12" stroke="#D4CDB5" stroke-width="0.3" fill="none"/>
+            </pattern>
+            <!-- Gneiss banding -->
+            <pattern id="gneiss" x="0" y="0" width="24" height="10" patternUnits="userSpaceOnUse">
+              <rect width="24" height="10" fill="#8A8070"/>
+              <rect y="0" width="24" height="2.5" fill="#7A7060" opacity="0.8"/>
+              <rect y="4" width="24" height="1.5" fill="#9A9080" opacity="0.7"/>
+              <rect y="7" width="24" height="2" fill="#7A7060" opacity="0.6"/>
+            </pattern>
+            <!-- Pegmatite -->
+            <pattern id="pegmatite" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+              <rect width="16" height="16" fill="#D4C8B4"/>
+              <polygon points="8,2 14,8 8,14 2,8" fill="#B8A880" opacity="0.5"/>
+              <rect x="6" y="6" width="4" height="4" fill="#E8E0CC" opacity="0.6" transform="rotate(20,8,8)"/>
+              <circle cx="3" cy="3" r="1.5" fill="#9A8868" opacity="0.4"/>
+              <circle cx="13" cy="13" r="1.2" fill="#9A8868" opacity="0.3"/>
+            </pattern>
+            <!-- Syenite (sodalite-bearing) -->
+            <pattern id="syenite" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+              <rect width="14" height="14" fill="#9890A8"/>
+              <circle cx="4" cy="4" r="2" fill="#7B6FA0" opacity="0.7"/>
+              <circle cx="10" cy="10" r="1.5" fill="#7B6FA0" opacity="0.6"/>
+              <circle cx="10" cy="3" r="1" fill="#8B80B0" opacity="0.5"/>
+              <circle cx="3" cy="11" r="1.2" fill="#6B5F90" opacity="0.5"/>
+            </pattern>
+            <!-- Calcite veins -->
+            <pattern id="calcite-vein" x="0" y="0" width="30" height="6" patternUnits="userSpaceOnUse">
+              <rect width="30" height="6" fill="transparent"/>
+              <path d="M0,3 Q8,1 15,3 Q22,5 30,3" stroke="#E8E0C0" stroke-width="1.5" fill="none" opacity="0.8"/>
+            </pattern>
+          </defs>
+
+          <!-- Sky/surface -->
+          <rect x="0" y="0" width="336" height="28" fill="#D4CCB8"/>
+          <!-- Subtle ground surface texture -->
+          <rect x="0" y="20" width="336" height="8" fill="url(#soil)" opacity="0.8"/>
+
+          <!-- Topography line — gentle rolling Ontario Shield surface -->
+          <path d="M0,26 Q40,22 80,24 Q120,26 160,22 Q200,18 240,22 Q280,26 336,24 L336,30 L0,30 Z"
+                fill="#B8B0A0" opacity="0.5"/>
+
+          <!-- Layer 1: Overburden / glacial till (28-48) -->
+          <rect x="0" y="26" width="336" height="22" fill="url(#soil)"/>
+
+          <!-- Layer 2: Marble formation (48-95) -->
+          <rect x="0" y="48" width="336" height="47" fill="url(#marble)"/>
+
+          <!-- Layer 3: Gneiss basement (95-145) -->
+          <rect x="0" y="95" width="336" height="50" fill="url(#gneiss)"/>
+
+          <!-- Layer 4: Pegmatite intrusion cutting through layers 2-3 -->
+          <!-- Irregular pegmatite body, upper left -->
+          <path d="M30,55 Q48,50 65,58 Q80,65 75,88 Q70,105 55,110 Q35,115 20,100 Q10,88 15,72 Q18,60 30,55 Z"
+                fill="url(#pegmatite)" opacity="0.95"/>
+          <path d="M30,55 Q48,50 65,58 Q80,65 75,88 Q70,105 55,110 Q35,115 20,100 Q10,88 15,72 Q18,60 30,55 Z"
+                fill="none" stroke="#C0B090" stroke-width="0.8" opacity="0.6"/>
+
+          <!-- Layer 5: Nepheline syenite — sodalite-bearing body, centre-right -->
+          <path d="M190,62 Q215,55 245,60 Q270,65 278,85 Q285,105 268,118 Q250,130 225,125 Q200,120 188,102 Q178,85 190,62 Z"
+                fill="url(#syenite)" opacity="0.9"/>
+          <path d="M190,62 Q215,55 245,60 Q270,65 278,85 Q285,105 268,118 Q250,130 225,125 Q200,120 188,102 Q178,85 190,62 Z"
+                fill="none" stroke="#8880A0" stroke-width="0.8" opacity="0.5"/>
+
+          <!-- Deep gneiss basement continues -->
+          <rect x="0" y="145" width="336" height="47" fill="#706860"/>
+          <!-- Foliation lines in deep basement -->
+          <line x1="0" y1="155" x2="336" y2="152" stroke="#60584A" stroke-width="0.8" opacity="0.6"/>
+          <line x1="0" y1="163" x2="336" y2="161" stroke="#807870" stroke-width="0.6" opacity="0.5"/>
+          <line x1="0" y1="171" x2="336" y2="170" stroke="#60584A" stroke-width="0.7" opacity="0.4"/>
+          <line x1="0" y1="180" x2="336" y2="178" stroke="#807870" stroke-width="0.5" opacity="0.3"/>
+
+          <!-- Calcite veins threading through marble -->
+          <path d="M85,52 Q100,60 95,75 Q90,88 100,95" stroke="#E8E0C0" stroke-width="1.5" fill="none" opacity="0.7"/>
+          <path d="M130,55 Q140,68 135,82 Q130,92 145,95" stroke="#E8E0C0" stroke-width="1.2" fill="none" opacity="0.6"/>
+          <path d="M160,60 Q165,75 158,90" stroke="#E8E0C0" stroke-width="1" fill="none" opacity="0.5"/>
+
+          <!-- Fault line -->
+          <path d="M300,26 Q302,60 298,95 Q295,130 300,192"
+                stroke="#5A5048" stroke-width="1.2" fill="none" stroke-dasharray="4,3" opacity="0.5"/>
+
+          <!-- Formation labels — small, technical-feeling -->
+          <!-- Overburden label -->
+          <text x="290" y="40" font-family="monospace" font-size="7" fill="#6A6050" opacity="0.7" text-anchor="end">Glacial till</text>
+
+          <!-- Marble label -->
+          <text x="290" y="75" font-family="monospace" font-size="7" fill="#6A6050" opacity="0.7" text-anchor="end">Marble · calcite</text>
+
+          <!-- Pegmatite label -->
+          <text x="78" y="83" font-family="monospace" font-size="7" fill="#7A7060" opacity="0.8" text-anchor="middle">Pegmatite</text>
+
+          <!-- Syenite label -->
+          <text x="233" y="92" font-family="monospace" font-size="7" fill="#F2EDE0" opacity="0.7" text-anchor="middle">Nepheline syenite</text>
+          <text x="233" y="102" font-family="monospace" font-size="6.5" fill="#C0B0D8" opacity="0.7" text-anchor="middle">sodalite ·  amazonite</text>
+
+          <!-- Gneiss label -->
+          <text x="155" y="125" font-family="monospace" font-size="7" fill="#C0B8A8" opacity="0.6" text-anchor="middle">Grenville gneiss</text>
+
+          <!-- Basement label -->
+          <text x="168" y="168" font-family="monospace" font-size="7" fill="#A09888" opacity="0.5" text-anchor="middle">Basement · ~1Ga</text>
+
+          <!-- Depth scale — right edge -->
+          <line x1="316" y1="26" x2="316" y2="192" stroke="#8A8070" stroke-width="0.5" opacity="0.3"/>
+          <text x="324" y="30" font-family="monospace" font-size="5.5" fill="#8A8070" opacity="0.4">0m</text>
+          <text x="324" y="96" font-family="monospace" font-size="5.5" fill="#8A8070" opacity="0.4">↓</text>
+
+          <!-- Surface outcrop marker -->
+          <circle cx="160" cy="24" r="3" fill="none" stroke="#C8A23A" stroke-width="1.2" opacity="0.8"/>
+          <circle cx="160" cy="24" r="1" fill="#C8A23A" opacity="0.8"/>
+
+          <!-- Subtle vignette -->
+          <rect x="0" y="0" width="336" height="192"
+                fill="url(#vignette)" opacity="0.15"/>
+          <defs>
+            <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+              <stop offset="0%" stop-color="transparent"/>
+              <stop offset="100%" stop-color="#181510"/>
+            </radialGradient>
+          </defs>
+        </svg>
+
+        <!-- Text overlay -->
+        <div class="back-overlay">
+          <div class="back-top">
+            <div class="back-label">Grenville Province · Eastern Ontario</div>
+            <div class="back-title">A billion years<br>beneath your feet.</div>
+          </div>
+          <div class="back-bottom">
+            <div class="back-minerals">
+              <div class="back-mineral sodalite">Sodalite</div>
+              <div class="back-mineral amazonite">Amazonite</div>
+              <div class="back-mineral calcite">Calcite</div>
+              <div class="back-mineral amethyst">Amethyst</div>
+              <div class="back-mineral feldspar">Feldspar</div>
+            </div>
+            <div class="back-url">digby.rocks</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Print spec -->
+<div class="spec-box">
+  <h2>Print Specification — Hannah Lithographers</h2>
+  <div class="spec-row">
+    <div class="spec-key">Size</div>
+    <div class="spec-val">3.5 × 2 inches (standard business card)</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Bleed</div>
+    <div class="spec-val">Add 0.125" bleed on all sides — extend background colours to bleed edge</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Corners</div>
+    <div class="spec-val">Rounded corners — 3/16" radius die cut</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Stock</div>
+    <div class="spec-val">16pt or 18pt card stock. Coated matte for a refined feel; uncoated natural/cream for an earthy feel. Either suits the brand well.</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Finish</div>
+    <div class="spec-val">Matte laminate on both sides. Optional: spot UV on the "digby.rocks" wordmark on the front for a subtle premium touch.</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Colours</div>
+    <div class="spec-val">Full colour both sides (4/4). Front is predominantly dark — ensure press profile handles deep blacks well.</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Quantity</div>
+    <div class="spec-val">250 to start. The back illustration is a conversation piece — people will keep these.</div>
+  </div>
+  <div class="spec-row">
+    <div class="spec-key">Files</div>
+    <div class="spec-val">Export front and back as separate PDFs from this page (File → Print → Save as PDF, no margins, background graphics on). Hannah may prefer press-ready PDFs — ask if they need a different format.</div>
+  </div>
+</div>
+
+</body>
+</html>

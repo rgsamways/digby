@@ -50,6 +50,7 @@ class JuniorProfile(Document):
     last_daily_claim: datetime | None = None
     login_streak: int = 0
     last_login: datetime | None = None
+    lessons_completed: list[str] = Field(default_factory=list)  # "track:lesson-slug"
 
     class Settings:
         name = "junior_profiles"

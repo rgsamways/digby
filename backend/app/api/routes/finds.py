@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 from datetime import UTC, datetime
 
 from beanie import PydanticObjectId
@@ -130,6 +131,26 @@ async def create_find(body: FindCreate, user: User = Depends(get_current_user)) 
     )
     find.citizen_science_eligible = _cs_eligible(find)
     await find.insert()
+
+    # Award junior badges if this is a junior submission
+    if body.is_junior_submission:
+        from app.api.routes.junior import _evaluate_badges
+        from app.models.junior import JuniorProfile
+        profiles = await JuniorProfile.find(
+            JuniorProfile.parent_id == str(user.id)
+        ).to_list()
+        if profiles:
+            # Count distinct provinces across all finds by this user
+            all_finds = await Find.find(Find.user_id == user.id).to_list()
+            provinces = {f.geological_province for f in all_finds if f.geological_province}
+            ctx = {
+                "has_photo": len(find.photo_urls) > 0,
+                "citizen_science_eligible": find.citizen_science_eligible,
+                "province_count": len(provinces),
+            }
+            for profile in profiles:
+                await _evaluate_badges(str(user.id), str(profile.id), "find_logged", ctx)
+
     return _find_dict(find, user.name)
 
 
@@ -289,6 +310,101 @@ async def toggle_save(
         await FindSave(user_id=user.id, find_id=find.id).insert()
         await find.set({"save_count": find.save_count + 1})
         return {"saved": True, "save_count": find.save_count + 1}
+
+
+class ImportFindItem(BaseModel):
+    date: str
+    mineral_name: str
+    notes: str = ""
+    geological_province: str | None = None
+    host_rock: str | None = None
+    formation: str | None = None
+    gps_lat: float | None = None
+    gps_lng: float | None = None
+    specimen_quality: str | None = None
+    visibility: FindVisibility = FindVisibility.PRIVATE
+
+
+class ImportBody(BaseModel):
+    finds: list[ImportFindItem]
+
+
+@router.post("/import")
+async def import_finds(body: ImportBody, user: User = Depends(get_current_user)) -> dict:
+    """Bulk-import legacy finds (max 500 per request)."""
+    created = 0
+    skipped = 0
+    for item in body.finds[:500]:
+        try:
+            find = Find(
+                user_id=user.id,
+                date=datetime.fromisoformat(item.date),
+                mineral_name=item.mineral_name.strip(),
+                notes=item.notes,
+                geological_province=item.geological_province or None,
+                host_rock=item.host_rock or None,
+                formation=item.formation or None,
+                gps_lat=item.gps_lat,
+                gps_lng=item.gps_lng,
+                specimen_quality=item.specimen_quality or None,
+                visibility=item.visibility,
+            )
+            find.citizen_science_eligible = _cs_eligible(find)
+            await find.insert()
+            created += 1
+        except Exception:
+            skipped += 1
+    return {"created": created, "skipped": skipped, "total": len(body.finds)}
+
+
+@router.get("/export/geojson")
+async def export_geojson(user: User = Depends(get_current_user)) -> StreamingResponse:
+    """Export all of the user's geolocated finds as a GeoJSON FeatureCollection."""
+    finds = await Find.find(
+        Find.user_id == user.id,
+        Find.gps_lat != None,  # noqa: E711
+        Find.gps_lng != None,  # noqa: E711
+    ).sort(-Find.date).to_list()
+
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [f.gps_lng, f.gps_lat]},
+            "properties": {
+                "id": str(f.id),
+                "mineral_name": f.mineral_name,
+                "date": f.date.date().isoformat(),
+                "host_rock": f.host_rock,
+                "geological_province": f.geological_province,
+                "formation": f.formation,
+                "specimen_quality": f.specimen_quality,
+                "verification_status": f.verification_status,
+                "uv_fluorescence": f.uv_fluorescence,
+                "citizen_science_opted_in": f.citizen_science_opted_in,
+                "site_name": f.site_name,
+                "notes": f.notes,
+            },
+        }
+        for f in finds
+    ]
+
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features,
+        "metadata": {
+            "exported_by": user.name,
+            "exported_at": datetime.now(UTC).isoformat(),
+            "total_features": len(features),
+            "source": "Digby.rocks",
+        },
+    }
+
+    filename = f"digby-finds-{datetime.now(UTC).date()}.geojson"
+    return StreamingResponse(
+        iter([json.dumps(geojson, indent=2)]),
+        media_type="application/geo+json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/admin/export")

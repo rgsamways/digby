@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Clock, Lightbulb } from "lucide-react";
+import { ChevronLeft, Clock, Lightbulb } from "lucide-react";
 import { TRACKS, getLesson } from "@/lib/learn-content";
+import LessonNavButton from "@/components/LessonNavButton";
 import type { Metadata } from "next";
 
 interface Props {
@@ -145,28 +146,29 @@ export default async function LessonPage({ params }: Props) {
         )}
 
         {lesson.nextSlug ? (
-          <Link
+          <LessonNavButton
             href={`/learn/${track}/${lesson.nextSlug}`}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold ${
+            label="Next lesson"
+            track={track}
+            lesson={lessonSlug}
+            colourClass={
               trackColour === "brand"
                 ? "bg-brand-600 text-white hover:bg-brand-700"
                 : "bg-violet-600 text-white hover:bg-violet-700"
-            }`}
-          >
-            Next lesson
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+            }
+          />
         ) : (
-          <Link
+          <LessonNavButton
             href="/learn"
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold ${
+            label="Track complete"
+            track={track}
+            lesson={lessonSlug}
+            colourClass={
               trackColour === "brand"
                 ? "bg-brand-600 text-white hover:bg-brand-700"
                 : "bg-violet-600 text-white hover:bg-violet-700"
-            }`}
-          >
-            Track complete →
-          </Link>
+            }
+          />
         )}
       </div>
 

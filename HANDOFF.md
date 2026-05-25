@@ -1,5 +1,5 @@
 # Digby.rocks — Complete Project Handoff
-_Last updated May 24, 2026 by Claude Code from direct code inspection. This document reflects the actual state of the codebase, not the todo list (which is outdated in several places)._
+_Last updated May 25, 2026 by Claude Code from direct code inspection. This document reflects the actual state of the codebase, not the todo list (which is outdated in several places)._
 
 ---
 
@@ -36,12 +36,13 @@ digby/
     models/              Beanie documents, one file per domain
   frontend/
     app/                 Next.js App Router pages
-    components/          Navbar, etc.
+    components/          Navbar, LessonNavButton, etc.
     lib/
       api.ts             HTTP client wrapper
       auth.ts            JWT helpers, useAuthStore (Zustand)
       junior.ts          Junior Club API + TypeScript interfaces
       cart.ts            Cart store (Zustand + localStorage)
+      accessibility.ts   useLargeText() hook (localStorage + html class toggle)
   openspec/
     specs/digby-todo.md  Master task list (NOTE: several items marked [ ] are actually done)
 ```
@@ -101,12 +102,14 @@ Webhook handlers (all implemented):
 - `customer.subscription.deleted` → cancel Strata subscription
 - `account.updated` → update operator `stripe_account_enabled`
 
+**Known issue:** Stripe webhook secret mismatch suspected on Railway. Endpoint URL must be `https://digby-production.up.railway.app/api/payments/webhook`. Verify `STRIPE_WEBHOOK_SECRET` matches the current Stripe Dashboard signing secret (it changes each time the endpoint is recreated in Stripe).
+
 ---
 
 ### Visitor Passport ✅
 
 Route: `/api/passport/`
-- `GET /me` — stamps, points, badges, hunt completions, quiz sessions, diary entries
+- `GET /me` — stamps, points, badges, hunt completions, quiz sessions, diary entries, **citizen_science_finds count**
 - `GET /leaderboard` — top 10 by points
 - `GET /{visitor_id}` — public passport view
 - `POST /stamp` — manually add stamp (idempotent by booking_id)
@@ -117,6 +120,8 @@ Passport badges (adult, not junior):
 - `first_dig` (1 visit), `rock_hound` (5), `gem_hunter` (10), `mineral_master` (25)
 
 Points: 25/stamp + 10/unique mineral + 100/hunt + quiz points + diary points
+
+**Citizen science:** Passport now shows `citizen_science_finds` (count of opted-in finds). Rendered as inline stat in passport hero + dedicated OGS callout block when count > 0.
 
 Frontend: `/passport` (my passport), `/passport/[id]` (public view)
 
@@ -157,7 +162,8 @@ Route: `POST /api/mineral-id/`
 - Rate limiting: 10/day per IP unauthenticated; authenticated users exempt (checks JWT in header)
 - Result cache: 1h TTL keyed on SHA-256(all image bytes + context string)
 - HEIC rejected with 415 — deferred (needs system libheif)
-- One-tap "Log to Find Journal" is wired: pre-populates `/finds/new?mineral=X&notes=Y&host_rock=Z&province=P&verification=ai_likely` via query params
+- One-tap "Log to Find Journal" is wired: pre-populates `/finds/new?mineral=X&notes=Y&host_rock=Z&province=P&formation=F&verification=ai_likely` via query params
+- **Formation auto-fill:** `typical_formations[0]` from AI result is passed as `formation` query param, auto-populating the formation field in the find form
 
 ---
 
@@ -173,27 +179,84 @@ Route: `POST /api/uploads/images` (requires auth)
 
 ---
 
-### Find Journal + Citizen Science ✅ (fully working including S3)
+### Find Journal + Citizen Science ✅
 
 Routes at `/api/finds/`:
 - `POST /` — create find
 - `GET /my` — user's finds (all, sorted by date)
-- `GET /feed` — public feed (filterable: mineral, province, verification, featured_only; paginated)
+- `GET /feed` — public feed (filterable: mineral, province, verification, featured_only, uv_only, uv_colour, haul_only; paginated)
 - `GET /feed/saved` — user's saved finds
 - `GET /{id}` — single find (SSR-compatible, privacy enforced)
 - `PATCH /{id}` + `DELETE /{id}` — edit/delete (owner only)
 - `POST /{id}/save` — toggle save/bookmark
 - `GET /admin/export` — CSV of all citizen-science-eligible finds (requires admin token)
+- `POST /import` — bulk CSV import (up to 500 rows), returns `{created, skipped, total}`
+- `GET /export/geojson` — GeoJSON FeatureCollection of user's GPS-tagged finds (auth required)
 
 **Find model fields:** user_id, date, mineral_name, notes, photo_urls[], gps_lat, gps_lng, site_id, site_name, host_rock, geological_province, formation, specimen_quality, verification_status (unverified/ai_likely/community_verified/ogs_reviewed/disputed), citizen_science_opted_in, citizen_science_eligible (computed), visibility (public/private), save_count, is_featured, is_junior_submission, uv_fluorescence (green/blue/red/orange/white/multi/null), is_haul (bool)
 
 **Citizen science eligibility** is auto-computed on save: requires GPS + at least one photo + verification ≥ ai_likely + host_rock + opted_in.
 
-**Photo upload to S3 IS wired** in the find form — the `/finds/new` page calls `/api/uploads/images` before creating the find, then passes the returned URLs in `photo_urls`. The todo list item saying this is pending is **wrong**.
+**UV nudge:** After a find is submitted without UV fluorescence, an inline UV prompt banner appears on the new find page instead of immediately navigating away. User can add UV data (PATCH) or skip.
 
-Frontend: `/finds` (public feed), `/finds/my` (private journal), `/finds/new` (log form — wrapped in `<Suspense>` for Next.js 15), `/finds/[id]` (SSR, 60s revalidation)
+**Photo upload to S3 IS wired** in the find form — the `/finds/new` page calls `/api/uploads/images` before creating the find, then passes the returned URLs in `photo_urls`.
 
-**Known gap:** Formation auto-population from GPS (would look up the bedrock layer to fill in the formation field automatically). Not implemented — blocked until OGS tileset query API is available.
+Frontend: `/finds` (public feed), `/finds/my` (private journal with GeoJSON export + import link), `/finds/new` (log form), `/finds/[id]` (SSR, 60s revalidation), `/finds/import` (CSV bulk import)
+
+**GeoJSON export:** Authenticated fetch triggers a blob download (uses auth header, not a plain `<a>` tag). GeoJSON includes: mineral name, date, province, formation, coordinates, verification status, citizen science flag.
+
+**CSV import:** Drop zone, template download, in-browser CSV parse with preview (first 5 rows), error list for skipped rows, success state.
+
+---
+
+### Find Verification ✅
+
+Route file: backend handles verification_status on Find model. Expert verification dashboard at `/expert/verify`.
+
+Verification tiers:
+- `unverified` — default
+- `ai_likely` — set by Mineral ID flow
+- `community_verified` — set via expert verify page
+- `ogs_reviewed` — set via expert verify page (OGS-credentialed users only)
+- `disputed` — flagged by community
+
+---
+
+### Expert Network ✅
+
+Routes: `/api/experts/`
+
+Expert profiles with credentials (P.Geo, P.Eng, MSc/PhD, OGS/GSC, GIS Professional tiers) visible at `/experts`. Expert credentialing page for users to register expert status.
+
+---
+
+### UV Gallery ✅
+
+Frontend: `/gallery/uv` — dark stone-950 page, per-colour glow shadows, square 4-col grid, colour filter chips (All/Green/Blue/Red/Orange/White/Multi), hover overlay with mineral name + fluorescence, UV badge per card.
+
+Backed by find feed with `uv_only=true` filter.
+
+---
+
+### Hauls ✅
+
+`is_haul` field on Find model. Haul filter on find feed (Zap icon toggle, `haul_only` query param). Homepage featured haul section.
+
+---
+
+### Specimen Drops ✅
+
+Routes: `/api/drops/`
+
+Frontend: `/drops` (listing), `/drops/[slug]` (detail page). Operator-posted specimen drops with images, price, weight, provenance, claim button.
+
+---
+
+### Creator Directory ✅
+
+Routes: `/api/creators/`
+
+Frontend: `/creators` — directory of verified creator accounts with profile cards, specialties, and links to their public finds and specimens.
 
 ---
 
@@ -271,9 +334,38 @@ Two tracks, 5 lessons each — all 10 lessons are fully written content:
 - **Field Track** — 5-minute reads, no software: geology formation, four provinces, minerals at Digby sites, Crown land/mineral rights, planning a trip with the Digby map
 - **GIS Track** — QGIS-based: installing QGIS, querying OGS data, symbolizing formations, intersecting layers, spatial trip planning
 
+Lesson completion is tracked server-side: `LessonNavButton` (frontend component) POSTs to `/api/junior/{id}/lesson-complete` when the user advances to the next lesson. This feeds the `mineral-scholar` badge (5 track completions).
+
 ---
 
-### Junior Geologist Games ✅ (all 6 games working; known gaps below)
+### Club Accounts ✅
+
+Routes at `/api/clubs/`:
+- `POST /` — create club (auto-slugged, owner membership auto-created)
+- `GET /` — public clubs + user's private clubs
+- `GET /mine` — user's memberships with role
+- `GET /{slug}` — detail with members + up to 30 recent public finds from all members
+- `POST /{slug}/join` — join public club (prevents duplicates)
+- `DELETE /{slug}/leave` — leave (non-owners only)
+- `DELETE /{slug}` — delete club + all memberships (owner only)
+
+Models: `Club` + `ClubMembership` in `backend/app/models/club.py`. Registered in `database.py`.
+
+Frontend: `/clubs` (browse + create), `/clubs/[slug]` (detail: member list, recent finds feed, leave/delete buttons)
+
+Clubs visible in navbar "My Digby" dropdown.
+
+---
+
+### Accessibility ✅
+
+- `useLargeText()` hook in `frontend/lib/accessibility.ts` — reads `digby_large_text` from localStorage, applies `large-text` class to `document.documentElement`
+- `frontend/app/globals.css` — `html.large-text` rules: 18px base font, 1.75 line-height, min-height 2.75rem on inputs/buttons, 1rem on p/li/label
+- Toggle button in desktop Navbar user dropdown (above "Log out") and mobile menu (always visible, `<Type>` icon)
+
+---
+
+### Junior Geologist Games ✅ (all 6 games wired to backend)
 
 **All content seeded automatically on every deploy** (idempotent, in `main.py` lifespan):
 - 43 Ontario minerals
@@ -292,7 +384,7 @@ Two tracks, 5 lessons each — all 10 lessons are fully written content:
 | `DetectiveCase` | `detective_cases` | 20 case definitions |
 | `DetectiveCaseHistory` | `detective_case_history` | per (user_id, junior_id, case_id) — unique compound index |
 
-JuniorMineral fields: `mineral_id` (slug), `name`, `family`, `rarity` (common/uncommon/rare/legendary), `mohs_hardness`, `key_property`, `ontario_locality`, `flavour_text`, `fun_fact`, `age_easy_description`, `age_standard_description`, `detective_clues[]`, `dig_site_associations[]`, `province_associations[]`, `card_emoji`, `card_colour`
+`JuniorProfile` also has `lessons_completed: list[str]` — stores keys as `"track:lesson-slug"` strings.
 
 Rarity weights for daily card draw: COMMON=60, UNCOMMON=25, RARE=13, LEGENDARY=2
 
@@ -306,20 +398,20 @@ Rarity weights for daily card draw: COMMON=60, UNCOMMON=25, RARE=13, LEGENDARY=2
 | `DELETE /profiles/{id}` | Delete profile |
 | `GET /minerals` | Full mineral catalogue (no auth) |
 | `GET /{id}/collection` | Cards owned + silhouettes for unowned |
-| `POST /{id}/daily-card` | Claim daily pack (streak tracking, weighted rarity, no dupe check) |
+| `POST /{id}/daily-card` | Claim daily pack (streak tracking, weighted rarity) |
 | `GET /{id}/badges` | All badges with earned/unearned state |
 | `GET /{id}/detective/cases` | All 20 cases with unlock state, solve state |
 | `POST /{id}/detective/{case_id}/submit` | Submit answer (tiered reward: rare/uncommon/common by attempts 1/2/3+) |
+| `POST /{id}/dig-complete` | Called on dig game end + match game win — unlocks cards for found minerals, evaluates badges |
+| `POST /{id}/lesson-complete` | Called by LessonNavButton — records track:lesson key, evaluates mineral-scholar badge |
+| `GET /{id}/provinces` | Returns provinces explored via parent's find logs, evaluates province-explorer badge |
 | `GET /parent-summary` | Parent dashboard: cards, badges, cases_solved per profile |
 | `POST /seed` | Manual re-seed (no auth required, idempotent) |
 
-**Detective answer format:** Case `options[]` are mineral NAMES (e.g. `"Muscovite Mica"`). Case `correct_id` is a mineral SLUG (e.g. `"muscovite"`). The submit endpoint looks up the mineral by slug to get its name and compares to the submitted answer. This was a bug that was fixed — it now works correctly.
-
-**Detective case unlock:** `unlock_day` field on each case. Cases with `unlock_day=0` are always available. Others unlock when the junior profile is `>= unlock_day` days old. This is the case rotation mechanism.
-
-**Badge evaluation** runs server-side on `daily_claim`, `detective_solve`, and `booking_complete` events. Checks: first_find (1 card), field_5 (5 cards), field_20 (20 cards), rarity_rare, rarity_legendary, streak_7, full_set (all 43 cards), detective_1, detective_5, detective_all. Badges can unlock card rewards.
-
-**Cross-trigger from bookings:** When `PATCH /api/bookings/{id}/complete` is called, it finds all JuniorProfiles for the visitor and calls `award_booking_badge()` for each. This awards the `booking_first` badge.
+**Badge evaluation** runs server-side on multiple triggers. All 19 badges are evaluatable including the three previously broken gated badges:
+- `deep-digger` — triggered by `dig-complete` event (dig game end or match game win)
+- `mineral-scholar` — triggered by `lesson-complete` when `track_lessons_completed >= 5`
+- `province-explorer` — triggered by `GET /provinces` when province count >= 1
 
 #### Frontend pages
 
@@ -330,32 +422,30 @@ Rarity weights for daily card draw: COMMON=60, UNCOMMON=25, RARE=13, LEGENDARY=2
 | `/junior/[id]` | Hub: 6 game tiles, streak display, daily pack alert | ✅ |
 | `/junior/[id]/collection` | **Game 1: Specimen Collector** | ✅ |
 | `/junior/[id]/detective` | **Game 2: Rock Detective** | ✅ |
-| `/junior/[id]/explore` | **Game 3: Formation Explorer** | ⚠️ Partial |
-| `/junior/[id]/dig` | **Game 4: Dig Site Simulator** | ⚠️ Partial |
-| `/junior/[id]/match` | **Game 6: Mineral Match** | ⚠️ Partial |
+| `/junior/[id]/explore` | **Game 3: Formation Explorer** | ✅ Province unlock wired |
+| `/junior/[id]/dig` | **Game 4: Dig Site Simulator** | ✅ Card unlock + badge wired |
+| `/junior/[id]/match` | **Game 6: Mineral Match** | ✅ Card unlock + badge wired |
 | `/junior/[id]/badges` | **Game 5: Junior Badges** | ✅ |
 
 Junior Club link visible in navbar "My Digby" dropdown for visitor accounts.
 
-#### Known gaps vs. full spec
+#### Remaining gaps vs. full spec
 
-**Formation Explorer (Game 3)** — built as a basic Mapbox map showing OMI dots with click-to-popup. The full spec requires: province unlock mechanic (answer 3 questions OR log a find from that region), per-user province unlock state in MongoDB, find-based auto-advancement, real site booking → "I was here" marker. **None of that is built.** The page just shows the OMI tileset on a map.
+**Dig Site Simulator (Game 4)** — premium site unlock (higher rare drop rates when you've booked a real Digby site) is not wired. The cross-check against real Digby bookings is not implemented.
 
-**Mineral Match (Game 6)** — client-side random deck each session. The spec requires a server-side seed so all players get the same daily set. The daily server seed is not implemented. Game is fully playable but not "daily challenge" format.
+**Mineral Match (Game 6)** — client-side random deck each session. The spec calls for a server-side seed so all players get the same daily set. Not implemented.
 
-**Dig Site Simulator (Game 4)** — premium site unlock (higher rare drop rates when you've booked a real Digby site) is not wired. Backend endpoint `GET /api/junior/sites/:userId` (for premium unlock status) does not exist. Game is fully playable with static site definitions.
-
-**Find → card unlock** — the spec says logging mineral X in the Find Journal should unlock card X in the Junior collection. This cross-trigger is not implemented. The find journal and junior collection are separate systems with no connection.
+**Find → card unlock cross-trigger** — the spec says logging mineral X in the Find Journal should unlock card X in the Junior collection. This is not implemented — find logging and junior collection are separate systems.
 
 **Shareable collection link** — not implemented.
 
-**Age scaling** — age range is stored on the profile and displayed, but does not auto-scale game difficulty (the spec called for larger targets + simpler labels for 6-8 year olds).
+**Age scaling** — age range stored on profile but does not auto-scale game difficulty.
 
 ---
 
 ### Visitor Passport (adult system — separate from Junior) ✅
 
-Described above under "Visitor Passport". Auto-stamp on booking completion. Points system. 4 badge tiers. Leaderboard. Public profile view at `/passport/[id]`. Personal view at `/passport`.
+Described above under "Visitor Passport". Auto-stamp on booking completion. Points system. 4 badge tiers. Leaderboard. Public profile view at `/passport/[id]`. Personal view at `/passport`. Citizen science find count now shown.
 
 ---
 
@@ -429,8 +519,6 @@ Status: Working backend with payment flow. Frontend is largely a placeholder/stu
 
 Route: `/api/waitlist/` — users join waitlist for specific site + date. When a booking is cancelled, the first un-notified waiter gets an email via `send_email()`.
 
-Frontend: `/api/waitlist` (backend only, form embedded on site detail page)
-
 ---
 
 ### Site Questions ✅
@@ -459,42 +547,34 @@ Frontend: `/mystery` — form picks province + mineral preference, creates a mys
 
 ## What Is NOT Started
 
-### Section 9 — Youth & Social Strategy
+### Remaining Section 11 Items
 
-Built:
-- ✅ UV Gallery at `/gallery/uv` — dark stone-950 page, per-colour glow shadows, square 4-col grid, colour filter chips (All/Green/Blue/Red/Orange/White/Multi), hover overlay with mineral name + fluorescence, UV badge per card
-- ✅ `uv_fluorescence` field on Find model + feed filter params (`uv_only`, `uv_colour`)
-- ✅ `is_haul` field on Find model
-- ✅ Hauls filter on find feed (Zap icon toggle button, `haul_only` feed query param)
-- ✅ UV fluorescence selector + haul checkbox on `/finds/new` form
-
-Not started:
-- "What's In Your Bag" flat-lay template
-- Specimen drop page at `/drops/:slug`
-- Creator directory page
-- Co-branded content templates
-
-### Section 10 — Expert & Professional Features
-None built:
-- Expert profiles & credentialing (P.Geo, P.Eng, MSc/PhD, OGS/GSC, GIS Professional tiers)
-- Community Reviewer tier
-- Expert verification dashboard / queue
-- Formation analytics
-- GIS data export (GeoJSON, shapefile, CSV)
-- Public API v1
-
-### Section 11 — Senior & Legacy Features
-None built:
-- Legacy data digitisation
-- Batch CSV import
-- Club accounts + club event pages
 - Email digest
 - Printable field cards / find log sheets
 - GPS track import (GPX)
 - ArcGIS / QGIS integrations
 
 ### Section 12 — Digby Seismic
+
 Gated. Requires legal review (PIPEDA, App Store sensor data policies), OGS pre-conversation, and native mobile app. **Do not build.**
+
+---
+
+## OGS Citizen Science Pipeline — Technical Complete, Robin Action Needed
+
+Technical side is fully built:
+- `citizen_science_opted_in` + `citizen_science_eligible` flags on Find model
+- `GET /api/finds/export/geojson` returns opted-in finds as GeoJSON FeatureCollection
+- Passport shows citizen science find count + OGS thank-you callout block
+- Admin CSV export at `GET /api/finds/admin/export` (admin token required)
+
+**Robin still needs to:**
+1. Contact OGS Resident Geologist for his region at `mndm.gov.on.ca` / Resident Geologist Program
+2. Confirm accepted data format (GeoJSON ready, CSV available)
+3. Sign voluntary data contribution agreement / MOU (ask for their standard template)
+4. Decide on cadence (quarterly GeoJSON/CSV drop to OGS email, or push to OGS API if one exists)
+5. Optional fast-track: approach geology professor at Laurentian/U of T/Queens as academic co-investigator under existing OGS research umbrella
+6. Professor William H. Blackburn (UWindsor) — Robin's personal geology professor, direct outreach letter still not sent
 
 ---
 
@@ -541,10 +621,10 @@ All three items complete:
 
 ## Suggested Next Priorities
 
-1. **Junior Formation Explorer (full spec)** — province unlock mechanic, per-user state, find-based progression
-3. **Junior find → card cross-trigger** — log find X → unlock junior card for mineral X
-4. **Section 9 remainder** — "What's In Your Bag" flat-lay template, specimen drops, creator directory
-5. **Expert features (Section 10)** — large spec, start with expert profile + credentialing
+1. **Strata shipping label export** — subscriber addresses → CSV for Canada Post (admin tool, deadline Aug 1)
+2. **Junior find → card cross-trigger** — log find with mineral X → unlock junior card for mineral X (cross-system wiring)
+3. **Junior dig premium unlock** — check booking history to give higher rare drop rates at booked sites
+4. **Prospector Track lessons** — new Learn the Land track, content captured as Robin goes through the prospecting process
 
 ---
 
@@ -553,16 +633,159 @@ All three items complete:
 A record of errors made while producing this document, for Claude's accountability and to help future sessions avoid the same problems.
 
 ### 1. Geology map described as incomplete when it was complete
-The first version of this document said "Awaiting Robin's Mapbox Studio tileset setup" and listed the manual Mapbox Studio steps as still open. In reality, both tilesets had already been uploaded, IDs were confirmed, field names were hardcoded in the map page, and the env vars were set. iPhone Claude read this and incorrectly concluded the map feature was unfinished.
+The first version of this document said "Awaiting Robin's Mapbox Studio tileset setup" and listed the manual Mapbox Studio steps as still open. In reality, both tilesets had already been uploaded, IDs were confirmed, field names were hardcoded in the map page, and the env vars were set.
 
 **Root cause:** Claude trusted the outdated `digby-todo.md` checkbox list instead of reading the actual source files.
 
 ### 2. Mapbox tilesets are now replaced by local GeoJSON
 After the tileset approach was confirmed correct, the geology layers were subsequently migrated away from Mapbox tilesets entirely. The OGS shapefiles were converted to GeoJSON with a Python script and placed in `frontend/public/geodata/`. The map page was updated to use `type="geojson"` sources instead of `type="vector"`. The two tileset env vars (`NEXT_PUBLIC_MAPBOX_TILESET_BEDROCK`, `NEXT_PUBLIC_MAPBOX_TILESET_MINERAL_OCCURRENCES`) are no longer used and should not be set.
 
-**Note for future sessions:** If you see any reference to Mapbox tilesets for the bedrock or OMI layers, it is stale. The layers are driven by local static files.
+**Note for future sessions:** If you see any reference to Mapbox tilesets for the bedrock or OMI layers, it is stale.
 
 ### 3. Failed to find the `.env` file using shell commands
-When asked to verify whether env vars were set, Claude ran `type .env` via the Bash tool (a Unix shell builtin that looks up command types, not file contents), then ran PowerShell `Get-ChildItem` which also returned nothing, and concluded the file didn't exist. The file was at `c:\dev\digby\.env` the entire time. The Read tool found it immediately when finally used.
+When asked to verify whether env vars were set, Claude ran `type .env` via the Bash tool (a Unix shell builtin), then ran PowerShell `Get-ChildItem` which also returned nothing, and concluded the file didn't exist. The file was at `c:\dev\digby\.env` the entire time. The Read tool found it immediately when finally used.
 
-**Root cause:** Reached for shell tools instead of using the Read tool directly on the known path. Assumed the file didn't exist after the first failed command instead of trying the right tool.
+**Root cause:** Reached for shell tools instead of using the Read tool directly on the known path.
+
+---
+
+## New Learn the Land Track: Prospector Track
+
+### Status: NOT YET BUILT — content planned, code not written
+
+The two existing tracks (Field + GIS) live entirely in `frontend/lib/learn-content.ts` as a `TRACKS` array. The learn page at `frontend/app/(site)/learn/page.tsx` renders whatever is in that array, so adding the Prospector Track means:
+1. Adding a new `Track` object to `TRACKS` in `learn-content.ts` with a new `id` (e.g. `"prospector"`) and 8 `Lesson` objects
+2. Updating the `Track` interface `id` type: `"field" | "gis"` → `"field" | "gis" | "prospector"`
+3. Adding the icon/colour case to the learn page (currently hardcodes `Map` for "field" and `BookOpen` for "gis")
+4. Updating `getLesson()` to accept the new track id
+
+No backend changes required — lessons are static content rendered client-side.
+
+### Content plan
+
+Practical, experience-based content written from Robin's lived experience learning Ontario mineral rights and prospecting in real time. Tone is authentic and first-person, not textbook.
+
+Planned lessons (none written yet):
+1. Do I need a prospector's licence? (commercial vs personal collecting, why wholesale is the clean path)
+2. Reading the MLAS map (claims, grid cells, alienation, how to identify open land, claim expiry)
+3. Understanding cell status codes (Available, Code C — known restrictions, what each means)
+4. Ground truthing — why you always visit before you stake
+5. Finding and researching historical mineral occurrences (MDI/OMI numbers, AMIS records, assessment files)
+6. Staking a claim — the actual process step by step
+7. Working with private landowners — access agreements, surface rights
+8. Sourcing specimens legally for commercial use
+
+Content is being captured in real time as Robin goes through the process personally. **Do not write lesson content without Robin's input** — each lesson reflects what he's actually done, not textbook theory. Ask Robin which lessons he's ready to write before building.
+
+---
+
+## Prospecting Research
+
+### Hound Lake Graphite Occurrence
+
+- MDI number: MDI31E01NE00012
+- AMIS abandoned mine record: 07760
+- Commodity: Flake graphite
+- Location: Herschel Township, Lot 24-25, Concession 10-11
+- Actual coordinates: 45°08'49.9"N 78°01'41.8"W (NOT at Hound Lake itself — further west)
+- Features: Adit + trench documented
+
+Work history:
+- 1912-1913: W. Wallace, J. Wallace, E. Woolton — pitting, trenching, adit (graphite boom era)
+- 1942: Testing of flake graphite (wartime critical material)
+- 1989: Harrington Sound Resources Inc. — mapping, prospecting, sampling, ground geophysics
+
+Ground truthed May 24, 2026 — Robin visited the area. Ice storm damage, heavy overgrowth, not currently accessible. Was approximately halfway between Dog Bay Road and the actual coordinates. Full site visit at exact coordinates still pending.
+
+Next research step: Search Ontario Assessment File system at geologyontario.mines.gov.on.ca for Harrington Sound Resources 1989 reports — Herschel Township, 1985-1995 date range.
+
+Unstaked cells in the Hound Lake area (confirmed on MLAS map May 24, 2026):
+31E01H077, 31E01H119, 31E01H120, 31E01H139, 31E01H140
+
+Note: Robin has not yet obtained a prospector's licence. MAAP not yet started. No claims staked.
+
+---
+
+## Strata Suppliers
+
+### Princess Sodalite Mine
+
+- Princess Sodalite Mine, Highway 28 East, ~4km outside Bancroft
+- Self-collect "rock farm" model — visitors chip away at surface material
+- Price: $3 CAD/lb for good quality sodalite
+- Requirements: steel toed boots, safety glasses
+- Owner was absent on May 24 visit — card obtained, follow-up needed
+- Need to confirm: is breaking permitted on rock farm, or take whole pieces home?
+- First collecting visit planned: May 25, 2026 (weather dependent)
+- Gear needed: 3-4 lb hand sledge, cold chisels, safety glasses, steel toes, sturdy transport box, small scale
+
+---
+
+## Strata Product Design
+
+### Box Format (confirmed)
+
+- Individual specimens presented in perky boxes (clear acrylic with foam insert)
+- Grid layout inside branded outer rigid box (kraft exterior, dark interior)
+- Story card on top of grid when lid is opened
+- Accessories (UV keychain, loupe etc) in dedicated space alongside grid
+
+### Tier Specimen Counts
+
+- Discoverer $39/mo: 3-4 specimens, 2x2 perky box grid
+- Collector $59/mo: 5-6 specimens, 2x3 grid, UV keychain included
+- Geologist $89/mo: 7-8 specimens, 2x4 grid, UV keychain, fold-out map or provenance document
+
+### Suppliers
+
+- Outer box: Packlane.com (25 unit minimum, ~3 week lead time)
+- Individual specimen boxes: Shannon Family Minerals (shannonsminerals.com), Fausto's Boxes
+
+Next physical step: Order sample perky boxes from Shannon's to measure and mock up outer box dimensions before ordering from Packlane.
+
+### 12-Month Theme Calendar
+
+- Month 1: Welcome to Bancroft (origin story — feldspar, tourmaline, calcite, sodalite)
+- Month 2: The Canadian Shield (deep time — gneiss, granite, amphibolite)
+- Month 3: Iron & Fire (magnetite, hematite, pyrite, marcasite)
+- Month 4: Hidden Light (fluorescent minerals — UV Gallery launch box, UV keychain in all tiers)
+- Month 5: Crystal Clear (quartz in all forms — smoky, milky, phantom, amethyst)
+- Month 6: The Gemboree Box (show-stopping specimens, Bancroft provenance, limited feel)
+- Month 7: Blue & Green (amazonite, chrysocolla, malachite, apatite — colour-themed, social-friendly)
+- Month 8: Deep Earth (olivine, pyroxene, hornblende — basalt/mantle minerals)
+- Month 9: Fool's Gold & Friends (pyrite, chalcopyrite, arsenopyrite — prospector history angle)
+- Month 10: Fossil Ontario (Ordovician marine fossils, southern Ontario limestone)
+- Month 11: The Dark Box (tourmaline, obsidian, jet, black calcite — youth/social aesthetic)
+- Month 12: Year One Collector's Edition (one significant specimen, rewards loyalty)
+
+Note: Month 4 Hidden Light deliberately timed to coincide with UV Gallery feature launch. Month 6 timed to Bancroft Gemboree season.
+
+---
+
+## Prospector's Licence — Status
+
+- Robin has not yet enrolled in the Ontario Prospector's Licence program
+- MAAP (Mining Act Awareness Program) not yet completed
+- Steps: Complete MAAP at mlas.mndm.gov.on.ca/maapp/en → Register MNDM client account → Purchase licence through MLAS
+- Urgency: moderate — unstaked cells identified near Robin's property, licence needed before staking
+
+---
+
+## Apple Developer Account — Status
+
+- Robin's current Apple ID: rgsamways@gmail.com
+- Previous developer account email unknown and unrecoverable — Apple support unable to help
+- New enrollment attempts failing — web enrollment loop (laptop pushes to phone, phone can't complete, web returns "could not be completed at this time")
+- iTunes installed on Windows laptop — still failing
+- Resolution path: unknown — cloud Mac rental was one idea but not confirmed
+- Needed for: any iOS/mobile development, Digby Seismic (already gated for other reasons)
+- Status: blocked, Apple support call scheduled for May 25, 2026 — awaiting outcome
+
+---
+
+## Reminders: Do Not Forget
+
+- **OGS citizen science pipeline** — Robin still needs to contact the OGS Resident Geologist and get a data-sharing MOU in place. Technical side is complete. See OGS section above for full action list.
+- **Professor William H. Blackburn** (UWindsor mineralogist, Robin's geology minor professor) — personal outreach letter from Robin as alumni still not sent. Digby is the direct descendant of his field trip. Meaningful connection worth making.
+- **Prospector Track** — new Learn the Land content track, capturing Robin's real-time prospecting education. Do not let this get lost.
+- **Strata Gemboree deadline: August 1, 2026** — must have shipping label export and first box contents ready.

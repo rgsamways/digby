@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.api.deps import get_current_user
 from app.models.diary_entry import DiaryEntry
+from app.models.find import Find
 from app.models.hunt_progress import HuntProgress
 from app.models.passport_stamp import PassportStamp
 from app.models.quiz_result import QuizResult
@@ -12,10 +13,12 @@ from app.models.user import User
 router = APIRouter()
 
 BADGES = [
-    {"id": "first_dig", "name": "First Dig", "description": "Complete your first site visit", "threshold": 1},
+    {"id": "first_dig", "name": "First Dig", "description": "Complete your first site visit",
+     "threshold": 1},
     {"id": "rock_hound", "name": "Rock Hound", "description": "Visit 5 sites", "threshold": 5},
     {"id": "gem_hunter", "name": "Gem Hunter", "description": "Visit 10 sites", "threshold": 10},
-    {"id": "mineral_master", "name": "Mineral Master", "description": "Visit 25 sites", "threshold": 25},
+    {"id": "mineral_master", "name": "Mineral Master", "description": "Visit 25 sites",
+     "threshold": 25},
 ]
 
 STAMP_POINTS = 25
@@ -23,8 +26,20 @@ MINERAL_POINTS = 10
 HUNT_POINTS = 100
 
 
-def _compute_points(stamp_count: int, unique_mineral_count: int, hunt_count: int, quiz_points: int, diary_points: int) -> int:
-    return stamp_count * STAMP_POINTS + unique_mineral_count * MINERAL_POINTS + hunt_count * HUNT_POINTS + quiz_points + diary_points
+def _compute_points(
+    stamp_count: int,
+    unique_mineral_count: int,
+    hunt_count: int,
+    quiz_points: int,
+    diary_points: int,
+) -> int:
+    return (
+        stamp_count * STAMP_POINTS
+        + unique_mineral_count * MINERAL_POINTS
+        + hunt_count * HUNT_POINTS
+        + quiz_points
+        + diary_points
+    )
 
 
 @router.get("/me")
@@ -50,7 +65,14 @@ async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
     diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == visitor.id).to_list()
     diary_points = sum(e.points_awarded for e in diary_entries)
 
-    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points)
+    cs_finds = await Find.find(
+        Find.user_id == visitor.id,
+        Find.citizen_science_opted_in == True,  # noqa: E712
+    ).count()
+
+    total_points = _compute_points(
+        len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points
+    )
 
     return {
         "visitor_name": visitor.name,
@@ -59,6 +81,7 @@ async def my_passport(visitor: User = Depends(get_current_user)) -> dict:
         "hunt_completions": hunt_completions,
         "quiz_sessions": len(quiz_results),
         "diary_entries": len(diary_entries),
+        "citizen_science_finds": cs_finds,
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],
@@ -104,7 +127,10 @@ async def leaderboard() -> list[dict]:
         minerals: set[str] = set()
         for s in vstamps:
             minerals.update(s.minerals_found)
-        pts = _compute_points(len(vstamps), len(minerals), hunts_by_visitor[vid], quiz_pts_by_visitor[vid], diary_pts_by_visitor[vid])
+        pts = _compute_points(
+            len(vstamps), len(minerals),
+            hunts_by_visitor[vid], quiz_pts_by_visitor[vid], diary_pts_by_visitor[vid],
+        )
         scores.append((vid, pts, len(vstamps)))
 
     scores.sort(key=lambda x: x[1], reverse=True)
@@ -149,7 +175,14 @@ async def get_passport(visitor_id: str) -> dict:
     diary_entries = await DiaryEntry.find(DiaryEntry.visitor_id == oid).to_list()
     diary_points = sum(e.points_awarded for e in diary_entries)
 
-    total_points = _compute_points(len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points)
+    cs_finds = await Find.find(
+        Find.user_id == oid,
+        Find.citizen_science_opted_in == True,  # noqa: E712
+    ).count()
+
+    total_points = _compute_points(
+        len(stamps), len(all_minerals), hunt_completions, quiz_points, diary_points
+    )
 
     return {
         "visitor_name": visitor.name,
@@ -158,6 +191,7 @@ async def get_passport(visitor_id: str) -> dict:
         "hunt_completions": hunt_completions,
         "quiz_sessions": len(quiz_results),
         "diary_entries": len(diary_entries),
+        "citizen_science_finds": cs_finds,
         "unique_minerals": sorted(all_minerals),
         "badges": earned_badges,
         "stamps": [_stamp_dict(s) for s in stamps],

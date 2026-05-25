@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { RARITY_LABELS, RARITY_COLORS } from "@/lib/junior";
+import { api } from "@/lib/api";
 
 // Static mineral data for the dig game — a curated subset with site associations
 const DIG_MINERALS = [
@@ -69,6 +70,7 @@ export default function DigSitePage() {
   const [digsLeft, setDigsLeft] = useState(MAX_DIGS);
   const [lastFind, setLastFind] = useState<(typeof DIG_MINERALS)[0] | null>(null);
   const [gameOver, setGameOver] = useState(false);
+  const [newBadges, setNewBadges] = useState<string[]>([]);
 
   const found = spots.filter((s) => s.dug && s.type === "mineral").map((s) => s.mineral!);
 
@@ -78,6 +80,7 @@ export default function DigSitePage() {
     setDigsLeft(MAX_DIGS);
     setLastFind(null);
     setGameOver(false);
+    setNewBadges([]);
   }
 
   function reset() {
@@ -85,9 +88,26 @@ export default function DigSitePage() {
     setDigsLeft(MAX_DIGS);
     setLastFind(null);
     setGameOver(false);
+    setNewBadges([]);
   }
 
-  function dig(index: number) {
+  async function submitDigResults(finalSpots: Spot[]) {
+    const mineralNames = finalSpots
+      .filter((s) => s.dug && s.type === "mineral" && s.mineral)
+      .map((s) => s.mineral!.name);
+    try {
+      const res = await api.post<{ new_cards: string[]; new_badges: string[] }>(
+        `/api/junior/${id}/dig-complete`,
+        { mineral_names: mineralNames },
+        { auth: true }
+      );
+      if (res.new_badges?.length) setNewBadges(res.new_badges);
+    } catch {
+      // non-fatal — badges missed silently
+    }
+  }
+
+  async function dig(index: number) {
     if (gameOver || digsLeft === 0 || spots[index].dug) return;
     const newSpots = spots.map((s) =>
       s.index === index ? { ...s, dug: true } : s
@@ -101,7 +121,10 @@ export default function DigSitePage() {
     }
     const newDigsLeft = digsLeft - 1;
     setDigsLeft(newDigsLeft);
-    if (newDigsLeft === 0) setGameOver(true);
+    if (newDigsLeft === 0) {
+      setGameOver(true);
+      await submitDigResults(newSpots);
+    }
   }
 
   return (
@@ -217,6 +240,12 @@ export default function DigSitePage() {
             </div>
           ) : (
             <p className="text-stone-500 text-sm mb-4">Better luck next time! Try a different site.</p>
+          )}
+          {newBadges.length > 0 && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-sm font-bold text-amber-800 mb-1">🏅 Badge{newBadges.length > 1 ? "s" : ""} earned!</p>
+              <p className="text-xs text-amber-700">{newBadges.join(", ")}</p>
+            </div>
           )}
           <button onClick={reset} className="btn-primary w-full">
             Dig again ⛏️

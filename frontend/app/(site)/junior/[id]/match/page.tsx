@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw, Timer } from "lucide-react";
+import { api } from "@/lib/api";
 
 // Each pair: mineral name ↔ key property
 const PAIRS = [
@@ -56,6 +57,7 @@ export default function MineralMatchPage() {
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
   const [won, setWon] = useState(false);
+  const [newBadges, setNewBadges] = useState<string[]>([]);
 
   useEffect(() => {
     if (!running) return;
@@ -74,6 +76,20 @@ export default function MineralMatchPage() {
     setElapsed(0);
     setRunning(false);
     setWon(false);
+    setNewBadges([]);
+  }
+
+  async function submitWin(mineralNames: string[]) {
+    try {
+      const res = await api.post<{ new_cards: string[]; new_badges: string[] }>(
+        `/api/junior/${id}/dig-complete`,
+        { mineral_names: mineralNames },
+        { auth: true }
+      );
+      if (res.new_badges?.length) setNewBadges(res.new_badges);
+    } catch {
+      // non-fatal
+    }
   }
 
   function flip(cardId: string) {
@@ -105,6 +121,9 @@ export default function MineralMatchPage() {
           if (newMatches === diff.pairs) {
             setRunning(false);
             setWon(true);
+            // All A-side cards represent every mineral in the current deck
+            const matchedNames = deck.filter((c) => c.side === "a").map((c) => c.text);
+            submitWin(matchedNames);
           }
         } else {
           // No match — flip back
@@ -167,6 +186,11 @@ export default function MineralMatchPage() {
           <div className="text-5xl mb-2">🎉</div>
           <p className="font-extrabold text-xl mb-1">You matched them all!</p>
           <p className="text-brand-200 text-sm mb-4">{moves} moves · {formatTime(elapsed)}</p>
+          {newBadges.length > 0 && (
+            <div className="mb-4 rounded-xl bg-white/20 px-4 py-2 text-sm font-semibold">
+              🏅 Badge{newBadges.length > 1 ? "s" : ""} earned: {newBadges.join(", ")}
+            </div>
+          )}
           <button onClick={() => reset()} className="bg-white text-brand-700 font-bold rounded-xl px-6 py-2">
             Play again
           </button>

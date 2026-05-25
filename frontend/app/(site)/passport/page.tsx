@@ -15,6 +15,7 @@ interface PassportData {
   hunt_completions: number;
   quiz_sessions: number;
   diary_entries: number;
+  citizen_science_finds: number;
   unique_minerals: string[];
   badges: Badge[];
   stamps: PassportStamp[];
@@ -191,6 +192,7 @@ export default function PassportPage() {
               {" · "}{passport.unique_minerals.length} mineral{passport.unique_minerals.length !== 1 ? "s" : ""}
               {passport.hunt_completions > 0 && ` · ${passport.hunt_completions} hunt${passport.hunt_completions !== 1 ? "s" : ""}`}
               {passport.diary_entries > 0 && ` · ${passport.diary_entries} journal entr${passport.diary_entries !== 1 ? "ies" : "y"}`}
+              {passport.citizen_science_finds > 0 && ` · ${passport.citizen_science_finds} OGS find${passport.citizen_science_finds !== 1 ? "s" : ""}`}
             </p>
             <button
               onClick={handleShare}
@@ -237,6 +239,23 @@ export default function PassportPage() {
                 </span>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* OGS citizen science contribution */}
+      {passport.citizen_science_finds > 0 && (
+        <section className="mb-10">
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 px-6 py-5 flex items-center gap-5">
+            <span className="text-4xl shrink-0">🔬</span>
+            <div>
+              <p className="font-bold text-stone-900">
+                {passport.citizen_science_finds} find{passport.citizen_science_finds !== 1 ? "s" : ""} contributed to OGS
+              </p>
+              <p className="text-sm text-stone-500 mt-0.5">
+                Your data is part of the Ontario Geological Survey citizen science dataset. Thank you for helping map Ontario&apos;s minerals.
+              </p>
+            </div>
           </div>
         </section>
       )}

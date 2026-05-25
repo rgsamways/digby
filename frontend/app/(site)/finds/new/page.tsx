@@ -67,7 +67,7 @@ function NewFindForm() {
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [hostRock, setHostRock] = useState(params.get("host_rock") ?? "");
   const [province, setProvince] = useState(params.get("province") ?? "");
-  const [formation, setFormation] = useState("");
+  const [formation, setFormation] = useState(params.get("formation") ?? "");
   const [quality, setQuality] = useState("");
   const [verification, setVerification] = useState(params.get("verification") ?? "unverified");
   const [siteName, setSiteName] = useState("");
@@ -140,9 +140,27 @@ function NewFindForm() {
       }, { auth: true });
     },
     onSuccess: (data: unknown) => {
-      router.push(`/finds/${(data as { id: string }).id}`);
+      const findId = (data as { id: string }).id;
+      if (!uvFluorescence) {
+        setPendingFindId(findId);
+      } else {
+        router.push(`/finds/${findId}`);
+      }
     },
   });
+
+  const [pendingFindId, setPendingFindId] = useState<string | null>(null);
+  const [pendingUv, setPendingUv] = useState("");
+  const [savingUv, setSavingUv] = useState(false);
+
+  async function saveUvAndNavigate() {
+    if (!pendingFindId) return;
+    setSavingUv(true);
+    try {
+      await api.patch(`/api/finds/${pendingFindId}`, { uv_fluorescence: pendingUv || null }, { auth: true });
+    } catch { /* non-fatal */ }
+    router.push(`/finds/${pendingFindId}`);
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -349,13 +367,51 @@ function NewFindForm() {
           </p>
         )}
 
-        <button
-          onClick={() => mutation.mutate()}
-          disabled={!mineralName || !date || mutation.isPending || uploading}
-          className="btn-primary w-full"
-        >
-          {uploading ? "Uploading photos…" : mutation.isPending ? "Saving…" : "Save find"}
-        </button>
+        {pendingFindId ? (
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5">
+            <p className="font-bold text-stone-900 mb-1">Find saved! One more thing —</p>
+            <p className="text-sm text-stone-600 mb-3">
+              Got a UV lamp? Minerals like calcite, sodalite, and fluorapatite often glow — and
+              fluorescence data helps OGS researchers. Takes 30 seconds to test.
+            </p>
+            <select
+              className="input mb-3"
+              value={pendingUv}
+              onChange={(e) => setPendingUv(e.target.value)}
+            >
+              <option value="">No fluorescence / not tested</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red / orange-red</option>
+              <option value="orange">Orange / yellow</option>
+              <option value="white">White / cream</option>
+              <option value="multi">Multi-colour</option>
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={saveUvAndNavigate}
+                disabled={savingUv}
+                className="flex-1 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+              >
+                {pendingUv ? "Save & view find" : "Save without UV"}
+              </button>
+              <button
+                onClick={() => router.push(`/finds/${pendingFindId}`)}
+                className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={!mineralName || !date || mutation.isPending || uploading}
+            className="btn-primary w-full"
+          >
+            {uploading ? "Uploading photos…" : mutation.isPending ? "Saving…" : "Save find"}
+          </button>
+        )}
       </div>
     </div>
   );

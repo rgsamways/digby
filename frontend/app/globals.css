@@ -34,3 +34,27 @@
     @apply rounded-lg border border-stone-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.07)];
   }
 }
+
+/* Large text / accessibility mode */
+html.large-text {
+  font-size: 18px;
+}
+
+html.large-text body {
+  line-height: 1.75;
+}
+
+html.large-text .input,
+html.large-text .btn-primary,
+html.large-text .btn-secondary {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+html.large-text p,
+html.large-text li,
+html.large-text label {
+  font-size: 1rem;
+}

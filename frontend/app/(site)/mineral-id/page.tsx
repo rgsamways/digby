@@ -254,16 +254,20 @@ function ResultCard({
 }) {
   const [showPhysical, setShowPhysical] = useState(false);
 
+  const resolvedProvince =
+    province && province !== "Unknown"
+      ? province
+      : result.ontario_context.province ?? "";
+
+  const resolvedFormation = result.ontario_context.typical_formations?.[0] ?? "";
+
   const logParams = new URLSearchParams({
     mineral: result.identified_mineral,
     verification: "ai_likely",
     notes: result.confidence_reason,
     ...(hostRock ? { host_rock: hostRock } : {}),
-    ...(province && province !== "Unknown"
-      ? { province }
-      : result.ontario_context.province
-      ? { province: result.ontario_context.province }
-      : {}),
+    ...(resolvedProvince ? { province: resolvedProvince } : {}),
+    ...(resolvedFormation ? { formation: resolvedFormation } : {}),
   });
 
   return (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { Download, PlusCircle, Trash2, Upload } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { Find } from "@/lib/types";
@@ -49,9 +49,35 @@ export default function MyFindsPage() {
             {finds.length} finds · {publicCount} public · {csCount} citizen science eligible
           </p>
         </div>
-        <Link href="/finds/new" className="btn-primary flex items-center gap-2">
-          <PlusCircle className="h-4 w-4" /> Log a find
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/finds/export/geojson`}
+            onClick={(e) => {
+              e.preventDefault();
+              const token = localStorage.getItem("digby_token");
+              fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/finds/export/geojson`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              }).then((r) => r.blob()).then((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `digby-finds-${new Date().toISOString().slice(0, 10)}.geojson`;
+                a.click();
+                URL.revokeObjectURL(url);
+              });
+            }}
+            className="btn-secondary flex items-center gap-1.5 text-sm py-2"
+            title="Export as GeoJSON"
+          >
+            <Download className="h-4 w-4" /> GeoJSON
+          </a>
+          <Link href="/finds/import" className="btn-secondary flex items-center gap-1.5 text-sm py-2">
+            <Upload className="h-4 w-4" /> Import
+          </Link>
+          <Link href="/finds/new" className="btn-primary flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" /> Log a find
+          </Link>
+        </div>
       </div>
 
       {isLoading && (

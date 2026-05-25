@@ -270,7 +270,7 @@ async def complete_booking(
     if junior_profiles:
         from app.api.routes.junior import award_booking_badge
         for jp in junior_profiles:
-            await award_booking_badge(visitor_id, str(jp.id))
+            await award_booking_badge(visitor_id, str(jp.id), site_id=str(booking.site_id))
 
     return {"status": "completed"}
 

@@ -10,6 +10,7 @@ from app.api.routes import (
     auth,
     availability,
     bookings,
+    clubs,
     creators,
     diary,
     drops,
@@ -113,6 +114,7 @@ app.include_router(map_routes.router, prefix="/api/map", tags=["map"])
 app.include_router(drops.router, prefix="/api/drops", tags=["drops"])
 app.include_router(creators.router, prefix="/api/creators", tags=["creators"])
 app.include_router(experts.router, prefix="/api/experts", tags=["experts"])
+app.include_router(clubs.router, prefix="/api/clubs", tags=["clubs"])
 
 
 @app.get("/api/auth/me", tags=["auth"])
