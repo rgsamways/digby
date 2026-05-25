@@ -19,9 +19,9 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const data = await api.post<{ access_token: string; user_id: string; name: string; role: "visitor" | "operator" | "admin" }>("/api/auth/login", { email, password });
+      const data = await api.post<{ access_token: string; user_id: string; name: string; role: "visitor" | "operator" | "guide" | "admin" }>("/api/auth/login", { email, password });
       setAuth(data.access_token, { id: data.user_id, name: data.name, role: data.role });
-      router.push(data.role === "operator" ? "/dashboard" : "/sites");
+      router.push(data.role === "visitor" ? "/dashboard" : data.role === "guide" ? "/dashboard/guide" : "/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

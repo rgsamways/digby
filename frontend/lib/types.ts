@@ -33,6 +33,7 @@ export interface GroupMember {
 export interface Booking {
   id: string;
   site_id: string;
+  site_name?: string;
   date: string;
   party_size: number;
   total_amount: number;

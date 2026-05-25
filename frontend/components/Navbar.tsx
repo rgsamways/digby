@@ -26,6 +26,7 @@ const exploreLinks = [
 ];
 
 const myDigbyLinks = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/bookings", label: "My Bookings" },
   { href: "/passport", label: "My Passport" },
   { href: "/diary", label: "Trip Journal" },
@@ -108,7 +109,7 @@ export function Navbar() {
     <nav ref={navRef} className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={user && isVisitor ? "/dashboard" : "/"} className="flex items-center gap-2">
           <Gem className="h-5 w-5 text-brand-600" />
           <span className="font-display text-lg text-stone-900 tracking-tight">
             digby<span className="text-brand-600">.rocks</span>
