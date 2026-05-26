@@ -396,6 +396,62 @@ function VisitorDashboard({ passport, bookings }: { passport: PassportData; book
   );
 }
 
+// ─── Host Welcome (first-visit orientation) ──────────────────────────────────
+
+function HostWelcome({ firstName }: { firstName: string }) {
+  return (
+    <div className="mb-10">
+      <h1 className="font-display text-3xl text-stone-900">
+        Welcome to Digby, {firstName}.
+      </h1>
+      <p className="mt-3 text-base text-stone-500 leading-relaxed">
+        You&rsquo;re about to list your land on Ontario&rsquo;s only dedicated rockhounding marketplace.
+        Digby handles discovery, scheduling, and payments &mdash; you focus on the land.
+      </p>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {[
+          {
+            icon: <Calendar className="h-4 w-4" />,
+            title: "Bookings managed",
+            body: "Visitors find your site on the map, pick a date, and pay online. You get a notification for every booking.",
+          },
+          {
+            icon: <CreditCard className="h-4 w-4" />,
+            title: "88% payout",
+            body: "Digby takes 12% to cover the platform. The rest lands in your Stripe account bi-weekly in CAD.",
+          },
+          {
+            icon: <MapPin className="h-4 w-4" />,
+            title: "Ontario&rsquo;s community",
+            body: "Active rockhounds searching for pay-to-dig access. Your site gets map placement and search visibility.",
+          },
+        ].map(({ icon, title, body }) => (
+          <div key={title} className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-brand-600">{icon}</span>
+              <p className="text-sm font-semibold text-stone-900">{title}</p>
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed">{body}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+        <p className="text-sm font-semibold text-amber-900">What makes a great Digby site</p>
+        <ul className="mt-2 space-y-1.5 text-sm text-amber-800">
+          <li>Known mineral deposits &mdash; visitors want a reasonable chance of finding something</li>
+          <li>Safe, accessible terrain with clear parking</li>
+          <li>Written rules: tools allowed, group size, any restricted areas</li>
+          <li>Fair pricing &mdash; most Ontario sites land between $20&ndash;60 per person</li>
+        </ul>
+      </div>
+
+      <p className="mt-6 mb-1 text-sm font-semibold text-stone-700">Three steps to go live:</p>
+    </div>
+  );
+}
+
 // ─── Operator Setup Checklist (States 1 & 2) ──────────────────────────────────
 
 function OperatorSetup({
@@ -429,8 +485,8 @@ function OperatorSetup({
   const steps = [
     {
       num: 1,
-      title: "Connect Stripe",
-      description: "Set up payouts so Digby can send you 88% of every booking.",
+      title: "Set up payouts",
+      description: "Get 88¢ of every dollar, bi-weekly, to your bank. Stripe handles all payment security.",
       done: stripeConnected,
       active: !stripeConnected,
       cta: (
@@ -445,8 +501,8 @@ function OperatorSetup({
     },
     {
       num: 2,
-      title: "List your first site",
-      description: "Add your dig site — location, minerals, pricing, photos.",
+      title: "Describe your land",
+      description: "Tell visitors what minerals they'll find, what the terrain is like, and what it costs to visit.",
       done: hasSites,
       active: stripeConnected && !hasSites,
       cta: (
@@ -461,8 +517,8 @@ function OperatorSetup({
     },
     {
       num: 3,
-      title: "Set availability",
-      description: "Open up dates so visitors can book.",
+      title: "Open your calendar",
+      description: "Choose which days you're ready for visitors. You control the schedule.",
       done: hasAvailability,
       active: hasSites && !hasAvailability,
       cta: (
@@ -479,14 +535,16 @@ function OperatorSetup({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl text-stone-900">{heading}</h1>
-        {isFirstVisit && (
-          <p className="mt-2 text-lg text-stone-500">
-            Three steps to start accepting bookings and getting paid.
+      {isFirstVisit ? (
+        <HostWelcome firstName={firstName} />
+      ) : (
+        <div className="mb-8">
+          <h1 className="font-display text-3xl text-stone-900">{heading}</h1>
+          <p className="mt-2 text-stone-500">
+            {stepsRemaining === 1 ? "One last step" : `${stepsRemaining} more steps`} before you start receiving bookings.
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {steps.map((step) => (
