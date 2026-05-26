@@ -18,6 +18,12 @@ class User(Document):
     name: str
     phone: str | None = None
     role: UserRole = UserRole.VISITOR
+    # Additive capability roles (citizen_scientist, educator, creator, prospector, researcher)
+    roles: list[str] = []
+    # Domain-inferred signals set at registration (university, school_board, government, mining)
+    email_flags: list[str] = []
+    # Answers from the optional signup survey
+    onboarding_answers: list[str] = []
     bio: str = ""
     avatar_url: str | None = None
     # visitor fields

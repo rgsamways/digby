@@ -51,6 +51,9 @@ export interface User {
   email?: string;
   name: string;
   role: "visitor" | "operator" | "guide" | "admin";
+  roles?: string[];
+  email_flags?: string[];
+  onboarding_answers?: string[];
   stripe_account_id?: string | null;
   stripe_account_enabled?: boolean;
   bio?: string;

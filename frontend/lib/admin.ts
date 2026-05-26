@@ -194,6 +194,9 @@ export interface AdminUser {
   email: string;
   name: string;
   role: string;
+  roles: string[];
+  email_flags: string[];
+  onboarding_answers: string[];
   is_active: boolean;
   is_verified: boolean;
   stripe_account_enabled: boolean;
@@ -206,6 +209,11 @@ export const usersAdminApi = {
     if (role) params.set("role", role);
     if (active !== undefined) params.set("active", String(active));
     return adminFetch(`/api/admin/users?${params}`) as Promise<AdminUser[]>;
+  },
+  listFlagged: (flag?: string) => {
+    const params = new URLSearchParams();
+    if (flag) params.set("flag", flag);
+    return adminFetch(`/api/admin/users/flagged?${params}`) as Promise<AdminUser[]>;
   },
   setRole: (id: string, role: string) =>
     adminFetch(`/api/admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }) as Promise<AdminUser>,

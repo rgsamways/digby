@@ -501,6 +501,9 @@ def _user_dict(u: User) -> dict:
         "email": u.email,
         "name": u.name,
         "role": u.role,
+        "roles": u.roles,
+        "email_flags": u.email_flags,
+        "onboarding_answers": u.onboarding_answers,
         "is_active": u.is_active,
         "is_verified": u.is_verified,
         "stripe_account_enabled": u.stripe_account_enabled,
@@ -523,6 +526,19 @@ async def admin_list_users(
         query["is_active"] = active
     users = await User.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     return [_user_dict(u) for u in users]
+
+
+@router.get("/users/flagged")
+async def admin_list_flagged_users(
+    flag: str | None = None,
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    """Return users with non-empty email_flags (partnership leads)."""
+    users = await User.find().sort("-created_at").to_list()
+    flagged = [u for u in users if u.email_flags]
+    if flag:
+        flagged = [u for u in flagged if flag in u.email_flags]
+    return [_user_dict(u) for u in flagged]
 
 
 class UserRoleIn(BaseModel):
