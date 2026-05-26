@@ -194,7 +194,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Left panel — desktop only */}
       {showPanel && !isMobile && (
         <div style={{ display: "flex", flexDirection: "column", width: 240, flexShrink: 0, backgroundColor: STONE, overflowY: "auto", zIndex: 30 }}>
-          <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            {pathname !== "/" && (
+              <Link href="/" style={{ display: "block", marginBottom: 12, textDecoration: "none" }}>
+                <div style={{ fontFamily: "var(--font-display), Georgia, serif", fontSize: 20, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em", color: "white" }}>
+                  digby<span style={{ fontStyle: "italic", color: "#E8A84A" }}>.rocks</span>
+                </div>
+                <p style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.35)", margin: "5px 0 0" }}>
+                  Ontario&apos;s Rockhound Booking Platform
+                </p>
+              </Link>
+            )}
             <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.5)" }}>{panelLabel}</span>
           </div>
           <nav style={{ flex: 1, padding: "12px 8px" }}>
