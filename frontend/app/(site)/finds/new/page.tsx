@@ -183,7 +183,7 @@ function NewFindForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-10 pb-24 md:pb-10">
       <h1 className="font-display text-4xl text-stone-900 mb-2">Log a Find</h1>
       {params.get("mineral") && (
         <p className="mb-6 text-sm text-brand-700 bg-brand-50 rounded-lg px-3 py-2 border border-brand-100">
