@@ -45,18 +45,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#F7F6F2]">
-      {/* Dark sidebar */}
-      <aside className="flex w-56 shrink-0 flex-col bg-stone-900">
+    <div className="flex min-h-screen bg-digby-cream">
+      {/* Navy sidebar */}
+      <aside className="flex w-56 shrink-0 flex-col bg-digby-navy">
         {/* Logo */}
-        <div className="px-4 py-5 border-b border-stone-800">
+        <div className="px-4 py-5 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Gem className="h-4 w-4 text-amber-400" />
             <span className="font-extrabold text-white tracking-tight">
               digby<span className="text-amber-400">.rocks</span>
             </span>
           </div>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-widest text-stone-500">Admin</p>
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-widest text-digby-blue/70">Admin</p>
         </div>
 
         {/* Nav */}
@@ -67,8 +67,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href={href}
               className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith(href)
-                  ? "bg-amber-400/10 text-amber-400"
-                  : "text-stone-400 hover:bg-stone-800 hover:text-stone-100"
+                  ? "bg-amber-400/15 text-amber-400"
+                  : "text-digby-blue/80 hover:bg-digby-slate hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -78,10 +78,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Logout */}
-        <div className="px-2 py-3 border-t border-stone-800">
+        <div className="px-2 py-3 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-stone-500 transition-colors hover:bg-stone-800 hover:text-stone-300"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-digby-blue/60 transition-colors hover:bg-digby-slate hover:text-white"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             Log out
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Main content — warm cream background */}
       <main className="flex-1 overflow-auto p-8">{children}</main>
     </div>
   );
