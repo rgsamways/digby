@@ -164,9 +164,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               const active = !showAccount && activeId === a.id;
               return (
                 <button key={a.id} onClick={() => handleActivity(a)} title={a.label}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", width: "100%", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", width: "100%", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
                   <Icon size={20} />
-                  <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>{a.label}</span>
                 </button>
               );
             })}
@@ -180,9 +179,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             {ready && user && (
               <button onClick={() => { setShowAccount(s => !s); setPanelOpen(true); }}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", width: "100%" }}>
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", width: "100%" }}>
                 <User size={20} />
-                <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>Account</span>
               </button>
             )}
           </div>
@@ -284,16 +282,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const active = !showAccount && activeId === a.id;
             return (
               <button key={a.id} onClick={() => { setShowAccount(false); router.push(a.href ?? a.rootHref ?? "/"); setActiveId(a.id); }}
-                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "8px 0", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", color: "white", background: active ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer" }}>
                 <Icon size={20} />
-                <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{a.label}</span>
               </button>
             );
           })}
           <button onClick={() => setShowAccount(s => !s)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, padding: "8px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", position: "relative" }}>
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", color: "white", background: showAccount ? "rgba(255,255,255,0.2)" : "transparent", border: "none", cursor: "pointer", position: "relative" }}>
             <User size={20} />
-            <span style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>Account</span>
             {cartCount > 0 && <span style={{ position: "absolute", top: 4, right: 8, background: "white", color: COPPER, borderRadius: "50%", width: 16, height: 16, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount > 9 ? "9+" : cartCount}</span>}
           </button>
         </nav>
