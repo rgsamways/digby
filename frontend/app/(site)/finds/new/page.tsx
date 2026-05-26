@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Layers } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 
@@ -58,7 +58,7 @@ export default function NewFindPage() {
 function NewFindForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user } = useAuthStore();
+  const { user, updateRoles } = useAuthStore();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [mineralName, setMineralName] = useState(params.get("mineral") ?? "");
@@ -82,6 +82,8 @@ function NewFindForm() {
   const [pendingFindId, setPendingFindId] = useState<string | null>(null);
   const [pendingUv, setPendingUv] = useState("");
   const [savingUv, setSavingUv] = useState(false);
+  const [showCsOptIn, setShowCsOptIn] = useState(false);
+  const [joiningCs, setJoiningCs] = useState(false);
 
   const addFiles = useCallback(async (rawFiles: FileList | null) => {
     if (!rawFiles) return;
@@ -138,7 +140,11 @@ function NewFindForm() {
     },
     onSuccess: (data: unknown) => {
       const findId = (data as { id: string }).id;
-      if (!uvFluorescence) {
+      const hasCsRole = user?.roles?.includes("citizen_scientist");
+      if (!hasCsRole) {
+        setPendingFindId(findId);
+        setShowCsOptIn(true);
+      } else if (!uvFluorescence) {
         setPendingFindId(findId);
       } else {
         router.push(`/finds/${findId}`);
@@ -158,6 +164,22 @@ function NewFindForm() {
       await api.patch(`/api/finds/${pendingFindId}`, { uv_fluorescence: pendingUv || null }, { auth: true });
     } catch { /* non-fatal */ }
     router.push(`/finds/${pendingFindId}`);
+  }
+
+  async function joinCitizenScience() {
+    setJoiningCs(true);
+    try {
+      const result = await api.post<{ roles: string[] }>("/api/auth/me/roles", { role: "citizen_scientist" }, { auth: true });
+      updateRoles(result.roles);
+    } catch { /* non-fatal — still proceed */ }
+    setJoiningCs(false);
+    setShowCsOptIn(false);
+    if (uvFluorescence) router.push(`/finds/${pendingFindId}`);
+  }
+
+  function skipCitizenScience() {
+    setShowCsOptIn(false);
+    if (uvFluorescence) router.push(`/finds/${pendingFindId}`);
   }
 
   return (
@@ -365,7 +387,44 @@ function NewFindForm() {
           </p>
         )}
 
-        {pendingFindId ? (
+        {/* Stage 1 — Citizen Scientist opt-in (first time only) */}
+        {showCsOptIn && pendingFindId && (
+          <div className="rounded-2xl border border-brand-200 bg-brand-50 p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100">
+                <Layers className="h-5 w-5 text-brand-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-stone-900">Your find is saved.</p>
+                <p className="text-sm text-stone-500">One more thing — your data could matter.</p>
+              </div>
+            </div>
+            <p className="mb-4 text-sm text-stone-700 leading-relaxed">
+              Ontario geology researchers rely on field observations from collectors. Your mineral name,
+              GPS location, and host rock are exactly what the OGS works with. As a Citizen Scientist,
+              your future finds (with GPS and photo) contribute to the provincial dataset.
+              Your name is never published — only location and mineral data.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                onClick={joinCitizenScience}
+                disabled={joiningCs}
+                className="flex-1 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+              >
+                {joiningCs ? "Joining…" : "Join as Citizen Scientist"}
+              </button>
+              <button
+                onClick={skipCitizenScience}
+                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-500 hover:bg-stone-50"
+              >
+                Not right now
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Stage 2 — UV fluorescence prompt */}
+        {!showCsOptIn && pendingFindId && (
           <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5">
             <p className="font-bold text-stone-900 mb-1">Find saved! One more thing —</p>
             <p className="text-sm text-stone-600 mb-3">
@@ -401,7 +460,10 @@ function NewFindForm() {
               </button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Stage 0 — Submit button */}
+        {!pendingFindId && (
           <button
             onClick={() => mutation.mutate()}
             disabled={!mineralName || !date || mutation.isPending || uploading}

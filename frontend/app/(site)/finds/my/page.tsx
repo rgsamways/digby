@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Download, PlusCircle, Trash2, Upload } from "lucide-react";
+import { Download, PlusCircle, Trash2, Upload, Layers } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { Find } from "@/lib/types";
@@ -40,8 +40,21 @@ export default function MyFindsPage() {
   const publicCount = finds.filter((f) => f.visibility === "public").length;
   const csCount = finds.filter((f) => f.citizen_science_eligible).length;
 
+  const isCitizenScientist = user?.roles?.includes("citizen_scientist");
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-10 pb-24 md:pb-10">
+
+      {/* Citizen Scientist badge */}
+      {isCitizenScientist && (
+        <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
+          <Layers className="h-4 w-4 shrink-0 text-brand-600" />
+          <p className="text-sm text-brand-800">
+            <span className="font-semibold">Citizen Scientist</span> — your eligible finds contribute to Ontario&apos;s geological dataset.
+          </p>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-display text-4xl text-stone-900">My Find Journal</h1>

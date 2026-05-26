@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   setAuth: (token: string, user: User) => void;
   clearAuth: () => void;
+  updateRoles: (roles: string[]) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,6 +23,8 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem("digby_token");
         set({ token: null, user: null });
       },
+      updateRoles: (roles) =>
+        set((state) => ({ user: state.user ? { ...state.user, roles } : null })),
     }),
     { name: "digby-auth" }
   )
