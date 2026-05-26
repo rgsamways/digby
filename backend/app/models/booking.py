@@ -36,6 +36,13 @@ class Booking(Document):
     mystery_province: str = ""
     is_group_booking: bool = False
     group_members: list[GroupMember] = []  # additional members beyond leader
+    # educator / field trip fields
+    is_educator_booking: bool = False
+    educator_institution: str | None = None
+    educator_grade_level: str | None = None  # primary | junior | intermediate | secondary | post-secondary | adult
+    po_number: str | None = None
+    invoice_requested: bool = False
+    group_waiver_acknowledged: bool = False
     created_at: datetime = datetime.now(UTC)
 
     class Settings:

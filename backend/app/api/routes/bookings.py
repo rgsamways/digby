@@ -27,6 +27,13 @@ class BookingCreate(BaseModel):
     notes: str = ""
     is_group_booking: bool = False
     group_members: list[GroupMember] = []
+    # educator / field trip fields
+    is_educator_booking: bool = False
+    educator_institution: str | None = None
+    educator_grade_level: str | None = None
+    po_number: str | None = None
+    invoice_requested: bool = False
+    group_waiver_acknowledged: bool = False
 
 
 class MysteryBookingCreate(BaseModel):
@@ -42,7 +49,8 @@ class MembersUpdate(BaseModel):
 
 class BookingResponse(BaseModel):
     booking_id: str
-    client_secret: str  # Stripe PaymentIntent client_secret
+    client_secret: str | None = None  # None for invoice/PO bookings
+    invoice_requested: bool = False
 
 
 @router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
@@ -54,10 +62,6 @@ async def create_booking(
     if not site or not site.is_active:
         raise HTTPException(status_code=404, detail="Site not found")
 
-    operator = await User.get(site.operator_id)
-    if not operator or not operator.stripe_account_id or not operator.stripe_account_enabled:
-        raise HTTPException(status_code=409, detail="Operator payment account not set up")
-
     avail = await Availability.find_one(
         Availability.site_id == site.id,
         Availability.date == body.date.date(),
@@ -68,6 +72,39 @@ async def create_booking(
     total = round(site.price_per_person * body.party_size, 2)
     platform_fee = round(total * settings.STRIPE_PLATFORM_FEE_PERCENT / 100, 2)
     operator_payout = round(total - platform_fee, 2)
+
+    # ── Invoice / PO path (educator field trips) ──────────────────────────────
+    if body.invoice_requested:
+        booking = Booking(
+            site_id=site.id,
+            visitor_id=visitor.id,
+            operator_id=site.operator_id,
+            date=body.date,
+            party_size=body.party_size,
+            total_amount=total,
+            platform_fee=platform_fee,
+            operator_payout=operator_payout,
+            notes=body.notes,
+            is_group_booking=body.is_group_booking,
+            group_members=body.group_members,
+            is_educator_booking=body.is_educator_booking,
+            educator_institution=body.educator_institution,
+            educator_grade_level=body.educator_grade_level,
+            po_number=body.po_number,
+            invoice_requested=True,
+            group_waiver_acknowledged=body.group_waiver_acknowledged,
+        )
+        await booking.insert()
+        return BookingResponse(
+            booking_id=str(booking.id),
+            client_secret=None,
+            invoice_requested=True,
+        )
+
+    # ── Standard Stripe path ──────────────────────────────────────────────────
+    operator = await User.get(site.operator_id)
+    if not operator or not operator.stripe_account_id or not operator.stripe_account_enabled:
+        raise HTTPException(status_code=409, detail="Operator payment account not set up")
 
     intent = stripe.PaymentIntent.create(
         amount=int(total * 100),  # cents
@@ -93,6 +130,11 @@ async def create_booking(
         notes=body.notes,
         is_group_booking=body.is_group_booking,
         group_members=body.group_members,
+        is_educator_booking=body.is_educator_booking,
+        educator_institution=body.educator_institution,
+        educator_grade_level=body.educator_grade_level,
+        po_number=body.po_number,
+        group_waiver_acknowledged=body.group_waiver_acknowledged,
     )
     await booking.insert()
 

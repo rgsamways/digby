@@ -10,9 +10,11 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 
 export default function BookingConfirmPage() {
   const params = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "failed" | "invoice">("loading");
 
   useEffect(() => {
+    if (params.get("invoice") === "1") { setStatus("invoice"); return; }
+
     const clientSecret = params.get("payment_intent_client_secret");
     if (!clientSecret) { setStatus("failed"); return; }
 
@@ -54,6 +56,20 @@ export default function BookingConfirmPage() {
               Something went wrong with your payment. You have not been charged.
             </p>
             <Link href="/sites" className="btn-primary">Try again</Link>
+          </>
+        )}
+        {status === "invoice" && (
+          <>
+            <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
+            <h1 className="mb-2 text-2xl font-bold text-stone-900">Field trip request received</h1>
+            <p className="mb-6 text-stone-600">
+              The site operator will contact you within 2 business days with an invoice.
+              Your booking is held pending payment.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link href="/bookings" className="btn-primary">View my bookings</Link>
+              <Link href="/educators" className="btn-secondary">Curriculum alignment notes</Link>
+            </div>
           </>
         )}
       </div>
