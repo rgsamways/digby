@@ -10,31 +10,68 @@ import { SiteMap } from "@/components/Map";
 import { EmptyState } from "@/components/EmptyState";
 
 type View = "grid" | "map";
+type Category = "all" | "mineral" | "fossil";
+
+const CATEGORY_TABS: { value: Category; label: string }[] = [
+  { value: "all", label: "All sites" },
+  { value: "mineral", label: "Minerals" },
+  { value: "fossil", label: "Fossils" },
+];
 
 export default function SitesPage() {
   const [view, setView] = useState<View>("grid");
   const [mineral, setMineral] = useState("");
+  const [category, setCategory] = useState<Category>("all");
+
+  const params = new URLSearchParams();
+  if (mineral) params.set("mineral", mineral);
+  if (category !== "all") params.set("category", category);
+  const queryString = params.toString();
 
   const { data: sites = [], isLoading } = useQuery<Site[]>({
-    queryKey: ["sites", mineral],
-    queryFn: () => api.get(`/api/sites${mineral ? `?mineral=${mineral}` : ""}`),
+    queryKey: ["sites", mineral, category],
+    queryFn: () => api.get(`/api/sites${queryString ? `?${queryString}` : ""}`),
   });
 
   return (
     <div className={view === "map" ? "overflow-hidden" : ""}>
       {/* Filter bar */}
       <div className="sticky top-[57px] z-30 border-b border-stone-200 bg-white/90 backdrop-blur px-4 py-3">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3">
+
+          {/* Category tabs */}
+          <div className="flex overflow-hidden rounded-lg border border-stone-200 bg-white">
+            {CATEGORY_TABS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => { setCategory(value); setMineral(""); }}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  value !== "all" ? "border-l border-stone-200" : ""
+                } ${
+                  category === value
+                    ? value === "fossil"
+                      ? "bg-lime-600 text-white"
+                      : "bg-brand-600 text-white"
+                    : "text-stone-500 hover:bg-stone-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <input
             type="text"
-            placeholder="Filter by mineral…"
+            placeholder={category === "fossil" ? "Filter by fossil type…" : "Filter by mineral…"}
             value={mineral}
             onChange={(e) => setMineral(e.target.value)}
             className="input max-w-xs flex-1"
           />
+
           {!isLoading && view === "grid" && (
             <p className="text-sm text-stone-400">{sites.length} site{sites.length !== 1 ? "s" : ""}</p>
           )}
+
           <div className="ml-auto flex overflow-hidden rounded-lg border border-stone-200 bg-white">
             <button
               onClick={() => setView("grid")}
@@ -70,8 +107,14 @@ export default function SitesPage() {
         <SiteMap sites={sites} />
       ) : sites.length === 0 ? (
         <EmptyState
-          title="No sites found"
-          body={mineral ? `No sites with "${mineral}" — try a different mineral.` : "No bookable sites yet."}
+          title={category === "fossil" ? "No fossil sites yet" : "No sites found"}
+          body={
+            category === "fossil"
+              ? "Fossil sites are coming soon. Check back or list your site."
+              : mineral
+              ? `No sites with "${mineral}" — try a different mineral.`
+              : "No bookable sites yet."
+          }
         />
       ) : (
         <div className="mx-auto max-w-6xl px-4 py-8">

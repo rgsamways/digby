@@ -11,6 +11,7 @@ export interface Site {
   max_group_size: number;
   duration_hours: number;
   site_type: "pay-to-dig" | "guided-tour" | "collecting-walk";
+  site_category?: "mineral" | "fossil";
   images: string[];
   rules: string;
   is_active: boolean;

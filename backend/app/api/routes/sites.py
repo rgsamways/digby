@@ -22,6 +22,7 @@ class SiteCreate(BaseModel):
     max_group_size: int = 10
     duration_hours: float = 3.0
     site_type: SiteType = SiteType.PAY_TO_DIG
+    site_category: str = "mineral"
     rules: str = ""
 
 
@@ -47,6 +48,7 @@ async def list_sites(
     radius_km: float = Query(50.0),
     mineral: str | None = Query(None),
     site_type: SiteType | None = Query(None),
+    category: str | None = Query(None),
     limit: int = Query(20, le=100),
     skip: int = Query(0),
 ) -> list[dict]:
@@ -56,6 +58,8 @@ async def list_sites(
         query = query.find({"minerals": mineral})
     if site_type:
         query = query.find(Site.site_type == site_type)
+    if category:
+        query = query.find({"site_category": category})
 
     sites = await query.skip(skip).limit(limit).to_list()
     return [_site_to_dict(s) for s in sites]
@@ -92,6 +96,7 @@ async def create_site(
         max_group_size=body.max_group_size,
         duration_hours=body.duration_hours,
         site_type=body.site_type,
+        site_category=body.site_category,
         rules=body.rules,
     )
     await site.insert()
@@ -162,6 +167,7 @@ def _site_to_dict(site: Site) -> dict:
         "max_group_size": site.max_group_size,
         "duration_hours": site.duration_hours,
         "site_type": site.site_type,
+        "site_category": site.site_category,
         "images": site.images,
         "rules": site.rules,
         "is_active": site.is_active,

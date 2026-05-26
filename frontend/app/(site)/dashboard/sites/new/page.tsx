@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { X, MapPin, Lightbulb, Tag } from "lucide-react";
 import { api } from "@/lib/api";
 
+const SITE_CATEGORIES = [
+  { value: "mineral", label: "Mineral site", desc: "Crystals, gemstones, ore minerals" },
+  { value: "fossil", label: "Fossil site", desc: "Trilobites, crinoids, coral, marine invertebrates" },
+] as const;
+
 const SITE_TYPES = [
   { value: "pay-to-dig", label: "Pay-to-dig", desc: "Visitors dig independently on your land" },
   { value: "guided-tour", label: "Guided tour", desc: "You lead visitors through the site" },
@@ -46,6 +51,7 @@ export default function NewSitePage() {
     max_group_size: "10",
     duration_hours: "3",
     site_type: "pay-to-dig" as "pay-to-dig" | "guided-tour" | "collecting-walk",
+    site_category: "mineral" as "mineral" | "fossil",
     rules: "",
   });
   const [minerals, setMinerals] = useState<string[]>([]);
@@ -101,6 +107,7 @@ export default function NewSitePage() {
           max_group_size: parseInt(form.max_group_size),
           duration_hours: parseFloat(form.duration_hours),
           minerals,
+          site_category: form.site_category,
         },
         { auth: true }
       ),
@@ -134,6 +141,30 @@ export default function NewSitePage() {
               className="input"
               placeholder="e.g. Miller Creek Amethyst Site"
             />
+          </div>
+
+          {/* Site category */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-stone-700">What does your site offer?</label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SITE_CATEGORIES.map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, site_category: value }))}
+                  className={`rounded-xl border p-3 text-left transition-all ${
+                    form.site_category === value
+                      ? value === "fossil"
+                        ? "border-lime-400 bg-lime-50 ring-1 ring-lime-300"
+                        : "border-brand-400 bg-brand-50 ring-1 ring-brand-300"
+                      : "border-stone-200 bg-white hover:border-stone-300"
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-stone-900">{label}</p>
+                  <p className="mt-0.5 text-xs text-stone-500">{desc}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Site type */}

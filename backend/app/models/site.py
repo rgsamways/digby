@@ -36,6 +36,7 @@ class Site(Document):
     max_group_size: int = 10
     duration_hours: float = 3.0
     site_type: SiteType = SiteType.PAY_TO_DIG
+    site_category: str = "mineral"   # mineral | fossil
     images: list[str] = []
     rules: str = ""
     is_active: bool = True
