@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Package, ShoppingBag, LogOut, Layers, Gem, Users, MapPin, CalendarCheck, BarChart2, BadgeCheck } from "lucide-react";
+import { Package, ShoppingBag, LogOut, Layers, Gem, Users, MapPin, CalendarCheck, BarChart2, BadgeCheck, Video } from "lucide-react";
 import { isAdminAuthenticated, clearAdminToken } from "@/lib/admin";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -40,6 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
     { href: "/admin/revenue", label: "Revenue", icon: BarChart2 },
     { href: "/admin/expert", label: "Experts", icon: BadgeCheck },
+    { href: "/admin/creator", label: "Creators", icon: Video },
   ];
 
   return (

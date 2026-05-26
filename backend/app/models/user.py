@@ -47,6 +47,12 @@ class User(Document):
     social_tiktok: str | None = None
     social_youtube: str | None = None
     content_url: str | None = None
+    # Creator application queue
+    creator_application_submitted: bool = False
+    creator_application_handle: str | None = None
+    creator_application_platform: str | None = None   # instagram | tiktok | youtube | other
+    creator_application_short_answer: str | None = None
+    creator_application_at: datetime | None = None
     # Expert programme fields
     expert_tier: str | None = None          # verified_expert | community_reviewer | ogs_endorsed
     # P.Geo | P.Eng | MSc/PhD | OGS/GSC | Faculty | GIS | Other

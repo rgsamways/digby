@@ -826,3 +826,84 @@ async def admin_review_expert_application(
 
     await user.set({"expert_tier": body.tier})
     return {"ok": True, "action": "approved", "tier": body.tier}
+
+
+# ── Creator applications ───────────────────────────────────────────────────────
+
+def _creator_application_dict(u: User) -> dict:
+    return {
+        "id": str(u.id),
+        "name": u.name,
+        "email": u.email,
+        "creator_application_handle": u.creator_application_handle,
+        "creator_application_platform": u.creator_application_platform,
+        "creator_application_short_answer": u.creator_application_short_answer,
+        "creator_application_at": u.creator_application_at.isoformat() if u.creator_application_at else None,
+        "bio": u.bio,
+        "content_url": u.content_url,
+    }
+
+
+@router.get("/creator/applications")
+async def admin_creator_applications(
+    _: None = Depends(require_admin_token),
+) -> list[dict]:
+    pending = await User.find(
+        {"creator_application_submitted": True, "is_creator": False}
+    ).sort("-creator_application_at").to_list()
+    return [_creator_application_dict(u) for u in pending]
+
+
+class CreatorApprovalIn(BaseModel):
+    tier: str   # explorer | field_geologist | resident_geologist
+    reject: bool = False
+
+
+@router.patch("/creator/applications/{user_id}")
+async def admin_review_creator_application(
+    user_id: str,
+    body: CreatorApprovalIn,
+    _: None = Depends(require_admin_token),
+) -> dict:
+    try:
+        user = await User.get(PydanticObjectId(user_id))
+    except Exception:
+        raise HTTPException(404, "User not found")
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    if body.reject:
+        await user.set({
+            "creator_application_submitted": False,
+            "creator_application_handle": None,
+            "creator_application_platform": None,
+            "creator_application_short_answer": None,
+        })
+        return {"ok": True, "action": "rejected"}
+
+    valid_tiers = {"explorer", "field_geologist", "resident_geologist"}
+    if body.tier not in valid_tiers:
+        raise HTTPException(400, f"Invalid tier: {body.tier}")
+
+    updates: dict = {
+        "is_creator": True,
+        "creator_tier": body.tier,
+        "creator_application_submitted": False,
+    }
+    # Populate social field from application handle + platform
+    platform = user.creator_application_platform
+    handle = user.creator_application_handle or ""
+    if platform == "instagram" and not user.social_instagram:
+        updates["social_instagram"] = handle
+    elif platform == "tiktok" and not user.social_tiktok:
+        updates["social_tiktok"] = handle
+    elif platform == "youtube" and not user.social_youtube:
+        updates["social_youtube"] = handle
+
+    await user.set(updates)
+
+    # Add 'creator' to additive roles[] if not already present
+    if "creator" not in user.roles:
+        await user.set({"roles": user.roles + ["creator"]})
+
+    return {"ok": True, "action": "approved", "tier": body.tier}

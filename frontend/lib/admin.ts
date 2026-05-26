@@ -323,3 +323,32 @@ export const expertAdminApi = {
       body: JSON.stringify({ tier: "verified_expert", reject: true }),
     }),
 };
+
+// ── Creator applications ───────────────────────────────────────────────────────
+
+export interface CreatorApplication {
+  id: string;
+  name: string;
+  email: string;
+  creator_application_handle: string | null;
+  creator_application_platform: string | null;
+  creator_application_short_answer: string | null;
+  creator_application_at: string | null;
+  bio: string;
+  content_url: string | null;
+}
+
+export const creatorAdminApi = {
+  listApplications: () =>
+    adminFetch("/api/admin/creator/applications") as Promise<CreatorApplication[]>,
+  approve: (userId: string, tier: string) =>
+    adminFetch(`/api/admin/creator/applications/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tier, reject: false }),
+    }),
+  reject: (userId: string) =>
+    adminFetch(`/api/admin/creator/applications/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tier: "explorer", reject: true }),
+    }),
+};

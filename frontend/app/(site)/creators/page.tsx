@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { Globe, Instagram } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Creator } from "@/lib/types";
@@ -195,6 +196,23 @@ export default function CreatorsPage() {
           </div>
         </section>
       )}
+
+      {/* Apply CTA */}
+      <section className="mt-16 rounded-2xl border border-stone-200 bg-stone-50 px-8 py-10 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 mb-2">
+          Join the Programme
+        </p>
+        <h2 className="font-display text-2xl text-stone-900">
+          Are you documenting Ontario geology?
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-stone-500">
+          We&rsquo;re looking for creators who cover rockhounding, field geology, and mineral collecting.
+          Accepted creators get comp booking credits, specimen drop priority, and a public Digby profile.
+        </p>
+        <Link href="/creators/apply" className="btn-primary mt-6 inline-block">
+          Apply to join →
+        </Link>
+      </section>
     </div>
   );
 }
