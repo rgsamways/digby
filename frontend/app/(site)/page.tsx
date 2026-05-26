@@ -111,7 +111,7 @@ export default function HomePage() {
       </div>
 
       {/* Right — wordmark + CTAs */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "48px 56px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "clamp(24px, 6vw, 48px) clamp(20px, 6vw, 56px)" }}>
 
         {/* Wordmark */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>

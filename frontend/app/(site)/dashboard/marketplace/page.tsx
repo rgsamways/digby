@@ -164,7 +164,7 @@ export default function MarketplacePage() {
               List exceptional finds as limited-release drops — numbered, with full provenance documentation.
               Collectors pay a premium for authenticated Ontario specimens. Operators get featured placement and 88% of every sale.
             </p>
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               {[
                 { stat: "88%", label: "Goes to you" },
                 { stat: "Priority", label: "Featured placement" },
