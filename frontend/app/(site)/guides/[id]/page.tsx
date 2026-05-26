@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Guide, GuideBooking, GuideReview } from "@/lib/types";
 import { useAuthStore } from "@/lib/auth";
-import { Star } from "lucide-react";
+import { Star, Compass } from "lucide-react";
 
 interface ReviewsResponse {
   reviews: GuideReview[];
@@ -127,7 +127,7 @@ export default function GuideDetailPage() {
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-3xl">
             {guide.avatar_url ? (
               <img src={guide.avatar_url} alt={guide.name} className="h-16 w-16 rounded-full object-cover" />
-            ) : "🧭"}
+            ) : <Compass className="h-8 w-8 text-stone-400" />}
           </div>
           <div className="flex-1">
             <h1 className="font-display text-3xl text-stone-900">{guide.name}</h1>

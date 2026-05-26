@@ -6,13 +6,14 @@ import { useState, Suspense } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Mountain, MapPin, Users, FlaskConical, Eye } from "lucide-react";
 
 const SURVEY_OPTIONS = [
-  { id: "finding_sites", label: "Finding dig sites", emoji: "🪨" },
-  { id: "sharing_land", label: "Sharing my land", emoji: "📍" },
-  { id: "booking_group", label: "Booking for a class or group", emoji: "🎒" },
-  { id: "research_science", label: "Research or science", emoji: "🔬" },
-  { id: "just_browsing", label: "Just browsing", emoji: "👀" },
+  { id: "finding_sites", label: "Finding dig sites", Icon: Mountain },
+  { id: "sharing_land", label: "Sharing my land", Icon: MapPin },
+  { id: "booking_group", label: "Booking for a class or group", Icon: Users },
+  { id: "research_science", label: "Research or science", Icon: FlaskConical },
+  { id: "just_browsing", label: "Just browsing", Icon: Eye },
 ];
 
 function RegisterForm() {
@@ -113,7 +114,7 @@ function RegisterForm() {
             <h2 className="mb-1 text-xl font-bold text-stone-900">What brings you here?</h2>
             <p className="mb-5 text-sm text-stone-500">Pick all that apply. You can skip this.</p>
             <div className="mb-5 space-y-2">
-              {SURVEY_OPTIONS.map(({ id, label, emoji }) => (
+              {SURVEY_OPTIONS.map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   type="button"
@@ -121,13 +122,13 @@ function RegisterForm() {
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
                     selected.includes(id)
-                      ? "border-brand-400 bg-brand-50 text-brand-800"
-                      : "border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+                      ? "border-brand-400 bg-brand-50 text-brand-700"
+                      : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
                   )}
                 >
-                  <span className="text-lg">{emoji}</span>
+                  <Icon className={cn("h-4 w-4 shrink-0", selected.includes(id) ? "text-brand-600" : "text-stone-400")} />
                   {label}
-                  {selected.includes(id) && <span className="ml-auto text-brand-600">✓</span>}
+                  {selected.includes(id) && <span className="ml-auto text-xs font-semibold text-brand-600">✓</span>}
                 </button>
               ))}
             </div>

@@ -11,8 +11,9 @@ import type { Booking, WeatherAlert, YieldReport, ScavengerHunt, Specimen, Site,
 import {
   Calendar, Plus, AlertTriangle, Pickaxe, CreditCard, CheckCircle, Map, ShoppingBag, Bell,
   CheckCircle2, HelpCircle, Gem, Users, Award, ChevronRight, BookOpen, Zap, TrendingUp,
-  MessageSquare,
+  MessageSquare, MapPin, Shield, Layers,
 } from "lucide-react";
+import { CrystalIcon, OccurrenceIcon } from "@/components/icons/GeologyIcons";
 
 // ─── Visitor dashboard types ──────────────────────────────────────────────────
 
@@ -793,13 +794,13 @@ export default function DashboardPage() {
     general: "#6B7280",
   };
 
-  const operatorTools = [
-    { href: "/dashboard/sites", icon: "📍", label: "Site Listing", sub: "Photos, pricing, profile" },
-    { href: "/dashboard/bookings", icon: "📋", label: "Waivers & Safety", sub: "Forms, field safety" },
-    { href: "/dashboard/settings", icon: "💳", label: "Pricing & Payouts", sub: "Payment history, guidance" },
-    { href: "/dashboard/marketplace", icon: "💎", label: "Specimen Drop", sub: "Limited releases with provenance" },
-    { href: "/dashboard/bookings", icon: "🔬", label: "Citizen Science", sub: "Log finds, OGS dataset" },
-    { href: "/dashboard/community", icon: "🗣️", label: "Community Board", sub: "Talk to other operators" },
+  const operatorTools: { href: string; icon: React.ReactNode; label: string; sub: string }[] = [
+    { href: "/dashboard/sites", icon: <MapPin className="h-5 w-5" />, label: "Site Listing", sub: "Photos, pricing, profile" },
+    { href: "/dashboard/bookings", icon: <Shield className="h-5 w-5" />, label: "Waivers & Safety", sub: "Forms, field safety" },
+    { href: "/dashboard/settings", icon: <CreditCard className="h-5 w-5" />, label: "Pricing & Payouts", sub: "Payment history, guidance" },
+    { href: "/dashboard/marketplace", icon: <CrystalIcon size={20} />, label: "Specimen Drop", sub: "Limited releases with provenance" },
+    { href: "/dashboard/bookings", icon: <OccurrenceIcon size={20} />, label: "Citizen Science", sub: "Log finds, OGS dataset" },
+    { href: "/dashboard/community", icon: <Users className="h-5 w-5" />, label: "Community Board", sub: "Talk to other operators" },
   ];
 
   return (
@@ -1007,7 +1008,7 @@ export default function DashboardPage() {
           {operatorTools.map(({ href, icon, label, sub }) => (
             <Link key={label} href={href}
               className="card group flex items-start gap-3 p-4 transition-shadow hover:shadow-md">
-              <span className="text-xl leading-none">{icon}</span>
+              <span className="mt-0.5 shrink-0 text-stone-400 group-hover:text-brand-600 transition-colors">{icon}</span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-stone-800 group-hover:text-brand-600 transition-colors">{label}</p>
                 <p className="mt-0.5 text-xs text-stone-400 leading-snug">{sub}</p>

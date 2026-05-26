@@ -4,15 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { Mountain, MapPin, Users, FlaskConical, Eye } from "lucide-react";
 
 const FIELD_GUIDE = ["FIELD", "GUIDE", "TO THE", "GEOLOGIC", "UNDER-", "GROUND"];
 
 const SURVEY_OPTIONS = [
-  { id: "finding_sites", label: "Finding dig sites", emoji: "🪨" },
-  { id: "sharing_land", label: "Sharing my land", emoji: "📍" },
-  { id: "booking_group", label: "Booking for a class or group", emoji: "🎒" },
-  { id: "research_science", label: "Research or science", emoji: "🔬" },
-  { id: "just_browsing", label: "Just browsing", emoji: "👀" },
+  { id: "finding_sites", label: "Finding dig sites", Icon: Mountain },
+  { id: "sharing_land", label: "Sharing my land", Icon: MapPin },
+  { id: "booking_group", label: "Booking for a class or group", Icon: Users },
+  { id: "research_science", label: "Research or science", Icon: FlaskConical },
+  { id: "just_browsing", label: "Just browsing", Icon: Eye },
 ];
 
 const inputStyle: React.CSSProperties = {
@@ -202,7 +203,7 @@ export default function HomePage() {
                   What brings you here?
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                  {SURVEY_OPTIONS.map(({ id, label, emoji }) => {
+                  {SURVEY_OPTIONS.map(({ id, label, Icon }) => {
                     const active = selectedAnswers.includes(id);
                     return (
                       <button key={id} type="button" onClick={() => toggleAnswer(id)}
@@ -210,12 +211,12 @@ export default function HomePage() {
                           display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
                           background: active ? "rgba(201,123,58,0.25)" : "rgba(255,255,255,0.06)",
                           border: active ? "1px solid #C97B3A" : "1px solid rgba(255,255,255,0.15)",
-                          color: active ? "#E8A84A" : "rgba(255,255,255,0.75)",
+                          color: active ? "#E8A84A" : "rgba(255,255,255,0.65)",
                           fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left",
                         }}>
-                        <span style={{ fontSize: 16 }}>{emoji}</span>
+                        <Icon size={15} style={{ flexShrink: 0, opacity: active ? 1 : 0.6 }} />
                         {label}
-                        {active && <span style={{ marginLeft: "auto", fontSize: 12 }}>✓</span>}
+                        {active && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700 }}>✓</span>}
                       </button>
                     );
                   })}

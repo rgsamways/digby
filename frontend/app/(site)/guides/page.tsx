@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { Compass } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Guide } from "@/lib/types";
 
@@ -32,7 +33,7 @@ export default function GuidesPage() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl">
                   {guide.avatar_url ? (
                     <img src={guide.avatar_url} alt={guide.name} className="h-12 w-12 rounded-full object-cover" />
-                  ) : "🧭"}
+                  ) : <Compass className="h-6 w-6 text-stone-400" />}
                 </div>
                 <div>
                   <p className="font-semibold text-stone-900">{guide.name}</p>
