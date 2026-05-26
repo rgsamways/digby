@@ -104,7 +104,7 @@ function isActive(href: string, pathname: string, exact?: boolean): boolean {
   return pathname === path || pathname.startsWith(path + "/");
 }
 
-const STONE = "#3D4F5C";
+const STONE = "#1A1F2E";
 const COPPER = "#C97B3A";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
