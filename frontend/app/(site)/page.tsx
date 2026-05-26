@@ -47,7 +47,6 @@ export default function HomePage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("visitor");
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,7 +82,8 @@ export default function HomePage() {
   async function handleSignupFinish(answers: string[]) {
     setError(""); setLoading(true);
     try {
-      const data = await api.post<{ access_token: string; user_id: string; name: string; role: "visitor" | "operator" | "admin"; roles: string[]; email_flags: string[] }>("/api/auth/register", { name, email, password, role, onboarding_answers: answers });
+      const inferredRole = answers.includes("sharing_land") ? "operator" : "visitor";
+      const data = await api.post<{ access_token: string; user_id: string; name: string; role: "visitor" | "operator" | "admin"; roles: string[]; email_flags: string[] }>("/api/auth/register", { name, email, password, role: inferredRole, onboarding_answers: answers });
       setAuth(data.access_token, { id: data.user_id, name: data.name, role: data.role, roles: data.roles ?? [], email_flags: data.email_flags ?? [], onboarding_answers: answers });
       router.push(data.role === "operator" ? "/dashboard" : "/sites");
     } catch (err: unknown) {
@@ -187,15 +187,6 @@ export default function HomePage() {
                 <div>
                   <label style={labelStyle}>Password</label>
                   <input style={inputStyle} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-                </div>
-                <div>
-                  <label style={labelStyle}>I am a…</label>
-                  <select value={role} onChange={e => setRole(e.target.value)}
-                    style={{ ...inputStyle, appearance: "none" }}>
-                    <option value="visitor">Visitor / Rockhound</option>
-                    <option value="operator">Operator / Landowner</option>
-                    <option value="guide">Guide / Expert</option>
-                  </select>
                 </div>
                 {error && <p style={{ fontSize: 13, color: "#E8A84A", margin: 0 }}>{error}</p>}
                 <button type="submit"
