@@ -552,12 +552,9 @@ function statusBadge(status: string) {
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const router = useRouter();
   const qc = useQueryClient();
 
-  useEffect(() => {
-    if (user === null) router.push("/login?next=/dashboard");
-  }, [user, router]);
+  // No redirect — logout uses window.location.href which handles navigation.
 
   const isVisitorRole = user?.role === "visitor";
   const isOperatorRole = user?.role === "operator" || user?.role === "admin";

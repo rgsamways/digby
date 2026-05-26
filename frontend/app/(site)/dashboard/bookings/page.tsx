@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -24,7 +23,6 @@ function statusBadge(status: string) {
 }
 
 export default function BookingsPage() {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("upcoming");
@@ -32,7 +30,6 @@ export default function BookingsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const isOperator = user?.role === "operator" || user?.role === "admin";
-  if (!isOperator && user !== undefined) { router.push("/dashboard"); }
 
   const { data: bookings = [] } = useQuery<Booking[]>({
     queryKey: ["operator-bookings"],
