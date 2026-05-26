@@ -59,6 +59,9 @@ async def stripe_webhook(request: Request) -> JSONResponse:
             await _handle_shop_order_succeeded(pi)
         elif order_type == "drop":
             await _handle_drop_piece_succeeded(pi)
+        elif order_type == "job_listing":
+            from app.api.routes.jobs import activate_job_listing
+            await activate_job_listing(pi)
         else:
             booking = await Booking.find_one(Booking.stripe_payment_intent_id == pi_id)
             if booking:

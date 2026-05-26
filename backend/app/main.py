@@ -22,6 +22,7 @@ from app.api.routes import (
     guide_reviews,
     guides,
     hunts,
+    jobs,
     junior,
     mineral_id,
     partners,
@@ -117,6 +118,7 @@ app.include_router(creators.router, prefix="/api/creators", tags=["creators"])
 app.include_router(experts.router, prefix="/api/experts", tags=["experts"])
 app.include_router(clubs.router, prefix="/api/clubs", tags=["clubs"])
 app.include_router(operator_updates.router, prefix="/api/operator-updates", tags=["operator-updates"])
+app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 
 
 @app.get("/api/auth/me", tags=["auth"])

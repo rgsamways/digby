@@ -352,3 +352,33 @@ export const creatorAdminApi = {
       body: JSON.stringify({ tier: "explorer", reject: true }),
     }),
 };
+
+// ── Job board ─────────────────────────────────────────────────────────────────
+
+export interface AdminJobListing {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  job_type: string;
+  category: string;
+  description: string;
+  salary_range: string | null;
+  apply_url: string | null;
+  apply_email: string | null;
+  posted_by_email: string;
+  status: string;
+  is_featured: boolean;
+  listing_fee: number;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export const jobAdminApi = {
+  listAll: () => adminFetch("/api/jobs/admin/all") as Promise<AdminJobListing[]>,
+  update: (id: string, payload: { status?: string; is_featured?: boolean }) =>
+    adminFetch(`/api/jobs/admin/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+};
